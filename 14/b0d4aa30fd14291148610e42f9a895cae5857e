@@ -1,0 +1,45 @@
+server/go.mod
+  s_c0a32b84bd18ee::t_a27355f830c85d 1-13
+server/go.sum
+  s_c0a32b84bd18ee::t_a70ab62bba87b1 1-26
+server/internal/text/testdata/paragraph.golden.json
+  s_c0a32b84bd18ee::t_e144eb22c56123 1-606
+server/internal/text/addr.go
+  s_511a41360e9566::t_7c8f3ccaefdd89 1-68
+server/internal/text/addr_test.go
+  s_511a41360e9566::t_ac78964cff01d8 1-84
+server/internal/text/golden_test.go
+  s_c0a32b84bd18ee::t_65de33bde62e39 1-51
+server/internal/text/property_test.go
+  s_c0a32b84bd18ee::t_067002580cb56d 1-68
+server/internal/text/split.go
+  s_511a41360e9566::t_0d8da21b73fb11 1-261
+server/internal/text/split_test.go
+  s_511a41360e9566::t_477d40eee007fa 1-273
+server/internal/text/testdata/paragraph.txt
+  s_c0a32b84bd18ee::t_0ac1def0556b53 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "14b0d4aa30fd14291148610e42f9a895cae5857e",
+  "prompts": {},
+  "sessions": {
+    "s_511a41360e9566": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a00ff5eb675621caf",
+        "model": "unknown"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    },
+    "s_c0a32b84bd18ee": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ea1d46b-66b6-435f-a356-eb7cedb73ad6",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
