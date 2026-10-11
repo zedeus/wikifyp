@@ -14,7 +14,7 @@ func TestDumpAnomalies(t *testing.T) {
 	if os.Getenv("WIKIFYP_SCAN") == "" {
 		t.Skip("set WIKIFYP_SCAN=1 to dump")
 	}
-	for _, f := range []string{"barack-obama.txt", "chemistry.txt", "computer.txt"} {
+	for _, f := range articleFixtures {
 		ss := Split(fixture(t, f))
 		fmt.Printf("== %s: %d sentences\n", f, len(ss))
 		for i, s := range ss {

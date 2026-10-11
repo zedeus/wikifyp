@@ -160,7 +160,7 @@ func TestSplitSentences(t *testing.T) {
 			want:  []string{"Encyclopædia Britannica.", "Vol. 5. pp. 23–24."},
 		},
 		{
-			name:  "unlisted abbreviation before a number",
+			name:  "abbreviation before a measurement",
 			input: "The route is approx. 40,000 km long.",
 			want:  []string{"The route is approx. 40,000 km long."},
 		},

@@ -7,6 +7,10 @@ import (
 	"testing"
 )
 
+// articleFixtures are the committed full articles every whole-article test
+// runs over.
+var articleFixtures = []string{"barack-obama.txt", "chemistry.txt", "computer.txt"}
+
 // fixture reads a committed article fixture from the repo's fixtures/ tree.
 func fixture(t testing.TB, name string) string {
 	t.Helper()
@@ -48,10 +52,7 @@ func TestSplitWikipediaGroundTruth(t *testing.T) {
 			}
 			want := strings.Split(strings.TrimRight(string(data), "\n"), "\n")
 
-			var got []string
-			for _, s := range Split(input) {
-				got = append(got, s.Text)
-			}
+			got := sentenceTexts(input)
 
 			for i := 0; i < len(got) || i < len(want); i++ {
 				switch {
@@ -75,7 +76,7 @@ func TestSplitWikipediaGroundTruth(t *testing.T) {
 // full articles (~175 KB of real text): determinism, token rejoin, and no
 // character loss.
 func TestSplitWikipediaInvariants(t *testing.T) {
-	for _, name := range []string{"barack-obama.txt", "chemistry.txt", "computer.txt"} {
+	for _, name := range articleFixtures {
 		t.Run(name, func(t *testing.T) {
 			checkInvariants(t, fixture(t, name))
 		})
