@@ -1,0 +1,94 @@
+server/internal/api/api.go
+  s_c0a32b84bd18ee::t_ae844f66c16d6b 1-5,7-10,15-16,23-30
+  s_c0a32b84bd18ee::t_9932a1751673bd 11-14,17-20,22
+  s_c0a32b84bd18ee::t_95996486c4be2d 21
+  s_c0a32b84bd18ee::t_0d48c4ac7806e9 6
+server/internal/text/addr_test.go
+  s_c0a32b84bd18ee::t_4f84b3b9e06a78 34-35
+  s_c0a32b84bd18ee::t_0e02bcdb122dc1 1-33,36-84
+server/internal/migrate/migrate.go
+  s_c0a32b84bd18ee::t_e75ec3ad32dbdf 4-8,19,43-48,50,52,78,89-90,93,95,97-98,103-126,129,136,138,147
+  s_c0a32b84bd18ee::t_05ff625b7c7fc1 68-76
+  s_c0a32b84bd18ee::t_db8d5b50041ca7 1-3,9-18,20-28,32-42,49,51,53-67,77,79-88,91-92,94,96,99-102,127-128,130-135,137,139-146,148-163
+  s_c0a32b84bd18ee::t_16e4f1e1f14c94 29-31
+server/internal/text/testdata/paragraph.txt
+  s_c0a32b84bd18ee::t_d6c85cc6fb13be 1
+server/go.mod
+  s_c0a32b84bd18ee::t_d4dff8c21a0b20 3
+  s_c0a32b84bd18ee::t_f6c11201c1e8da 4,7-9,12-13
+  s_c0a32b84bd18ee::t_63da1345d85f95 5-6,10-11
+  s_c0a32b84bd18ee::t_47684ba5a6c3a4 1-2
+server/internal/text/property_test.go
+  s_c0a32b84bd18ee::t_c6611f2928d53c 1-68
+.github/workflows/ci.yml
+  s_c0a32b84bd18ee::t_d9aa3c43a0a364 1-26
+server/internal/testdb/testdb_test.go
+  s_c0a32b84bd18ee::t_cf3ab4e1870c0a 1-43
+server/internal/config/config_test.go
+  s_c0a32b84bd18ee::t_894b52a1040c04 1-26,30-39
+  s_c0a32b84bd18ee::t_359fac10414aa8 27-29
+server/internal/migrate/migrate_test.go
+  s_c0a32b84bd18ee::t_e3c7e73d571ce4 1-123,172-184
+  s_c0a32b84bd18ee::t_902ff2aab71471 161-163
+  s_c0a32b84bd18ee::t_42928c2b51f6ca 124-160,164-171
+server/internal/text/split.go
+  s_c0a32b84bd18ee::t_ea865e5b52818f 71
+  s_c0a32b84bd18ee::t_f49e9ce2551aa7 131-133
+  s_c0a32b84bd18ee::t_755a847a543649 203
+  s_c0a32b84bd18ee::t_72546c62ff625e 182
+  s_c0a32b84bd18ee::t_8f760b033b5476 1-14,16-42,44-70,72-93,104-106,109-130,134-145,148,150-181,183-202,204-261
+  s_c0a32b84bd18ee::t_0da8d60a02cb9d 15
+  s_c0a32b84bd18ee::t_a03c4b546c7c16 43
+  s_c0a32b84bd18ee::t_c0c1a209836ad5 94-103,107-108
+  s_c0a32b84bd18ee::t_04babd17bbf47c 146-147,149
+server/internal/text/golden_test.go
+  s_c0a32b84bd18ee::t_a0890bf0e0b1fd 1-51
+server/internal/config/config.go
+  s_c0a32b84bd18ee::t_d0d8a18b946417 1-3,8-21,23-25
+  s_c0a32b84bd18ee::t_a14c9258fec29b 4-7,22
+server/internal/text/addr.go
+  s_c0a32b84bd18ee::t_6a7306211d8540 1-20,22-61,67-68
+  s_c0a32b84bd18ee::t_888183266aefbe 62-66
+  s_c0a32b84bd18ee::t_803aee0cb221d6 21
+server/cmd/wikifyp/main.go
+  s_c0a32b84bd18ee::t_2369ed789afa25 33,35,43,46
+  s_c0a32b84bd18ee::t_56bccc92f5c3c4 1-32,34,36-42,44-45,47-58,64-67
+  s_c0a32b84bd18ee::t_ff72f5fa771c37 59-63
+server/internal/testdb/testdb.go
+  s_c0a32b84bd18ee::t_d0f62094e4ec83 1-58,63-66,72-73,79-94,99-104,112,114,116-150
+  s_c0a32b84bd18ee::t_b9a6ff1d1e11d0 96-98
+  s_c0a32b84bd18ee::t_db2346ef5b5c1b 59-62,67-71,74,77-78
+  s_c0a32b84bd18ee::t_b4c22c63b04b56 95,105-111,113,115
+  s_c0a32b84bd18ee::t_0d1296e6e6540d 75-76
+server/internal/text/split_test.go
+  s_c0a32b84bd18ee::t_a8d92b613f68d8 1-6,8-154,170-229,231-264,266-273
+  s_c0a32b84bd18ee::t_5ca4aa5f659778 7
+  s_c0a32b84bd18ee::t_907fa11a9429e6 265
+  s_c0a32b84bd18ee::t_92d9afded123cd 230
+  s_c0a32b84bd18ee::t_6efd33d7ffc8ab 155-169
+server/internal/migrate/migrations/0001_init.sql
+  s_c0a32b84bd18ee::t_d1c5afa028eef4 1-4
+server/internal/api/api_test.go
+  s_c0a32b84bd18ee::t_e61d367b9c355f 1-11,15-16,18-19,24-28,30-36,39-41,43-46
+  s_c0a32b84bd18ee::t_f563930e0ba4d0 12-14,17,20-23,29,37-38,42
+server/internal/text/testdata/paragraph.golden.json
+  s_c0a32b84bd18ee::t_118852f72177c5 1-606
+server/go.sum
+  s_c0a32b84bd18ee::t_1324d3ad76e2a6 1-26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "965352dc64214a19b3d2c9942f82c7b3fafa6ce1",
+  "prompts": {},
+  "sessions": {
+    "s_c0a32b84bd18ee": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ea1d46b-66b6-435f-a356-eb7cedb73ad6",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
