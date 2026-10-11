@@ -1,0 +1,20 @@
+server/internal/migrate/migrate.go
+  s_c0a32b84bd18ee::t_6b7755d85dd0a0 70-73,77
+  s_c0a32b84bd18ee::t_137d74966e3901 18,127
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "73b79a89fde6a61d676921d0dcad08fb18c82031",
+  "prompts": {},
+  "sessions": {
+    "s_c0a32b84bd18ee": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ea1d46b-66b6-435f-a356-eb7cedb73ad6",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
