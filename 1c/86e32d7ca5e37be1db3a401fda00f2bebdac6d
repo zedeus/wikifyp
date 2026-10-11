@@ -1,0 +1,19 @@
+.github/workflows/ci.yml
+  s_c0a32b84bd18ee::t_ebf26549776441 1-26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1c86e32d7ca5e37be1db3a401fda00f2bebdac6d",
+  "prompts": {},
+  "sessions": {
+    "s_c0a32b84bd18ee": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ea1d46b-66b6-435f-a356-eb7cedb73ad6",
+        "model": "unknown"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
