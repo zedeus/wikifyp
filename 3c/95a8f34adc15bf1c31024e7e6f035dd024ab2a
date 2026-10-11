@@ -1,0 +1,43 @@
+server/internal/text/wikipedia_test.go
+  s_c0a32b84bd18ee::t_f8865747c4899a 1-88
+server/internal/text/split_test.go
+  s_c0a32b84bd18ee::t_0ddc4124a9dc02 166-175
+  s_c0a32b84bd18ee::t_9ae584b656f8e1 141-143,145-165
+server/internal/text/testdata/wikipedia/chemistry.sentences.txt
+  s_c0a32b84bd18ee::t_29191018118d2f 1-15
+server/internal/text/scan_dump_test.go
+  s_c0a32b84bd18ee::t_72185d31b2e997 25-26
+  s_c0a32b84bd18ee::t_9afbaf3eda0674 1-24,27-41
+server/internal/text/split.go
+  s_c0a32b84bd18ee::t_a1701bf9685eba 163-173
+  s_c0a32b84bd18ee::t_48de1bb0a62865 222
+  s_c0a32b84bd18ee::t_ed1884438940ce 63-64
+  s_c0a32b84bd18ee::t_f03b5c8613553f 33,42,45-61,65,69,93
+  s_c0a32b84bd18ee::t_9942796b2fbab2 43-44
+  s_c0a32b84bd18ee::t_f602e5bf1f74dd 34-40
+  s_c0a32b84bd18ee::t_2068f4d5948d36 212-215,218
+  s_c0a32b84bd18ee::t_cfb7b64c7dc9bc 116
+  s_c0a32b84bd18ee::t_105fa200d25247 225-227,233-243
+  s_c0a32b84bd18ee::t_fd6a43fa266599 228,230
+  s_c0a32b84bd18ee::t_f8cc26103af4f2 62
+server/internal/text/testdata/wikipedia/computer.sentences.txt
+  s_c0a32b84bd18ee::t_958e0f62a38c42 1-28
+server/internal/text/testdata/wikipedia/obama.sentences.txt
+  s_c0a32b84bd18ee::t_df89a1ba2e2f7c 1-39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3c95a8f34adc15bf1c31024e7e6f035dd024ab2a",
+  "prompts": {},
+  "sessions": {
+    "s_c0a32b84bd18ee": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ea1d46b-66b6-435f-a356-eb7cedb73ad6",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
