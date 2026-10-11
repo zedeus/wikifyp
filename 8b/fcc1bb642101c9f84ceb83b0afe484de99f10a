@@ -1,0 +1,32 @@
+server/cmd/wikifyp/main.go
+  s_b8ac2b1ae65a53::t_cd4cf7367c5de3 42-53
+  s_b8ac2b1ae65a53::t_dd58b97a9ef7a8 61
+  s_b8ac2b1ae65a53::t_a3849086f48e9b 8
+  s_b8ac2b1ae65a53::t_d55232dd3b53e3 28-29,31-35
+  s_b8ac2b1ae65a53::t_fd468d09b5fd99 24-27,30,36-37,56
+  s_b8ac2b1ae65a53::t_6539b77a45f78b 54-55
+server/cmd/wikifyp/ingest.go
+  s_b8ac2b1ae65a53::t_353cf90b1270ab 32-35
+  s_b8ac2b1ae65a53::t_631511f5f4ebb7 13
+  s_b8ac2b1ae65a53::t_c746f0a58b9acf 51-52,69-70
+  s_b8ac2b1ae65a53::t_f3c578972bd985 10-11
+  s_b8ac2b1ae65a53::t_5d783cbd2e5355 43-50
+  s_b8ac2b1ae65a53::t_33b73c31df16a7 67,75,83-84
+  s_b8ac2b1ae65a53::t_c2a110652cbf1e 1-9,12,14-31,36-42,53-66,68,71-74,76-82,85-109
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8bfcc1bb642101c9f84ceb83b0afe484de99f10a",
+  "prompts": {},
+  "sessions": {
+    "s_b8ac2b1ae65a53": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d9e70940-322e-4583-bd58-8f4bfd355f7e",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}

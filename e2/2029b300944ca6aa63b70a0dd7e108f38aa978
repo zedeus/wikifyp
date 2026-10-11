@@ -1,0 +1,118 @@
+fixtures/articles/philosophy.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-162
+fixtures/articles/prime-number.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-855
+fixtures/articles/french-revolution.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-321
+fixtures/articles/roman-empire.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-389
+fixtures/articles/dna.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-588
+fixtures/articles/simplewiki-chemistry.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-898
+fixtures/articles/philosophy.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-721
+fixtures/articles/history-of-science.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-513
+fixtures/articles/photosynthesis.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-1133
+fixtures/articles/chemistry.json
+  s_b8ac2b1ae65a53::t_c61e7fa0e32066 7
+  s_b8ac2b1ae65a53::t_34e9f0248c7a1e 3,9
+fixtures/articles/antarctica.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-227
+fixtures/articles/computer.json
+  s_b8ac2b1ae65a53::t_c61e7fa0e32066 7
+  s_b8ac2b1ae65a53::t_34e9f0248c7a1e 3,9
+fixtures/articles/history-of-science.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-1495
+fixtures/articles/prime-number.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-3719
+fixtures/articles/ethics.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-220
+fixtures/articles/simplewiki-photosynthesis.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-164
+fixtures/articles/stoicism.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-252
+fixtures/articles/photosynthesis.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-249
+fixtures/articles/mathematics.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-394
+fixtures/articles/japan.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-1479
+fixtures/articles/mathematics.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-786
+fixtures/articles/leonardo-da-vinci.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-236
+fixtures/articles/ethics.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-964
+fixtures/articles/simplewiki-photosynthesis.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-136
+fixtures/articles/french-revolution.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-1502
+fixtures/articles/simplewiki-physics.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-116
+fixtures/articles/amazon-rainforest.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-161
+fixtures/articles/simplewiki-japan.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-135
+fixtures/articles/marie-curie.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-1046
+fixtures/articles/roman-empire.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-2880
+fixtures/articles/metaphysics.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-186
+fixtures/articles/exponentiation.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-7524
+fixtures/articles/dna.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-299
+fixtures/articles/exponentiation.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-691
+fixtures/articles/antarctica.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-1366
+fixtures/articles/barack-obama.json
+  s_b8ac2b1ae65a53::t_c61e7fa0e32066 7
+  s_b8ac2b1ae65a53::t_34e9f0248c7a1e 3,9
+fixtures/articles/calculus.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-916
+fixtures/articles/leonardo-da-vinci.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-897
+fixtures/articles/japan.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-255
+fixtures/articles/calculus.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-839
+fixtures/articles/metaphysics.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-907
+fixtures/articles/stoicism.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-858
+fixtures/articles/physics.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-234
+fixtures/articles/simplewiki-physics.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-274
+fixtures/articles/amazon-rainforest.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-650
+fixtures/articles/simplewiki-japan.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-599
+fixtures/articles/marie-curie.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-220
+fixtures/articles/simplewiki-chemistry.txt
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-165
+fixtures/articles/physics.json
+  s_b8ac2b1ae65a53::t_42e1f2c9b2bf1d 1-587
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e22029b300944ca6aa63b70a0dd7e108f38aa978",
+  "prompts": {},
+  "sessions": {
+    "s_b8ac2b1ae65a53": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d9e70940-322e-4583-bd58-8f4bfd355f7e",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}

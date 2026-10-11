@@ -1,0 +1,29 @@
+server/internal/ingest/ingest_test.go
+  s_b8ac2b1ae65a53::t_9447b850b114a2 261-263,265-268,271,282-306
+  s_b8ac2b1ae65a53::t_64f280448dbf7e 310-381
+  s_b8ac2b1ae65a53::t_24c78fada9d99e 1-260,264,269-270,272-281,307-309
+server/internal/ingest/ingest.go
+  s_b8ac2b1ae65a53::t_c13f00612ea6d0 1-12,14-63,65-77,81-93,95,105-112,128-136,138-140,142-150
+  s_b8ac2b1ae65a53::t_de0c9dd1eda3f8 13
+  s_b8ac2b1ae65a53::t_6daba93ecbbf80 113-127,137,141
+  s_b8ac2b1ae65a53::t_452d03bffd813e 64
+  s_b8ac2b1ae65a53::t_17a3bbbbad95a5 78-80,94,96-104
+server/internal/migrate/migrations/0002_articles.sql
+  s_b8ac2b1ae65a53::t_8ab1d79d2178f1 1-43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bc3908e6da767c52a87a643a951bdc3f5fb20dd4",
+  "prompts": {},
+  "sessions": {
+    "s_b8ac2b1ae65a53": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d9e70940-322e-4583-bd58-8f4bfd355f7e",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
