@@ -15,7 +15,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -67,19 +67,14 @@ func ApplyFS(ctx context.Context, db *sql.DB, fsys fs.FS) error {
 
 		// Serialize with other instances migrating the same database (a
 		// rolling deploy starts several at once). The session-level lock
-		// outlives ctx cancellation and conn.Close only returns the session
-		// to the pool, so the unlock must run even on a canceled ctx; if it
-		// fails anyway, close the session so the lock dies with it instead
-		// of going back to the pool still held.
+		// dies with its session, so burn the connection instead of
+		// choreographing an unlock on every exit path: migrations run once
+		// per process start, and the pool discards the dead session.
+		// WithoutCancel lets the close finish on a canceled ctx.
 		if _, err := pc.Exec(ctx, "SELECT pg_advisory_lock($1)", lockKey); err != nil {
 			return fmt.Errorf("migrate: acquire advisory lock: %w", err)
 		}
-		defer func() {
-			unlockCtx := context.WithoutCancel(ctx)
-			if _, err := pc.Exec(unlockCtx, "SELECT pg_advisory_unlock($1)", lockKey); err != nil {
-				pc.Close(unlockCtx)
-			}
-		}()
+		defer pc.Close(context.WithoutCancel(ctx))
 
 		if _, err := pc.Exec(ctx, `CREATE TABLE IF NOT EXISTS schema_migrations (
 			version integer PRIMARY KEY,
@@ -129,7 +124,7 @@ func load(fsys fs.FS) ([]migration, error) {
 		seen[version] = name
 		ms = append(ms, migration{version: version, name: name})
 	}
-	sort.Slice(ms, func(i, j int) bool { return ms[i].version < ms[j].version })
+	slices.SortFunc(ms, func(a, b migration) int { return a.version - b.version })
 	return ms, nil
 }
 
