@@ -36,7 +36,11 @@ func TestSplitWikipediaGroundTruth(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.fixture, func(t *testing.T) {
 			article := fixture(t, tt.fixture)
-			input := strings.Join(strings.SplitN(article, "\n", tt.lines+1)[:tt.lines], "\n")
+			parts := strings.SplitN(article, "\n", tt.lines+1)
+			if len(parts) <= tt.lines {
+				t.Fatalf("fixture %s has fewer than %d lines", tt.fixture, tt.lines)
+			}
+			input := strings.Join(parts[:tt.lines], "\n")
 
 			data, err := os.ReadFile(filepath.Join("testdata", "wikipedia", tt.golden))
 			if err != nil {

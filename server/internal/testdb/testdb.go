@@ -116,13 +116,14 @@ func start() error {
 	if err != nil {
 		return fmt.Errorf("docker port: %w", err)
 	}
-	// Output looks like "127.0.0.1:49153" (possibly one line per address family).
+	// Output looks like "127.0.0.1:49153" (possibly one line per address
+	// family). Split on the last colon so an IPv6 address would not break.
 	addr, _, _ := strings.Cut(strings.TrimSpace(string(out)), "\n")
-	_, port, ok := strings.Cut(addr, ":")
-	if !ok {
+	i := strings.LastIndexByte(addr, ':')
+	if i < 0 {
 		return fmt.Errorf("docker port: unexpected output %q", out)
 	}
-	shared.port = port
+	shared.port = addr[i+1:]
 
 	admin, err := sql.Open("pgx", dsn("wikifyp"))
 	if err != nil {

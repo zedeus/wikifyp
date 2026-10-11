@@ -43,7 +43,13 @@ func run() error {
 		checks = append(checks, db.PingContext)
 	}
 
-	srv := &http.Server{Addr: cfg.Addr, Handler: api.New(checks...)}
+	srv := &http.Server{
+		Addr:    cfg.Addr,
+		Handler: api.New(checks...),
+		// A client trickling its header bytes must not hold a connection
+		// open forever.
+		ReadHeaderTimeout: 5 * time.Second,
+	}
 	errc := make(chan error, 1)
 	go func() {
 		log.Printf("listening on %s", cfg.Addr)
