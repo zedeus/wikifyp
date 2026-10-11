@@ -1,0 +1,21 @@
+server/internal/text/split.go
+  s_c0a32b84bd18ee::t_1b73373152baed 168-170,172-174
+server/internal/text/split_test.go
+  s_c0a32b84bd18ee::t_6fce677f092a20 177-186
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "493c3dc724a754664e97c6fc8e38624bfa561007",
+  "prompts": {},
+  "sessions": {
+    "s_c0a32b84bd18ee": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ea1d46b-66b6-435f-a356-eb7cedb73ad6",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
