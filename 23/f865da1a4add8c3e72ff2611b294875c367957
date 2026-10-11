@@ -1,0 +1,23 @@
+server/internal/text/wikipedia_test.go
+  s_c0a32b84bd18ee::t_8a31d265b6b242 39-43
+server/cmd/wikifyp/main.go
+  s_c0a32b84bd18ee::t_f6204c1acf3c58 46-52
+server/internal/testdb/testdb.go
+  s_c0a32b84bd18ee::t_52d43cc27040b1 119-120,122-123,126
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "23f865da1a4add8c3e72ff2611b294875c367957",
+  "prompts": {},
+  "sessions": {
+    "s_c0a32b84bd18ee": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ea1d46b-66b6-435f-a356-eb7cedb73ad6",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
