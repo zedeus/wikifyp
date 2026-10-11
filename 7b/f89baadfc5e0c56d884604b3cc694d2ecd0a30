@@ -1,0 +1,26 @@
+server/internal/text/split_test.go
+  s_c0a32b84bd18ee::t_37efc9654b324c 163
+server/internal/text/wikipedia_test.go
+  s_c0a32b84bd18ee::t_37efc9654b324c 10-13,55,79
+server/internal/text/scan_dump_test.go
+  s_c0a32b84bd18ee::t_37efc9654b324c 17
+server/internal/text/split.go
+  s_c0a32b84bd18ee::t_5931ccdc86ea90 42-44,46-50,55-61,66,75,101
+  s_c0a32b84bd18ee::t_1353288927bae4 136-137,144,162-163,166-170,173-175,180,186-191,194,196-197,200-203,213-214
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7bf89baadfc5e0c56d884604b3cc694d2ecd0a30",
+  "prompts": {},
+  "sessions": {
+    "s_c0a32b84bd18ee": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ea1d46b-66b6-435f-a356-eb7cedb73ad6",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
