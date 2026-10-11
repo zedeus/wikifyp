@@ -1,0 +1,91 @@
+server/internal/source/mediawiki_test.go
+  s_b8ac2b1ae65a53::t_307b6b375a02dd 42-44,52,206,218,240
+  s_b8ac2b1ae65a53::t_ebcbe8e0ff2e55 225-228
+  s_b8ac2b1ae65a53::t_a620c9bc413424 26,28,30,202,229
+  s_b8ac2b1ae65a53::t_5e131735a1eedb 156-199
+  s_b8ac2b1ae65a53::t_a6cbbb6e5fe824 10
+  s_b8ac2b1ae65a53::t_262163d364d96d 1-9,11-25,27,29,31-41,45-51,53-112,200-201,203-205,207-217,219-224,230-239,241-256
+  s_b8ac2b1ae65a53::t_89591e1ebd5795 113-155
+server/internal/source/source_test.go
+  s_b8ac2b1ae65a53::t_33957e777b94d0 29,44
+  s_b8ac2b1ae65a53::t_9fe177e406b853 28
+  s_b8ac2b1ae65a53::t_9be60ecf292092 1-27,30-43,45-66
+server/internal/text/split.go
+  s_b8ac2b1ae65a53::t_6d35af1bb68268 30-37
+  s_b8ac2b1ae65a53::t_95e89d88b2a90e 59-60
+server/internal/source/source.go
+  s_b8ac2b1ae65a53::t_686414e8b2a230 25-28,39
+  s_b8ac2b1ae65a53::t_307b6b375a02dd 30-38,40
+  s_b8ac2b1ae65a53::t_27f2678c1a71a0 1-24,29,41-79
+server/internal/source/fixture.go
+  s_b8ac2b1ae65a53::t_4f6e8ce8bdb390 40-44
+  s_b8ac2b1ae65a53::t_e3be4e14dc3730 104
+  s_b8ac2b1ae65a53::t_673b81155d2b1b 54-56,59-60,63,68-70,78-81,84
+  s_b8ac2b1ae65a53::t_75f8cc25144c00 1-11,13-35,38-39,45-48,51-53,57-58,72-74,82-83,85-103,105-115
+  s_b8ac2b1ae65a53::t_15c1a60736e2d0 61-62,64-67
+  s_b8ac2b1ae65a53::t_75c1c109acb243 36-37,49-50,71
+  s_b8ac2b1ae65a53::t_4a274b48243a21 75-77
+  s_b8ac2b1ae65a53::t_b567fd7ca797f9 12
+server/internal/source/clean.go
+  s_b8ac2b1ae65a53::t_d9575c9c56e1c0 116-119,126
+  s_b8ac2b1ae65a53::t_fdfa63c694c4d6 1-2,7-11,22-46,51-115,120-125,127-164
+  s_b8ac2b1ae65a53::t_4b84ea7147098c 3-6
+  s_b8ac2b1ae65a53::t_9fe177e406b853 12-21
+  s_b8ac2b1ae65a53::t_e69afa810f8cae 47-50
+server/internal/source/clean_test.go
+  s_b8ac2b1ae65a53::t_26f099cbc8fd57 1-13,15-34,36-67,69-149,153,155-168,170-186,194-218,220-225,227-238,240-258
+  s_b8ac2b1ae65a53::t_a620c9bc413424 35,68,239
+  s_b8ac2b1ae65a53::t_9fe177e406b853 219
+  s_b8ac2b1ae65a53::t_5e61fb659b630c 14,187-193,226
+  s_b8ac2b1ae65a53::t_edc84d555e643e 150-152,154
+  s_b8ac2b1ae65a53::t_01810f496c5e84 169
+server/internal/source/mediawiki.go
+  s_b8ac2b1ae65a53::t_3a25e8e857daaa 15-17,68,118-122,127-129
+  s_b8ac2b1ae65a53::t_b65dee49bc4fc2 59-62
+  s_b8ac2b1ae65a53::t_9776e8c1f3d741 131-134,137-138,140-141,143-144,146-148
+  s_b8ac2b1ae65a53::t_75245745bf7580 207-210,212
+  s_b8ac2b1ae65a53::t_5b817b0ab45e6c 164-172,175
+  s_b8ac2b1ae65a53::t_9fdd7d48efb93c 154-157
+  s_b8ac2b1ae65a53::t_00de26a15b2efb 174
+  s_b8ac2b1ae65a53::t_9a2b37dd419484 104-108
+  s_b8ac2b1ae65a53::t_2fb4df0d996547 109
+  s_b8ac2b1ae65a53::t_61489f1d909084 1-14,18-58,63-67,69-103,110-117,123-126,130,135-136,139,142,145,149-153,158-163,173,176-206,211,213-216
+server/internal/source/fixture_test.go
+  s_b8ac2b1ae65a53::t_9d0f947781ba08 74-108
+  s_b8ac2b1ae65a53::t_ff1d4c626b8e8a 139-140,142-143,145-147,149,151-152,154-184
+  s_b8ac2b1ae65a53::t_8338a0bcc83897 137-138,141,144,148,150,153
+  s_b8ac2b1ae65a53::t_a2a2597801796d 32
+  s_b8ac2b1ae65a53::t_a17715ca06055f 6-7
+  s_b8ac2b1ae65a53::t_bf6897155c9c68 1-5,9-31,33-73,109-136
+  s_b8ac2b1ae65a53::t_435ba2c4be0b4a 8
+server/internal/source/testdata/README.md
+  s_b8ac2b1ae65a53::t_ed0796806888fb 1-9
+server/internal/source/testdata/exponentiation.json
+  s_b8ac2b1ae65a53::t_85aae40672f74b 1
+server/internal/source/testdata/missing-page.json
+  s_b8ac2b1ae65a53::t_146d5551041b80 1
+server/internal/source/testdata/photosynthesis-1.json
+  s_b8ac2b1ae65a53::t_dc5074b04be051 1
+server/internal/source/testdata/photosynthesis-2.json
+  s_b8ac2b1ae65a53::t_dffa8def72fa88 1
+server/internal/source/testdata/photosynthesis-3.json
+  s_b8ac2b1ae65a53::t_a0532a5ab5b78a 1
+server/internal/source/testdata/simplewiki-chemistry.json
+  s_b8ac2b1ae65a53::t_8f64ed9e38aeed 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a68bd792cf7cb75946b35f48cb6754183b1508b4",
+  "prompts": {},
+  "sessions": {
+    "s_b8ac2b1ae65a53": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d9e70940-322e-4583-bd58-8f4bfd355f7e",
+        "model": "metr-model"
+      },
+      "human_author": null
+    }
+  }
+}
