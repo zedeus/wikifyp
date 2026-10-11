@@ -30,24 +30,43 @@ type Sentence struct {
 
 // Split breaks text into sentences and tokens. Whitespace-only input yields
 // no sentences.
+//
+// Segmentation runs in two passes: a line pass, then a terminator-driven
+// sentence pass within each line. In the text this project ingests
+// (MediaWiki plain-text extracts), a newline is always a structural break —
+// a new paragraph, heading, list item or table row, never a soft wrap — so
+// no sentence continues across lines, and structure that carries no
+// terminator punctuation (headings, flattened lists) still segments
+// correctly without pattern-matching any of it.
 func Split(text string) []Sentence {
-	runes := []rune(text)
+	var sentences []Sentence
+	for line := range strings.Lines(text) {
+		for _, span := range sentenceSpans([]rune(line)) {
+			fields := strings.Fields(string(span))
+			if len(fields) == 0 {
+				continue
+			}
+			tokens := make([]Token, len(fields))
+			for i, f := range fields {
+				tokens[i] = Token{Idx: i, Text: f}
+			}
+			sentences = append(sentences, Sentence{
+				Idx:    len(sentences),
+				Text:   strings.Join(fields, " "),
+				Tokens: tokens,
+			})
+		}
+	}
+	return sentences
+}
+
+// sentenceSpans splits one line into sentence spans on terminator
+// punctuation. A whitespace-only line yields no spans.
+func sentenceSpans(runes []rune) [][]rune {
 	var spans [][]rune
 	start := 0
-
 	for i := 0; i < len(runes); {
-		r := runes[i]
-
-		// A numbered list item starting on a new line begins a new sentence
-		// even without a terminator before it ("…item one\n2. Item two").
-		if r == '\n' && startsListItem(runes[i+1:]) && !allSpace(runes[start:i]) {
-			spans = append(spans, runes[start:i])
-			start = i + 1
-			i++
-			continue
-		}
-
-		if !isTerminator(r) {
+		if !isTerminator(runes[i]) {
 			i++
 			continue
 		}
@@ -71,24 +90,7 @@ func Split(text string) []Sentence {
 	if !allSpace(runes[start:]) {
 		spans = append(spans, runes[start:])
 	}
-
-	sentences := make([]Sentence, 0, len(spans))
-	for _, span := range spans {
-		fields := strings.Fields(string(span))
-		if len(fields) == 0 {
-			continue
-		}
-		tokens := make([]Token, len(fields))
-		for i, f := range fields {
-			tokens[i] = Token{Idx: i, Text: f}
-		}
-		sentences = append(sentences, Sentence{
-			Idx:    len(sentences),
-			Text:   strings.Join(fields, " "),
-			Tokens: tokens,
-		})
-	}
-	return sentences
+	return spans
 }
 
 // allSpace reports whether the span holds nothing but whitespace.
@@ -111,7 +113,7 @@ var abbreviations = map[string]bool{
 	"St": true, "Jr": true, "Sr": true, "Fig": true, "No": true,
 	"vs": true, "cf": true, "ca": true, "approx": true, "al": true,
 	"Inc": true, "Ltd": true, "Co": true, "Dept": true, "Univ": true,
-	"ed": true, "eds": true, "vol": true, "pp": true, "p": true,
+	"ed": true, "eds": true, "vol": true, "Vol": true, "pp": true, "p": true,
 }
 
 // isBoundary decides whether the terminator run runes[first..last] (followed
@@ -158,9 +160,17 @@ func isBoundary(runes []rune, start, first, last, after int) bool {
 		// "wait... five seconds" runs on; "It faded... Then silence." splits.
 		return unicode.IsUpper(next)
 	}
-	// Sentences start with capitals or digits; a lowercase continuation
-	// ("etc. and so on") runs on.
-	return unicode.IsUpper(next) || unicode.IsDigit(next)
+	if unicode.IsUpper(next) {
+		return true
+	}
+	// Digits after a period are nearly always a continuation — citations and
+	// measurements like "Vol. 5", "p. 12", "approx. 40,000 km" — unless the
+	// digits are themselves the "2." numbering of an inline list.
+	if unicode.IsDigit(next) {
+		return isListNumbering(runes, k)
+	}
+	// A lowercase continuation ("etc. and so on") runs on.
+	return false
 }
 
 // wordBefore returns the non-space run immediately before position end,
@@ -199,32 +209,38 @@ func isListNumber(runes []rune, start, first int, word string) bool {
 			return false
 		}
 	}
-	// Position where the word begins.
+	// Only whitespace and opening marks may sit between the sentence start
+	// and the number ("(1." included): list numbering opens a sentence, it
+	// never ends one. word arrives with leading openers already trimmed, so
+	// the backward scan must skip them too.
 	wordStart := first - utf8.RuneCountInString(word)
 	for i := wordStart - 1; i >= start; i-- {
-		if runes[i] == '\n' {
-			return true
-		}
-		if !unicode.IsSpace(runes[i]) {
+		if !unicode.IsSpace(runes[i]) && !isOpener(runes[i]) {
 			return false
 		}
 	}
-	return true // first word of the sentence
+	return true
 }
 
-// startsListItem reports whether runes begin (after optional spaces) with
-// digits followed by a dot, like "2." at the start of a line.
-func startsListItem(runes []rune) bool {
-	i := 0
-	for i < len(runes) && (runes[i] == ' ' || runes[i] == '\t') {
-		i++
-	}
+// isListNumbering reports whether runes[k:] starts with the "2." of an
+// inline numbered list: digits, a dot, whitespace, then an uppercase item.
+// Without the uppercase item it is citation structure ("Vol. 5. pp. 23").
+func isListNumbering(runes []rune, k int) bool {
 	digits := 0
-	for i < len(runes) && unicode.IsDigit(runes[i]) {
-		i++
+	for ; k < len(runes) && unicode.IsDigit(runes[k]); k++ {
 		digits++
 	}
-	return digits > 0 && i < len(runes) && runes[i] == '.'
+	if digits == 0 || k >= len(runes) || runes[k] != '.' {
+		return false
+	}
+	k++
+	if k >= len(runes) || !unicode.IsSpace(runes[k]) {
+		return false
+	}
+	for k < len(runes) && unicode.IsSpace(runes[k]) {
+		k++
+	}
+	return k < len(runes) && unicode.IsUpper(runes[k])
 }
 
 func isTerminator(r rune) bool {

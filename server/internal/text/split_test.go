@@ -138,9 +138,41 @@ func TestSplitSentences(t *testing.T) {
 			want:  []string{"1. First boil the water", "2. Then add the rice"},
 		},
 		{
-			name:  "newlines inside a sentence collapse",
+			// In extract-format text a newline is always a structural break
+			// (paragraph, heading, list item, table row), never a soft wrap.
+			name:  "each line stands alone",
 			input: "The quick\nbrown fox\njumps. It lands.",
-			want:  []string{"The quick brown fox jumps.", "It lands."},
+			want:  []string{"The quick", "brown fox", "jumps.", "It lands."},
+		},
+		{
+			name:  "heading line stands alone",
+			input: "He retired in 2017.\n\n\n== Early life ==\n\nHe was born in 1961.",
+			want:  []string{"He retired in 2017.", "== Early life ==", "He was born in 1961."},
+		},
+		{
+			name:  "unpunctuated list lines stand alone",
+			input: "Memory comes in two varieties:\nrandom-access memory or RAM\nread-only memory or ROM",
+			want:  []string{"Memory comes in two varieties:", "random-access memory or RAM", "read-only memory or ROM"},
+		},
+		{
+			name:  "citation abbreviation before a number",
+			input: "Encyclopædia Britannica. Vol. 5. pp. 23–24.",
+			want:  []string{"Encyclopædia Britannica.", "Vol. 5. pp. 23–24."},
+		},
+		{
+			name:  "unlisted abbreviation before a number",
+			input: "The route is approx. 40,000 km long.",
+			want:  []string{"The route is approx. 40,000 km long."},
+		},
+		{
+			name:  "capitalized Vol before a non-digit",
+			input: "See Vol. V of the series.",
+			want:  []string{"See Vol. V of the series."},
+		},
+		{
+			name:  "parenthesized list numbering",
+			input: "(1. First item) follows.",
+			want:  []string{"(1. First item) follows."},
 		},
 		{
 			name:  "number citation like No.",
