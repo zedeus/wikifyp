@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -20,26 +21,48 @@ import (
 )
 
 func main() {
-	if err := run(); err != nil {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	var err error
+	switch {
+	case len(os.Args) == 1:
+		err = serve(ctx)
+	case os.Args[1] == "ingest":
+		err = runIngest(ctx, os.Args[2:])
+	default:
+		// A typo must not silently start the server instead of ingesting.
+		err = fmt.Errorf("unknown command %q (the only command is \"ingest\"; run with no arguments to serve)", os.Args[1])
+	}
+	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run() error {
+// openDB opens the database and brings its schema up to date. Both serving
+// and ingesting go through it, so the two paths cannot drift.
+func openDB(ctx context.Context, dsn string) (*sql.DB, error) {
+	db, err := sql.Open("pgx", dsn)
+	if err != nil {
+		return nil, fmt.Errorf("open database: %w", err)
+	}
+	if err := migrate.Apply(ctx, db); err != nil {
+		db.Close()
+		return nil, err
+	}
+	return db, nil
+}
+
+func serve(ctx context.Context) error {
 	cfg := config.FromEnv()
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
 
 	var checks []func(context.Context) error
 	if cfg.DatabaseURL != "" {
-		db, err := sql.Open("pgx", cfg.DatabaseURL)
+		db, err := openDB(ctx, cfg.DatabaseURL)
 		if err != nil {
 			return err
 		}
 		defer db.Close()
-		if err := migrate.Apply(ctx, db); err != nil {
-			return err
-		}
 		checks = append(checks, db.PingContext)
 	}
 
