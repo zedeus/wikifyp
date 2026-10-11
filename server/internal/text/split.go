@@ -165,8 +165,13 @@ func isBoundary(runes []rune, start, first, last, after int) bool {
 	}
 	// Digits after a period are nearly always a continuation — citations and
 	// measurements like "Vol. 5", "p. 12", "approx. 40,000 km" — unless the
-	// digits are themselves the "2." numbering of an inline list.
+	// digits are themselves the "2." numbering of an inline list. Only a bare
+	// period can be citation structure: after "?" or "!" a digit starts a
+	// sentence ("Was it worth it? 50 years later...").
 	if unicode.IsDigit(next) {
+		if runes[first] != '.' || first != last {
+			return true
+		}
 		return isListNumbering(runes, k)
 	}
 	// A lowercase continuation ("etc. and so on") runs on.

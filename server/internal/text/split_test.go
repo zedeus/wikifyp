@@ -175,6 +175,16 @@ func TestSplitSentences(t *testing.T) {
 			want:  []string{"(1. First item) follows."},
 		},
 		{
+			name:  "digits start a sentence after a question mark",
+			input: "Was it worth it? 50 years later, nobody knew.",
+			want:  []string{"Was it worth it?", "50 years later, nobody knew."},
+		},
+		{
+			name:  "digits start a sentence after an exclamation mark",
+			input: "It erupted! 57 villages were buried.",
+			want:  []string{"It erupted!", "57 villages were buried."},
+		},
+		{
 			name:  "number citation like No.",
 			input: "See No. 7 for the full score.",
 			want:  []string{"See No. 7 for the full score."},
