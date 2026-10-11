@@ -1,0 +1,19 @@
+docs/decisions.md
+  s_b8ac2b1ae65a53::t_509e5da039f8d9 1-202
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "640155abcb2256e97797503e772811c14e5ea466",
+  "prompts": {},
+  "sessions": {
+    "s_b8ac2b1ae65a53": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d9e70940-322e-4583-bd58-8f4bfd355f7e",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
