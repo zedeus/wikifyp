@@ -1,0 +1,606 @@
+[
+  {
+    "Idx": 0,
+    "Text": "The metre (or meter in U.S. spelling) is the base unit of length in the International System of Units (SI).",
+    "Tokens": [
+      {
+        "Idx": 0,
+        "Text": "The"
+      },
+      {
+        "Idx": 1,
+        "Text": "metre"
+      },
+      {
+        "Idx": 2,
+        "Text": "(or"
+      },
+      {
+        "Idx": 3,
+        "Text": "meter"
+      },
+      {
+        "Idx": 4,
+        "Text": "in"
+      },
+      {
+        "Idx": 5,
+        "Text": "U.S."
+      },
+      {
+        "Idx": 6,
+        "Text": "spelling)"
+      },
+      {
+        "Idx": 7,
+        "Text": "is"
+      },
+      {
+        "Idx": 8,
+        "Text": "the"
+      },
+      {
+        "Idx": 9,
+        "Text": "base"
+      },
+      {
+        "Idx": 10,
+        "Text": "unit"
+      },
+      {
+        "Idx": 11,
+        "Text": "of"
+      },
+      {
+        "Idx": 12,
+        "Text": "length"
+      },
+      {
+        "Idx": 13,
+        "Text": "in"
+      },
+      {
+        "Idx": 14,
+        "Text": "the"
+      },
+      {
+        "Idx": 15,
+        "Text": "International"
+      },
+      {
+        "Idx": 16,
+        "Text": "System"
+      },
+      {
+        "Idx": 17,
+        "Text": "of"
+      },
+      {
+        "Idx": 18,
+        "Text": "Units"
+      },
+      {
+        "Idx": 19,
+        "Text": "(SI)."
+      }
+    ]
+  },
+  {
+    "Idx": 1,
+    "Text": "It was originally defined in 1793 as one ten-millionth of the distance from the equator to the North Pole, i.e. along a great circle, so the Earth's circumference is approx. 40,000 km.",
+    "Tokens": [
+      {
+        "Idx": 0,
+        "Text": "It"
+      },
+      {
+        "Idx": 1,
+        "Text": "was"
+      },
+      {
+        "Idx": 2,
+        "Text": "originally"
+      },
+      {
+        "Idx": 3,
+        "Text": "defined"
+      },
+      {
+        "Idx": 4,
+        "Text": "in"
+      },
+      {
+        "Idx": 5,
+        "Text": "1793"
+      },
+      {
+        "Idx": 6,
+        "Text": "as"
+      },
+      {
+        "Idx": 7,
+        "Text": "one"
+      },
+      {
+        "Idx": 8,
+        "Text": "ten-millionth"
+      },
+      {
+        "Idx": 9,
+        "Text": "of"
+      },
+      {
+        "Idx": 10,
+        "Text": "the"
+      },
+      {
+        "Idx": 11,
+        "Text": "distance"
+      },
+      {
+        "Idx": 12,
+        "Text": "from"
+      },
+      {
+        "Idx": 13,
+        "Text": "the"
+      },
+      {
+        "Idx": 14,
+        "Text": "equator"
+      },
+      {
+        "Idx": 15,
+        "Text": "to"
+      },
+      {
+        "Idx": 16,
+        "Text": "the"
+      },
+      {
+        "Idx": 17,
+        "Text": "North"
+      },
+      {
+        "Idx": 18,
+        "Text": "Pole,"
+      },
+      {
+        "Idx": 19,
+        "Text": "i.e."
+      },
+      {
+        "Idx": 20,
+        "Text": "along"
+      },
+      {
+        "Idx": 21,
+        "Text": "a"
+      },
+      {
+        "Idx": 22,
+        "Text": "great"
+      },
+      {
+        "Idx": 23,
+        "Text": "circle,"
+      },
+      {
+        "Idx": 24,
+        "Text": "so"
+      },
+      {
+        "Idx": 25,
+        "Text": "the"
+      },
+      {
+        "Idx": 26,
+        "Text": "Earth's"
+      },
+      {
+        "Idx": 27,
+        "Text": "circumference"
+      },
+      {
+        "Idx": 28,
+        "Text": "is"
+      },
+      {
+        "Idx": 29,
+        "Text": "approx."
+      },
+      {
+        "Idx": 30,
+        "Text": "40,000"
+      },
+      {
+        "Idx": 31,
+        "Text": "km."
+      }
+    ]
+  },
+  {
+    "Idx": 2,
+    "Text": "In 1799 the definition was replaced by a platinum bar, the \"mètre des Archives.\"",
+    "Tokens": [
+      {
+        "Idx": 0,
+        "Text": "In"
+      },
+      {
+        "Idx": 1,
+        "Text": "1799"
+      },
+      {
+        "Idx": 2,
+        "Text": "the"
+      },
+      {
+        "Idx": 3,
+        "Text": "definition"
+      },
+      {
+        "Idx": 4,
+        "Text": "was"
+      },
+      {
+        "Idx": 5,
+        "Text": "replaced"
+      },
+      {
+        "Idx": 6,
+        "Text": "by"
+      },
+      {
+        "Idx": 7,
+        "Text": "a"
+      },
+      {
+        "Idx": 8,
+        "Text": "platinum"
+      },
+      {
+        "Idx": 9,
+        "Text": "bar,"
+      },
+      {
+        "Idx": 10,
+        "Text": "the"
+      },
+      {
+        "Idx": 11,
+        "Text": "\"mètre"
+      },
+      {
+        "Idx": 12,
+        "Text": "des"
+      },
+      {
+        "Idx": 13,
+        "Text": "Archives.\""
+      }
+    ]
+  },
+  {
+    "Idx": 3,
+    "Text": "Dr. Charles Sanders Peirce was the first to propose tying it to a wavelength of light, and later work by A. A. Michelson refined the idea.",
+    "Tokens": [
+      {
+        "Idx": 0,
+        "Text": "Dr."
+      },
+      {
+        "Idx": 1,
+        "Text": "Charles"
+      },
+      {
+        "Idx": 2,
+        "Text": "Sanders"
+      },
+      {
+        "Idx": 3,
+        "Text": "Peirce"
+      },
+      {
+        "Idx": 4,
+        "Text": "was"
+      },
+      {
+        "Idx": 5,
+        "Text": "the"
+      },
+      {
+        "Idx": 6,
+        "Text": "first"
+      },
+      {
+        "Idx": 7,
+        "Text": "to"
+      },
+      {
+        "Idx": 8,
+        "Text": "propose"
+      },
+      {
+        "Idx": 9,
+        "Text": "tying"
+      },
+      {
+        "Idx": 10,
+        "Text": "it"
+      },
+      {
+        "Idx": 11,
+        "Text": "to"
+      },
+      {
+        "Idx": 12,
+        "Text": "a"
+      },
+      {
+        "Idx": 13,
+        "Text": "wavelength"
+      },
+      {
+        "Idx": 14,
+        "Text": "of"
+      },
+      {
+        "Idx": 15,
+        "Text": "light,"
+      },
+      {
+        "Idx": 16,
+        "Text": "and"
+      },
+      {
+        "Idx": 17,
+        "Text": "later"
+      },
+      {
+        "Idx": 18,
+        "Text": "work"
+      },
+      {
+        "Idx": 19,
+        "Text": "by"
+      },
+      {
+        "Idx": 20,
+        "Text": "A."
+      },
+      {
+        "Idx": 21,
+        "Text": "A."
+      },
+      {
+        "Idx": 22,
+        "Text": "Michelson"
+      },
+      {
+        "Idx": 23,
+        "Text": "refined"
+      },
+      {
+        "Idx": 24,
+        "Text": "the"
+      },
+      {
+        "Idx": 25,
+        "Text": "idea."
+      }
+    ]
+  },
+  {
+    "Idx": 4,
+    "Text": "Since 1983, the metre has been defined as the length of the path travelled by light in a vacuum in 1/299792458 of a second, about 3.34 nanoseconds... a definition that no physical artefact can drift away from.",
+    "Tokens": [
+      {
+        "Idx": 0,
+        "Text": "Since"
+      },
+      {
+        "Idx": 1,
+        "Text": "1983,"
+      },
+      {
+        "Idx": 2,
+        "Text": "the"
+      },
+      {
+        "Idx": 3,
+        "Text": "metre"
+      },
+      {
+        "Idx": 4,
+        "Text": "has"
+      },
+      {
+        "Idx": 5,
+        "Text": "been"
+      },
+      {
+        "Idx": 6,
+        "Text": "defined"
+      },
+      {
+        "Idx": 7,
+        "Text": "as"
+      },
+      {
+        "Idx": 8,
+        "Text": "the"
+      },
+      {
+        "Idx": 9,
+        "Text": "length"
+      },
+      {
+        "Idx": 10,
+        "Text": "of"
+      },
+      {
+        "Idx": 11,
+        "Text": "the"
+      },
+      {
+        "Idx": 12,
+        "Text": "path"
+      },
+      {
+        "Idx": 13,
+        "Text": "travelled"
+      },
+      {
+        "Idx": 14,
+        "Text": "by"
+      },
+      {
+        "Idx": 15,
+        "Text": "light"
+      },
+      {
+        "Idx": 16,
+        "Text": "in"
+      },
+      {
+        "Idx": 17,
+        "Text": "a"
+      },
+      {
+        "Idx": 18,
+        "Text": "vacuum"
+      },
+      {
+        "Idx": 19,
+        "Text": "in"
+      },
+      {
+        "Idx": 20,
+        "Text": "1/299792458"
+      },
+      {
+        "Idx": 21,
+        "Text": "of"
+      },
+      {
+        "Idx": 22,
+        "Text": "a"
+      },
+      {
+        "Idx": 23,
+        "Text": "second,"
+      },
+      {
+        "Idx": 24,
+        "Text": "about"
+      },
+      {
+        "Idx": 25,
+        "Text": "3.34"
+      },
+      {
+        "Idx": 26,
+        "Text": "nanoseconds..."
+      },
+      {
+        "Idx": 27,
+        "Text": "a"
+      },
+      {
+        "Idx": 28,
+        "Text": "definition"
+      },
+      {
+        "Idx": 29,
+        "Text": "that"
+      },
+      {
+        "Idx": 30,
+        "Text": "no"
+      },
+      {
+        "Idx": 31,
+        "Text": "physical"
+      },
+      {
+        "Idx": 32,
+        "Text": "artefact"
+      },
+      {
+        "Idx": 33,
+        "Text": "can"
+      },
+      {
+        "Idx": 34,
+        "Text": "drift"
+      },
+      {
+        "Idx": 35,
+        "Text": "away"
+      },
+      {
+        "Idx": 36,
+        "Text": "from."
+      }
+    ]
+  },
+  {
+    "Idx": 5,
+    "Text": "The change mattered: measurements of 0.5 nm precision (see Fig. 2) became routine.",
+    "Tokens": [
+      {
+        "Idx": 0,
+        "Text": "The"
+      },
+      {
+        "Idx": 1,
+        "Text": "change"
+      },
+      {
+        "Idx": 2,
+        "Text": "mattered:"
+      },
+      {
+        "Idx": 3,
+        "Text": "measurements"
+      },
+      {
+        "Idx": 4,
+        "Text": "of"
+      },
+      {
+        "Idx": 5,
+        "Text": "0.5"
+      },
+      {
+        "Idx": 6,
+        "Text": "nm"
+      },
+      {
+        "Idx": 7,
+        "Text": "precision"
+      },
+      {
+        "Idx": 8,
+        "Text": "(see"
+      },
+      {
+        "Idx": 9,
+        "Text": "Fig."
+      },
+      {
+        "Idx": 10,
+        "Text": "2)"
+      },
+      {
+        "Idx": 11,
+        "Text": "became"
+      },
+      {
+        "Idx": 12,
+        "Text": "routine."
+      }
+    ]
+  }
+]
