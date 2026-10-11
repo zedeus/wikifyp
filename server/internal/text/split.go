@@ -27,6 +27,14 @@ type Sentence struct {
 	Tokens []Token
 }
 
+// Normalize returns the stored form of a sentence's text: its whitespace
+// fields joined by single spaces. It is the one definition of that form —
+// everything that stores sentence text goes through it, so tokens (the
+// fields) always rejoin to the stored text exactly.
+func Normalize(s string) string {
+	return strings.Join(strings.Fields(s), " ")
+}
+
 // Split breaks text into sentences and tokens. Whitespace-only input yields
 // no sentences.
 //
@@ -48,14 +56,13 @@ func Split(text string) []Sentence {
 			runes = append(runes, r)
 		}
 		for _, span := range sentenceSpans(runes) {
-			fields := strings.Fields(string(span))
-			if len(fields) == 0 {
+			joined := Normalize(string(span))
+			if joined == "" {
 				continue
 			}
 			// Text is the one copy of the sentence that is kept; the tokens
 			// are substrings of it, so the bytes are retained once, not once
 			// per view.
-			joined := strings.Join(fields, " ")
 			parts := strings.Split(joined, " ")
 			tokens := make([]Token, len(parts))
 			for i, f := range parts {
