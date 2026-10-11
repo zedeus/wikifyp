@@ -1,0 +1,35 @@
+server/internal/migrate/migrate_test.go
+  s_c0a32b84bd18ee::t_fd6170e80b8170 1-184
+server/internal/migrate/migrate.go
+  s_511a41360e9566::t_3ff426825d9890 1-163
+server/internal/migrate/migrations/0001_init.sql
+  s_c0a32b84bd18ee::t_bfb97400508537 1-4
+server/internal/testdb/testdb.go
+  s_511a41360e9566::t_ac438a34a8e035 1-150
+server/internal/testdb/testdb_test.go
+  s_c0a32b84bd18ee::t_e02bc5a3434d3b 1-43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9ce3a53c934fd5cea15decb413a07d15767498be",
+  "prompts": {},
+  "sessions": {
+    "s_511a41360e9566": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a00ff5eb675621caf",
+        "model": "unknown"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    },
+    "s_c0a32b84bd18ee": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ea1d46b-66b6-435f-a356-eb7cedb73ad6",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
