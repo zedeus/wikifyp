@@ -1,0 +1,35 @@
+server/cmd/wikifyp/main.go
+  s_511a41360e9566::t_09910bc6c2de5a 1-67
+server/internal/api/api.go
+  s_511a41360e9566::t_f8e3aeeee2abfd 1-30
+server/internal/api/api_test.go
+  s_c0a32b84bd18ee::t_1773e1b5cd49dd 1-46
+server/internal/config/config.go
+  s_c0a32b84bd18ee::t_34aaf461771049 1-25
+server/internal/config/config_test.go
+  s_c0a32b84bd18ee::t_b58b9da9b439e0 1-39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e020e9d596636820910f1dd26bf6a4d4ea5e1438",
+  "prompts": {},
+  "sessions": {
+    "s_511a41360e9566": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a00ff5eb675621caf",
+        "model": "unknown"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    },
+    "s_c0a32b84bd18ee": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ea1d46b-66b6-435f-a356-eb7cedb73ad6",
+        "model": "unknown"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
