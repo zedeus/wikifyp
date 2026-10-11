@@ -66,13 +66,20 @@ func ApplyFS(ctx context.Context, db *sql.DB, fsys fs.FS) error {
 		pc := sc.Conn()
 
 		// Serialize with other instances migrating the same database (a
-		// rolling deploy starts several at once). The session-level lock is
-		// released explicitly below, and by the connection closing on any
-		// error path.
+		// rolling deploy starts several at once). The session-level lock
+		// outlives ctx cancellation and conn.Close only returns the session
+		// to the pool, so the unlock must run even on a canceled ctx; if it
+		// fails anyway, close the session so the lock dies with it instead
+		// of going back to the pool still held.
 		if _, err := pc.Exec(ctx, "SELECT pg_advisory_lock($1)", lockKey); err != nil {
 			return fmt.Errorf("migrate: acquire advisory lock: %w", err)
 		}
-		defer pc.Exec(ctx, "SELECT pg_advisory_unlock($1)", lockKey)
+		defer func() {
+			unlockCtx := context.WithoutCancel(ctx)
+			if _, err := pc.Exec(unlockCtx, "SELECT pg_advisory_unlock($1)", lockKey); err != nil {
+				pc.Close(unlockCtx)
+			}
+		}()
 
 		if _, err := pc.Exec(ctx, `CREATE TABLE IF NOT EXISTS schema_migrations (
 			version integer PRIMARY KEY,
