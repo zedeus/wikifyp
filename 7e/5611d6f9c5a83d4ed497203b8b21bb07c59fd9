@@ -1,0 +1,27 @@
+android/app/src/main/java/com/wikifyp/theme/Type.kt
+  s_201ef5cbf1b55b::t_2262f1a55b26b2 7,18-33,36-50
+android/build.gradle.kts
+  s_201ef5cbf1b55b::t_03d6defa1fdbc1 3-5
+android/reader/build.gradle.kts
+  s_201ef5cbf1b55b::t_72bb2fde517103 19-23
+  s_201ef5cbf1b55b::t_dee1e0d17e1ccd 55-57
+  s_201ef5cbf1b55b::t_c11998d35f76cc 17-18
+android/app/build.gradle.kts
+  s_201ef5cbf1b55b::t_38c6df85da20c3 50-53,55,57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7e5611d6f9c5a83d4ed497203b8b21bb07c59fd9",
+  "prompts": {},
+  "sessions": {
+    "s_201ef5cbf1b55b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "324c2069-093c-4a15-83ae-c080f30c2f3c",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
