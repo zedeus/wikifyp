@@ -1,0 +1,19 @@
+android/app/src/test/java/com/wikifyp/ui/PlaceholderScreenshotTest.kt
+  s_201ef5cbf1b55b::t_49ac5ca1fa6d6d 18-20,23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2924325bf01c94333b908e948930a42c78d0a537",
+  "prompts": {},
+  "sessions": {
+    "s_201ef5cbf1b55b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "324c2069-093c-4a15-83ae-c080f30c2f3c",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
