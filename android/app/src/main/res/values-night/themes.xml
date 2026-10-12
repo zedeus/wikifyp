@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Dark window chrome. windowBackground matches Night in
+         theme/Color.kt so a dark-mode cold start never flashes white. -->
+    <style name="Theme.Wikifyp" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#16130E</item>
+    </style>
+</resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Pre-Compose window chrome. windowBackground matches Paper in
+         theme/Color.kt so cold start doesn't flash stock Material white;
+         the dark variant lives in values-night. -->
+    <style name="Theme.Wikifyp" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">#FAF7F1</item>
+    </style>
+</resources>
