@@ -1,0 +1,36 @@
+android/app/src/test/java/com/wikifyp/ui/reader/ReaderScreenTest.kt
+  s_c447953a5816aa::t_23720f0f850718 83-86
+  s_c447953a5816aa::t_c44afa8d7108c0 8
+android/app/src/test/java/com/wikifyp/ui/reader/ReaderScreenGestureTest.kt
+  s_c447953a5816aa::t_e26d1eabda41b7 90,111,134,174,218,235,257
+android/app/src/main/java/com/wikifyp/ui/reader/ReaderScreen.kt
+  s_c447953a5816aa::t_8fc7b7236c7ab8 105,167-175,358-359,422
+  s_c447953a5816aa::t_8f46f15ae81f4a 52-55,113,158,164,178-313,315-357,444
+  s_c447953a5816aa::t_7ee09d3561bc9b 417
+  s_c447953a5816aa::t_084847ec13f26c 415-416
+  s_c447953a5816aa::t_7648783203439e 177,412,425-426,443
+  s_c447953a5816aa::t_38e85f8131434e 420
+  s_c447953a5816aa::t_d9272ce8d0dcbc 360
+  s_c447953a5816aa::t_f7424af0fd446b 371
+  s_c447953a5816aa::t_9fca1add3ab1ac 41
+  s_c447953a5816aa::t_b81c0298c4b985 163
+  s_c447953a5816aa::t_a810a886e59f72 30,33
+android/app/src/test/java/com/wikifyp/ui/reader/ReaderScreenScreenshotTest.kt
+  s_c447953a5816aa::t_f87e3ba267d969 144,173,197
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "15a4dc82293f487accc622a602acafd35c690775",
+  "prompts": {},
+  "sessions": {
+    "s_c447953a5816aa": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97564575-d1a7-426a-b877-e7eb64c61493",
+        "model": "metr-model"
+      },
+      "human_author": null
+    }
+  }
+}
