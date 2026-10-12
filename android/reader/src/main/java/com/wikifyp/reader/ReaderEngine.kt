@@ -54,8 +54,8 @@ class ReaderEngine(
     /** Total number of tokens across all sentences, cached on [load]. */
     private var totalTokens: Int = 0
 
-    /** Session UUID, created on first play. */
-    private var sessionId: String? = null
+    /** Session UUID, created on each [load]. */
+    private var sessionId: String = idGenerator()
 
     /** Article ID for token addresses. */
     private var articleId: Long = 0
@@ -83,7 +83,7 @@ class ReaderEngine(
         this.totalTokens = sentences.sumOf { it.tokens.size }
         this.position = 0
         this.state = ReaderState.IDLE
-        this.sessionId = null
+        this.sessionId = idGenerator()
     }
 
     /**
@@ -182,7 +182,6 @@ class ReaderEngine(
     fun skip() {
         if (sentences.isEmpty()) return
         cancelPending()
-        ensureSession()
         emitEvent(EventType.SKIP)
         state = ReaderState.IDLE
     }
@@ -202,7 +201,6 @@ class ReaderEngine(
 
     private fun startPlaying() {
         if (totalTokens == 0) return
-        ensureSession()
         state = ReaderState.PLAYING
         emitEvent(EventType.PLAY)
         scheduleNextAdvance()
@@ -236,18 +234,12 @@ class ReaderEngine(
         scheduleNextAdvance()
     }
 
-    private fun ensureSession() {
-        if (sessionId == null) {
-            sessionId = idGenerator()
-        }
-    }
-
     private fun emitEvent(type: EventType) {
         val (sentIdx, tokIdx) = flatToAddress(position) ?: return
         listener.onEvent(
             ReadingEvent(
                 id = idGenerator(),
-                sessionId = sessionId!!,
+                sessionId = sessionId,
                 type = type,
                 timestamp = clock.nowMs(),
                 token = TokenAddress(articleId, sentIdx, tokIdx),
@@ -265,7 +257,7 @@ class ReaderEngine(
         listener.onEvent(
             ReadingEvent(
                 id = idGenerator(),
-                sessionId = sessionId!!,
+                sessionId = sessionId,
                 type = EventType.SCROLL_BACK,
                 timestamp = clock.nowMs(),
                 token = TokenAddress(articleId, startSentIdx, startTokIdx),

@@ -37,18 +37,7 @@ class TokensTest {
         for (tc in cases) {
             val normalized = normalize(tc.text)
             val got = tokenize(normalized)
-            assertEquals(
-                "token count for '${tc.comment}'",
-                tc.tokens.size,
-                got.size,
-            )
-            for (i in got.indices) {
-                assertEquals(
-                    "token[$i] for '${tc.comment}'",
-                    tc.tokens[i],
-                    got[i],
-                )
-            }
+            assertEquals("tokens for '${tc.comment}'", tc.tokens, got)
         }
     }
 

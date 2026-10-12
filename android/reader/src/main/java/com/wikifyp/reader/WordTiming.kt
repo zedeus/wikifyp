@@ -86,10 +86,10 @@ internal fun lengthFactor(tokenText: String): Double {
 }
 
 /** Sentence-ending punctuation, optionally followed by closing quotes/brackets. */
-private val SENTENCE_END = Regex(".*[.!?…][\"')\\]]*$")
+private val SENTENCE_END = Regex("[.!?…][\"')\\]]*$")
 
 /** Clause-boundary punctuation, optionally followed by closing quotes/brackets. */
-private val CLAUSE_BOUNDARY = Regex(".*[,;:][\"')\\]]*$")
+private val CLAUSE_BOUNDARY = Regex("[,;:][\"')\\]]*$")
 
 /**
  * Punctuation factor from the token's trailing characters.
@@ -100,7 +100,7 @@ private val CLAUSE_BOUNDARY = Regex(".*[,;:][\"')\\]]*$")
  */
 internal fun punctuationFactor(tokenText: String): Double =
     when {
-        SENTENCE_END.matches(tokenText) -> 1.5
-        CLAUSE_BOUNDARY.matches(tokenText) -> 1.3
+        SENTENCE_END.containsMatchIn(tokenText) -> 1.5
+        CLAUSE_BOUNDARY.containsMatchIn(tokenText) -> 1.3
         else -> 1.0
     }
