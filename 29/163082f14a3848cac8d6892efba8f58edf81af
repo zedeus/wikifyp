@@ -1,0 +1,23 @@
+android/app/src/main/java/com/wikifyp/ui/reader/ReaderScreen.kt
+  s_c447953a5816aa::t_56e676d40ee5fc 111-116,159-178,199,203,209-229,284-286,294
+  s_c447953a5816aa::t_f49fccf54d94f6 51-52,99-100,102-104
+android/app/src/main/java/com/wikifyp/ui/reader/ReaderGestures.kt
+  s_c447953a5816aa::t_e5aea91c839d88 22-23
+  s_c447953a5816aa::t_b4801b189ee13e 82-83
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "29163082f14a3848cac8d6892efba8f58edf81af",
+  "prompts": {},
+  "sessions": {
+    "s_c447953a5816aa": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97564575-d1a7-426a-b877-e7eb64c61493",
+        "model": "metr-model"
+      },
+      "human_author": null
+    }
+  }
+}
