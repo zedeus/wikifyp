@@ -27,3 +27,30 @@ jobs:
         run: go vet ./...
       - name: go test
         run: go test ./... -count=1
+
+  android:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+      # check = lint + JVM tests (Roborazzi verifies committed goldens) +
+      # :reader:checkReaderIsolation; spotlessCheck = ktlint formatting.
+      - name: check
+        run: ./gradlew check spotlessCheck
+      # Verify-failure images (*_compare.png, *_actual.png) go to
+      # build/outputs/roborazzi regardless of the goldens outputDir
+      # (verified empirically: deliberate golden mismatch wrote them there).
+      - name: upload screenshot diffs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: roborazzi-diffs
+          path: android/app/build/outputs/roborazzi
+          if-no-files-found: ignore
