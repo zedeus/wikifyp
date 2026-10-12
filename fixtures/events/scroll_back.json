@@ -1,0 +1,20 @@
+{
+    "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+    "schema_version": 1,
+    "session_id": "sess-0001-0002-0003-000000000001",
+    "type": "scroll_back",
+    "timestamp": 1728720003000,
+    "token": {
+        "article_id": 42,
+        "sentence_idx": 1,
+        "token_idx": 3
+    },
+    "wpm": 250,
+    "landed_token": {
+        "article_id": 42,
+        "sentence_idx": 0,
+        "token_idx": 2
+    },
+    "distance": 6,
+    "dwell_ms": 1800
+}

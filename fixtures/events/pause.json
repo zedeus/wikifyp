@@ -1,0 +1,13 @@
+{
+    "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+    "schema_version": 1,
+    "session_id": "sess-0001-0002-0003-000000000001",
+    "type": "pause",
+    "timestamp": 1728720001200,
+    "token": {
+        "article_id": 42,
+        "sentence_idx": 0,
+        "token_idx": 4
+    },
+    "wpm": 250
+}

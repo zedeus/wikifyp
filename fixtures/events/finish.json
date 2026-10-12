@@ -1,0 +1,13 @@
+{
+    "id": "e5f6a7b8-c9d0-1234-efab-345678901234",
+    "schema_version": 1,
+    "session_id": "sess-0001-0002-0003-000000000001",
+    "type": "finish",
+    "timestamp": 1728720060000,
+    "token": {
+        "article_id": 42,
+        "sentence_idx": 15,
+        "token_idx": 12
+    },
+    "wpm": 280
+}

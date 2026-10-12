@@ -1,0 +1,13 @@
+{
+    "id": "d4e5f6a7-b8c9-0123-defa-234567890123",
+    "schema_version": 1,
+    "session_id": "sess-0001-0002-0003-000000000001",
+    "type": "ask",
+    "timestamp": 1728720002500,
+    "token": {
+        "article_id": 42,
+        "sentence_idx": 0,
+        "token_idx": 7
+    },
+    "wpm": 250
+}
