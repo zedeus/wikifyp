@@ -249,6 +249,7 @@ class ReaderEngine(
     }
 
     private fun emitScrollBack() {
+        if (position == dragStartPosition) return // no movement, no event
         val (sentIdx, tokIdx) = flatToAddress(position) ?: return
         val (startSentIdx, startTokIdx) = flatToAddress(dragStartPosition) ?: return
         val distance = kotlin.math.abs(dragStartPosition - position)
@@ -287,6 +288,8 @@ class ReaderEngine(
     private fun cancelPending() {
         pendingAdvance?.cancel()
         pendingAdvance = null
+        pendingHoldCheck?.cancel()
+        pendingHoldCheck = null
     }
 
     companion object {

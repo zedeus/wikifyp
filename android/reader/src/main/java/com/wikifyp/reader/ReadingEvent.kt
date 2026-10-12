@@ -55,5 +55,5 @@ val eventJson: Json =
     Json {
         encodeDefaults = true
         ignoreUnknownKeys = true
-        prettyPrint = true
+        prettyPrint = false
     }
