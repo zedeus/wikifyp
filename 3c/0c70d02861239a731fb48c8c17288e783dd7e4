@@ -1,0 +1,59 @@
+android/app/src/main/java/com/wikifyp/ui/reader/ReaderScreen.kt
+  s_c447953a5816aa::t_084847ec13f26c 51-52,66-69,76-78,80-81,91,105,220-221,226-227,290-292
+  s_c447953a5816aa::t_45a143ac2b4e3f 74,79
+  s_c447953a5816aa::t_d9272ce8d0dcbc 37,86,92,94,97,112,121,124-128,139,147,151,175,183,187,196-203,271-272,282,320,338
+  s_c447953a5816aa::t_7ee09d3561bc9b 1-36,38-50,53-65,70-73,82-85,87-90,98-104,106-111,113-120,122-123,129-138,144,146,148-150,152-159,161-165,171-174,180,182,184-186,188-195,204-219,222-225,228-235,270,273-280,283-285,287-289,293-295,297-315,318-319,321-327,329-337,339-352,356,369
+  s_c447953a5816aa::t_89c3068ce7c482 160,166-170
+  s_c447953a5816aa::t_38e85f8131434e 75,93,95-96,140-143,145,176-179,181,236-269,281,286,296,316-317,328,353
+  s_c447953a5816aa::t_deab83722bd5d8 354-355,357-368,370-372
+android/app/src/main/assets/articles/roman-empire.json
+  s_c447953a5816aa::t_1e888539f33475 1-2435
+android/app/build.gradle.kts
+  s_c447953a5816aa::t_e37f45a4487862 75-76
+  s_c447953a5816aa::t_673502d0b7068b 4
+  s_c447953a5816aa::t_448b43bca0db90 85
+android/app/src/main/java/com/wikifyp/ui/reader/HandlerClock.kt
+  s_c447953a5816aa::t_ce74036adfb027 1-26
+android/app/src/main/java/com/wikifyp/ui/reader/ReaderGestures.kt
+  s_c447953a5816aa::t_02fd22b3556109 1-89
+android/app/src/main/java/com/wikifyp/data/FixtureArticles.kt
+  s_c447953a5816aa::t_9cae6f2abe135a 1-38,44-50
+  s_c447953a5816aa::t_02f8f70e5498cd 39-43,51
+  s_c447953a5816aa::t_6eb29cd1540b4a 52
+android/app/src/main/assets/articles/photosynthesis.json
+  s_c447953a5816aa::t_1e888539f33475 1-1118
+android/app/src/main/assets/articles/marie-curie.json
+  s_c447953a5816aa::t_1e888539f33475 1-1007
+android/app/src/main/assets/articles/philosophy.json
+  s_c447953a5816aa::t_1e888539f33475 1-1099
+android/app/src/main/assets/articles/dna.json
+  s_c447953a5816aa::t_1e888539f33475 1-1455
+android/app/src/main/java/com/wikifyp/MainActivity.kt
+  s_c447953a5816aa::t_d89cf7eb41dae3 7-13,15-17,23-25,28-47
+android/app/src/main/java/com/wikifyp/ui/ArticleListScreen.kt
+  s_c447953a5816aa::t_a905e0684a1730 1-74
+android/app/src/main/java/com/wikifyp/ui/reader/FocalPoint.kt
+  s_c447953a5816aa::t_ea6f50fbd3ad15 1-15
+  s_c447953a5816aa::t_b1f576e5d348e1 16-18
+  s_c447953a5816aa::t_f523235757ca04 19-50
+android/app/src/androidTest/java/com/wikifyp/MainActivityTest.kt
+  s_c447953a5816aa::t_02cfab78114959 17,19-20
+android/gradle.properties
+  s_c447953a5816aa::t_e4ef3017466726 9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3c0c70d02861239a731fb48c8c17288e783dd7e4",
+  "prompts": {},
+  "sessions": {
+    "s_c447953a5816aa": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97564575-d1a7-426a-b877-e7eb64c61493",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
