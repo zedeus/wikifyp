@@ -1,0 +1,22 @@
+android/reader/src/main/java/com/wikifyp/reader/ReadingEvent.kt
+  s_d43d9b3836855f::t_bd1b248ce93055 58
+android/reader/src/main/java/com/wikifyp/reader/ReaderEngine.kt
+  s_d43d9b3836855f::t_24bc1c4e40e1bc 252
+  s_d43d9b3836855f::t_21a72751830044 291-292
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e6d614ec4f56da56af5d4a0d0a36d6fabf6e64cb",
+  "prompts": {},
+  "sessions": {
+    "s_d43d9b3836855f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eae88f0b-e7f9-4009-b072-618c96d72856",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
