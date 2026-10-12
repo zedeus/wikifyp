@@ -1,0 +1,33 @@
+docs/design-system.md
+  s_6c4118a54b5556::t_3a5e55f4862168 1-20,30-45
+  s_201ef5cbf1b55b::t_3008a4c94b5c4b 21-29
+.github/workflows/ci.yml
+  s_6c4118a54b5556::t_c10c9ef2769441 30-40,42,50-54,56
+  s_201ef5cbf1b55b::t_e4e606e48f06b4 43-46
+  s_6c4118a54b5556::t_918dbdc3263884 41
+  s_201ef5cbf1b55b::t_8a58f7c4a09492 47-49,55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "93b3905a87b838e8859a9cf7337b3b2a17f9f029",
+  "prompts": {},
+  "sessions": {
+    "s_201ef5cbf1b55b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "324c2069-093c-4a15-83ae-c080f30c2f3c",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    },
+    "s_6c4118a54b5556": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "94b4b82d-a721-4d74-b7dc-811285a96b05",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
