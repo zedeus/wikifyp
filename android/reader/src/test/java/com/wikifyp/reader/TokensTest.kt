@@ -3,6 +3,7 @@ package com.wikifyp.reader
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -28,7 +29,7 @@ class TokensTest {
 
     @Test
     fun sharedFixtureIsNotEmpty() {
-        assert(cases.isNotEmpty()) { "fixture must have at least one case" }
+        assertTrue("fixture must have at least one case", cases.isNotEmpty())
     }
 
     @Test

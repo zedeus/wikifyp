@@ -51,8 +51,8 @@ class ReaderEngine(
     /** Flat index into all tokens across sentences. */
     private var position: Int = 0
 
-    /** Total number of tokens across all sentences. */
-    private val totalTokens: Int get() = sentences.sumOf { it.tokens.size }
+    /** Total number of tokens across all sentences, cached on [load]. */
+    private var totalTokens: Int = 0
 
     /** Session UUID, created on first play. */
     private var sessionId: String? = null
@@ -80,6 +80,7 @@ class ReaderEngine(
         cancelPending()
         this.articleId = articleId
         this.sentences = sentences
+        this.totalTokens = sentences.sumOf { it.tokens.size }
         this.position = 0
         this.state = ReaderState.IDLE
         this.sessionId = null
@@ -200,7 +201,7 @@ class ReaderEngine(
     // --- internals ---
 
     private fun startPlaying() {
-        if (sentences.isEmpty()) return
+        if (totalTokens == 0) return
         ensureSession()
         state = ReaderState.PLAYING
         emitEvent(EventType.PLAY)
@@ -258,7 +259,7 @@ class ReaderEngine(
     private fun emitScrollBack() {
         val (sentIdx, tokIdx) = flatToAddress(position) ?: return
         val (startSentIdx, startTokIdx) = flatToAddress(dragStartPosition) ?: return
-        val distance = dragStartPosition - position
+        val distance = kotlin.math.abs(dragStartPosition - position)
         val dwellMs = clock.nowMs() - dragStartMs
 
         listener.onEvent(
