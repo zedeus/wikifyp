@@ -1,0 +1,19 @@
+android/reader/src/main/java/com/wikifyp/reader/ReaderEngine.kt
+  s_c447953a5816aa::t_4ae4a751c89355 38-40,90,120,149,165,175,185,196,210-215,222,247,252,307-310,327-329,333
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5783262c9ce33b57d71f977d9a2040ace0d08fb7",
+  "prompts": {},
+  "sessions": {
+    "s_c447953a5816aa": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97564575-d1a7-426a-b877-e7eb64c61493",
+        "model": "unknown"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
