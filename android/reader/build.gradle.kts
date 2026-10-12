@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -13,6 +14,13 @@ android {
             libs.versions.minSdk
                 .get()
                 .toInt()
+    }
+    // Shared fixtures (tokens.json, events/) on the test classpath so both
+    // Kotlin and Go validate against the same files.
+    sourceSets {
+        getByName("test") {
+            resources.directories.add("../../fixtures")
+        }
     }
 }
 
@@ -30,6 +38,11 @@ kotlin {
             .get()
             .toInt(),
     )
+}
+
+dependencies {
+    implementation(libs.kotlinx.serialization.json)
+    testImplementation(libs.junit)
 }
 
 // The reader must stay buildable and testable on its own: no dependency on
