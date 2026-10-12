@@ -1,0 +1,41 @@
+android/reader/src/test/java/com/wikifyp/reader/WordTimingTest.kt
+  s_d43d9b3836855f::t_3a4a1174d60a9d 1-95,99,107-129
+  s_d43d9b3836855f::t_4952bb66eadd21 96-98,100-106
+android/reader/src/main/java/com/wikifyp/reader/WordTiming.kt
+  s_d43d9b3836855f::t_aa78c3e7a9f33e 13-17
+  s_d43d9b3836855f::t_72b22c9cbea595 1-12,18-47
+android/reader/src/main/java/com/wikifyp/reader/ReaderClock.kt
+  s_d43d9b3836855f::t_aa78c3e7a9f33e 15-18,31-37,43-46,67-70
+  s_d43d9b3836855f::t_f55ed180ff4ed6 1-14,19-30,38-42,47-66,71-75
+android/reader/src/main/java/com/wikifyp/reader/ReaderEngine.kt
+  s_d43d9b3836855f::t_4e00d4b3ba0ee1 1-75,80-95,100,102-103,109,111-131,133-137,139-202,204-216,221-311
+  s_d43d9b3836855f::t_aa78c3e7a9f33e 76-79,96,98-99,101,104,106-108,110,132,138,217-220
+  s_d43d9b3836855f::t_10883ffd7586fd 97,105
+  s_d43d9b3836855f::t_ad20adeaa3dcab 203
+android/reader/src/main/java/com/wikifyp/reader/ReadingEvent.kt
+  s_d43d9b3836855f::t_aa78c3e7a9f33e 34-50,54-59
+  s_d43d9b3836855f::t_5236cbde3ccb8f 1-33,51-53
+android/reader/src/test/java/com/wikifyp/reader/ReaderEngineTest.kt
+  s_d43d9b3836855f::t_41d89c79b99a2b 1-20,26-31,38-321,326-329
+  s_d43d9b3836855f::t_aa78c3e7a9f33e 21-25,32-37,322-325
+android/reader/src/test/java/com/wikifyp/reader/ReaderEngineEdgeCaseTest.kt
+  s_d43d9b3836855f::t_e84b8948283823 34,38-40
+  s_d43d9b3836855f::t_aa78c3e7a9f33e 23-28,62-67
+  s_d43d9b3836855f::t_7ff4b4da8e2ba0 1-22,29-33,35-37,41-61,68-233
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2f7d602b8c157197c83cdd2e2119e59cf0d172c4",
+  "prompts": {},
+  "sessions": {
+    "s_d43d9b3836855f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eae88f0b-e7f9-4009-b072-618c96d72856",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
