@@ -1,0 +1,21 @@
+.github/workflows/ci.yml
+  s_201ef5cbf1b55b::t_d102e3d9c0c129 43-54,69-91,94-103
+  s_201ef5cbf1b55b::t_ca1d76766ad781 92-93
+  s_201ef5cbf1b55b::t_f5d51a21c7884d 104
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ebcacf78a79e0e5f645924f2dabb71b1f56b0c77",
+  "prompts": {},
+  "sessions": {
+    "s_201ef5cbf1b55b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "324c2069-093c-4a15-83ae-c080f30c2f3c",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
