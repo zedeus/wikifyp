@@ -40,6 +40,18 @@ jobs:
           distribution: temurin
           java-version: 21
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          # Lets the action persist Gradle's configuration cache between runs.
+          # Unset/empty just skips that cache. Create the secret with:
+          #   gh secret set GRADLE_ENCRYPTION_KEY --body "$(openssl rand -base64 16)"
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+      # Robolectric downloads its android-all runtime jars into ~/.m2 at test
+      # time; setup-gradle doesn't cover that directory.
+      - name: cache robolectric android-all jars
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/robolectric
+          key: robolectric-${{ hashFiles('android/gradle/libs.versions.toml') }}
       # check = lint + JVM tests (Roborazzi verifies committed goldens) +
       # :reader:checkReaderIsolation; spotlessCheck = ktlint formatting.
       - name: check
@@ -53,4 +65,40 @@ jobs:
         with:
           name: roborazzi-diffs
           path: android/app/build/outputs/roborazzi
+          if-no-files-found: ignore
+
+  android-emulator:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+      # GitHub-hosted Linux runners ship KVM but gate /dev/kvm behind root.
+      - name: enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: instrumented tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          # API 36 system images only exist in google_apis flavors.
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          working-directory: android
+          script: ./gradlew connectedDebugAndroidTest
+      - name: upload instrumented test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: connected-test-reports
+          path: android/app/build/reports/androidTests
           if-no-files-found: ignore
