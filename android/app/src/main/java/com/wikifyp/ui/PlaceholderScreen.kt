@@ -24,7 +24,7 @@ import com.wikifyp.ui.components.QuietButton
 
 /**
  * Stand-in for the feed until it exists: shows the design system doing its
- * job on one screen. Replaced by the real feed in a later issue.
+ * job on one screen. Replaced by the real feed when the feed issue lands.
  */
 @Composable
 fun PlaceholderScreen(
