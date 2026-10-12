@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.roborazzi)
 }
 
@@ -71,6 +72,8 @@ roborazzi {
 }
 
 dependencies {
+    implementation(project(":reader"))
+
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)
     testImplementation(composeBom)
@@ -79,6 +82,7 @@ dependencies {
     // Core Android dependencies
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.kotlinx.serialization.json)
 
     // Compose
     implementation(libs.androidx.compose.ui)

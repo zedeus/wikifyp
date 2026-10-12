@@ -14,8 +14,9 @@ class MainActivityTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun launch_showsPlaceholderScreen() {
+    fun launch_showsArticleList() {
         compose.onNodeWithText("wikifyp").assertIsDisplayed()
-        compose.onNodeWithText("Start reading").assertIsDisplayed()
+        // At least one fixture article should appear.
+        compose.onNodeWithText("DNA").assertIsDisplayed()
     }
 }

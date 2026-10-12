@@ -1,0 +1,1099 @@
+{
+  "id": 1,
+  "title": "Philosophy",
+  "attribution": "Text from the Wikipedia article \"Philosophy\", https://en.wikipedia.org/wiki/Philosophy (revision 1378768606), licensed CC BY-SA 4.0",
+  "sentences": [
+    {
+      "text": "Philosophy (from Ancient Greek φιλοσοφία (philosophía), lit. 'love of wisdom') is a systematic study of general and fundamental questions concerning topics like existence, knowledge, mind, reason, language, and value."
+    },
+    {
+      "text": "It is a rational and critical inquiry that reflects on its methods and assumptions."
+    },
+    {
+      "text": "Historically, many of the individual sciences, such as physics and psychology, formed part of philosophy."
+    },
+    {
+      "text": "However, they are considered separate academic disciplines in the modern sense of the term."
+    },
+    {
+      "text": "Influential traditions in the history of philosophy include Western, Arabic–Persian, Indian, and Chinese philosophy."
+    },
+    {
+      "text": "Western philosophy originated in Ancient Greece and covers a wide area of philosophical subfields."
+    },
+    {
+      "text": "A central topic in Arabic–Persian philosophy is the relation between reason and revelation."
+    },
+    {
+      "text": "Indian philosophy combines the spiritual problem of how to reach enlightenment with the exploration of the nature of reality and the ways of arriving at knowledge."
+    },
+    {
+      "text": "Chinese philosophy focuses principally on practical issues about right social conduct, government, and self-cultivation."
+    },
+    {
+      "text": "Major branches of philosophy are epistemology, ethics, logic, and metaphysics."
+    },
+    {
+      "text": "Epistemology studies what knowledge is and how to acquire it."
+    },
+    {
+      "text": "Ethics investigates moral principles and what constitutes right conduct."
+    },
+    {
+      "text": "Logic is the study of correct reasoning and explores how good arguments can be distinguished from bad ones."
+    },
+    {
+      "text": "Metaphysics examines the most general features of reality, existence, objects, and properties."
+    },
+    {
+      "text": "Other subfields are aesthetics, philosophy of language, philosophy of mind, philosophy of mathematics, philosophy of science, philosophy of religion, philosophy of history, and political philosophy."
+    },
+    {
+      "text": "Within each branch, there are competing schools of philosophy that promote different principles, theories, or methods."
+    },
+    {
+      "text": "Philosophers use a great variety of methods to arrive at philosophical knowledge."
+    },
+    {
+      "text": "They include conceptual analysis, reliance on common sense and intuitions, use of thought experiments, analysis of ordinary language, description of experience, and critical questioning."
+    },
+    {
+      "text": "Many scientific academic disciplines have associated philosophical subfields, like philosophy of physics and philosophy of biology, examining their fundamental concepts, methods, assumptions, and implications."
+    },
+    {
+      "text": "Philosophy is related to and informs many other fields, such as law, business, and journalism, providing an interdisciplinary perspective and addressing their ethical questions."
+    },
+    {
+      "text": "Etymology",
+      "heading_level": 2
+    },
+    {
+      "text": "The word philosophy comes from the Ancient Greek term φιλοσοφία (philosophía), meaning 'love of wisdom', from φίλος (phílos, 'loving, friend of') and σοφία (sophía, 'wisdom')."
+    },
+    {
+      "text": "Some sources say that the term was coined by the pre-Socratic philosopher Pythagoras, but this is not certain."
+    },
+    {
+      "text": "The word entered the English language primarily from Old French and Anglo-Norman starting around 1175 CE."
+    },
+    {
+      "text": "The French philosophie is itself a borrowing from the Latin philosophia."
+    },
+    {
+      "text": "The term philosophy acquired the meanings of \"advanced study of the speculative subjects (logic, ethics, physics, and metaphysics)\", \"deep wisdom consisting of love of truth and virtuous living\", \"profound learning as transmitted by the ancient writers\", and \"the study of the fundamental nature of knowledge, reality, and existence, and the basic limits of human understanding\"."
+    },
+    {
+      "text": "Before the modern age, the term philosophy was used in a wide sense."
+    },
+    {
+      "text": "It included most forms of rational inquiry, such as the individual sciences, as its subdisciplines."
+    },
+    {
+      "text": "For instance, natural philosophy was a major branch of philosophy."
+    },
+    {
+      "text": "This branch of philosophy encompassed a wide range of fields, including disciplines like physics, chemistry, and biology."
+    },
+    {
+      "text": "An example of this usage is the 1687 book Philosophiæ Naturalis Principia Mathematica by Isaac Newton."
+    },
+    {
+      "text": "This book referred to natural philosophy in its title, but it is today considered a book of physics."
+    },
+    {
+      "text": "The meaning of philosophy changed toward the end of the modern period when it acquired the narrower meaning common today."
+    },
+    {
+      "text": "In this new sense, the term is mainly associated with disciplines like metaphysics, epistemology, and ethics."
+    },
+    {
+      "text": "Among other topics, it covers the rational study of reality, knowledge, and values."
+    },
+    {
+      "text": "It is distinguished from other disciplines of rational inquiry such as the empirical sciences and mathematics."
+    },
+    {
+      "text": "Conceptions of philosophy",
+      "heading_level": 2
+    },
+    {
+      "text": "General conception",
+      "heading_level": 3
+    },
+    {
+      "text": "The practice of philosophy is characterized by several general features: it is a form of rational inquiry, it aims to be systematic, and it tends to critically reflect on its own methods and presuppositions."
+    },
+    {
+      "text": "It requires thinking attentively, long and carefully, about the provocative, vexing, and enduring problems central to the human condition."
+    },
+    {
+      "text": "The philosophical pursuit of wisdom involves asking general and fundamental questions."
+    },
+    {
+      "text": "It often does not result in straightforward answers but may help a person to better understand the topic, examine their life, dispel confusion, and overcome prejudices and self-deceptive ideas associated with common sense."
+    },
+    {
+      "text": "For example, Socrates stated that \"the unexamined life is not worth living\" to highlight the role of philosophical inquiry in understanding one's own existence."
+    },
+    {
+      "text": "And according to Bertrand Russell,"
+    },
+    {
+      "text": "the man who has no tincture of philosophy goes through life imprisoned in the prejudices derived from common sense, from the habitual beliefs of his age or his nation, and from convictions which have grown up in his mind without the cooperation or consent of his deliberate reason."
+    },
+    {
+      "text": "Academic definitions",
+      "heading_level": 3
+    },
+    {
+      "text": "Attempts to provide more precise definitions of philosophy are controversial and are studied in metaphilosophy."
+    },
+    {
+      "text": "Some approaches argue that there is a set of essential features shared by all parts of philosophy."
+    },
+    {
+      "text": "Others see only weaker family resemblances or contend that it is merely an empty blanket term."
+    },
+    {
+      "text": "Precise definitions are often only accepted by theorists belonging to a certain philosophical movement and are revisionist according to Søren Overgaard et al. in that many presumed parts of philosophy would not deserve the title \"philosophy\" if they were true."
+    },
+    {
+      "text": "Some definitions characterize philosophy in relation to its method, like pure reasoning."
+    },
+    {
+      "text": "Others focus on its topic; for example, as the study of the biggest patterns of the world as a whole or as the attempt to answer the big questions."
+    },
+    {
+      "text": "Such an approach is pursued by Immanuel Kant, who holds that the task of philosophy is united by four questions: \"What can I know?\", \"What should I do?\", \"What may I hope?\", and \"What is the human being?\""
+    },
+    {
+      "text": "Both approaches have the problem that they are usually either too wide, by including non-philosophical disciplines, or too narrow, by excluding some philosophical subdisciplines."
+    },
+    {
+      "text": "Many definitions of philosophy emphasize its intimate relation to science."
+    },
+    {
+      "text": "In this sense, philosophy is sometimes understood as a proper science in its own right."
+    },
+    {
+      "text": "According to some naturalistic philosophers, such as W. V. O. Quine, philosophy is an empirical yet abstract science that is concerned with wide-ranging empirical patterns instead of particular observations."
+    },
+    {
+      "text": "Science-based definitions usually face the problem of explaining why philosophy in its long history has not progressed to the same extent or in the same way as the sciences."
+    },
+    {
+      "text": "This problem is avoided by seeing philosophy as an immature or provisional science whose subdisciplines cease to be philosophy once they have fully developed."
+    },
+    {
+      "text": "In this sense, philosophy is sometimes described as \"the midwife of the sciences\"."
+    },
+    {
+      "text": "Other definitions focus on the contrast between science and philosophy."
+    },
+    {
+      "text": "A common theme among many such conceptions is that philosophy is concerned with meaning, understanding, or the clarification of language."
+    },
+    {
+      "text": "According to one view, philosophy is conceptual analysis, which involves finding the necessary and sufficient conditions for the application of concepts."
+    },
+    {
+      "text": "Another definition characterizes philosophy as thinking about thinking to emphasize its self-critical, reflective nature."
+    },
+    {
+      "text": "A further approach presents philosophy as a linguistic therapy."
+    },
+    {
+      "text": "According to Ludwig Wittgenstein, for instance, philosophy aims at dispelling misunderstandings to which humans are susceptible due to the confusing structure of ordinary language."
+    },
+    {
+      "text": "Phenomenologists, such as Edmund Husserl, characterize philosophy as a \"rigorous science\" investigating essences."
+    },
+    {
+      "text": "They practice a radical suspension of theoretical assumptions about reality to get back to the \"things themselves\"; that is, as originally given in experience."
+    },
+    {
+      "text": "They contend that this base-level of experience provides the foundation for higher-order theoretical knowledge and that one needs to understand the former to understand the latter."
+    },
+    {
+      "text": "An early approach found in ancient Greek and Roman philosophy is that philosophy is the spiritual practice of developing one's rational capacities."
+    },
+    {
+      "text": "This practice is an expression of the philosopher's love of wisdom and has the aim of improving one's well-being by leading a reflective life."
+    },
+    {
+      "text": "For example, the Stoics saw philosophy as an exercise to train the mind and thereby achieve eudaimonia and flourish in life."
+    },
+    {
+      "text": "History",
+      "heading_level": 2
+    },
+    {
+      "text": "As a discipline, the history of philosophy aims to provide a systematic and chronological exposition of philosophical concepts and doctrines."
+    },
+    {
+      "text": "Some theorists see it as a part of intellectual history, but it also investigates questions not covered by intellectual history, such as whether the theories of past philosophers are true and have remained philosophically relevant."
+    },
+    {
+      "text": "The history of philosophy is primarily concerned with theories based on rational inquiry and argumentation; some historians understand it in a looser sense that includes myths, religious teachings, and proverbial lore."
+    },
+    {
+      "text": "Influential traditions in the history of philosophy include Western, Arabic–Persian, Indian, and Chinese philosophy."
+    },
+    {
+      "text": "Other philosophical traditions are Japanese philosophy, Latin American philosophy, and African philosophy."
+    },
+    {
+      "text": "Western",
+      "heading_level": 3
+    },
+    {
+      "text": "Western philosophy originated in Ancient Greece in the 6th century BCE with the pre-Socratic philosophers, such as Thales of Miletus (c. 626 – c. 545 BCE)."
+    },
+    {
+      "text": "They attempted to provide rational explanations of the cosmos as a whole."
+    },
+    {
+      "text": "The philosophy following them was shaped by Socrates (469–399 BCE), Plato (427–347 BCE), and Aristotle (384–322 BCE)."
+    },
+    {
+      "text": "They expanded the range of topics to questions like how people should act, how to arrive at knowledge, and what the nature of reality and mind is."
+    },
+    {
+      "text": "The later part of the ancient period was marked by the emergence of philosophical movements, for example, Epicureanism, Stoicism, Skepticism, and Neoplatonism."
+    },
+    {
+      "text": "The medieval period started in the 5th century CE."
+    },
+    {
+      "text": "Its focus was on religious topics, and many thinkers used ancient philosophy to explain and further elaborate Christian doctrines."
+    },
+    {
+      "text": "The Renaissance period started in the 14th century and saw a renewed interest in schools of ancient philosophy, in particular Platonism."
+    },
+    {
+      "text": "Humanism also emerged in this period."
+    },
+    {
+      "text": "The modern period started in the 17th century."
+    },
+    {
+      "text": "One of its central concerns was how philosophical and scientific knowledge is created."
+    },
+    {
+      "text": "Specific importance was given to the role of reason and sensory experience."
+    },
+    {
+      "text": "Many of these innovations were used in the Enlightenment movement to challenge traditional authorities."
+    },
+    {
+      "text": "Several attempts to develop comprehensive systems of philosophy were made in the 19th century, for instance, by German idealism and Marxism."
+    },
+    {
+      "text": "Influential developments in 20th-century philosophy were the emergence and application of formal logic, the focus on the role of language as well as pragmatism, and movements in continental philosophy like phenomenology, existentialism, and post-structuralism."
+    },
+    {
+      "text": "The 20th century saw a rapid expansion of academic philosophy in terms of the number of philosophical publications and philosophers working at academic institutions."
+    },
+    {
+      "text": "There was also a noticeable growth in the number of female philosophers, but they still remained underrepresented."
+    },
+    {
+      "text": "Arabic–Persian",
+      "heading_level": 3
+    },
+    {
+      "text": "Arabic–Persian philosophy arose in the early 9th century CE as a response to discussions in the Islamic theological tradition."
+    },
+    {
+      "text": "Its classical period lasted until the 12th century CE and was strongly influenced by ancient Greek philosophers."
+    },
+    {
+      "text": "It employed their ideas to elaborate and interpret the teachings of the Quran."
+    },
+    {
+      "text": "Al-Kindi (801–873 CE) is usually regarded as the first philosopher of this tradition."
+    },
+    {
+      "text": "He translated and interpreted many works of Aristotle and Neoplatonists in his attempt to show that there is a harmony between reason and faith."
+    },
+    {
+      "text": "Avicenna (980–1037 CE) also followed this goal and developed a comprehensive philosophical system to provide a rational understanding of reality encompassing science, religion, and mysticism."
+    },
+    {
+      "text": "Al-Ghazali (1058–1111 CE) was a strong critic of the idea that reason can arrive at a true understanding of reality and God."
+    },
+    {
+      "text": "He formulated a detailed critique of philosophy and tried to assign philosophy a more limited place besides the teachings of the Quran and mystical insight."
+    },
+    {
+      "text": "Following Al-Ghazali and the end of the classical period, the influence of philosophical inquiry waned."
+    },
+    {
+      "text": "Mulla Sadra (1571–1636 CE) is often regarded as one of the most influential philosophers of the subsequent period."
+    },
+    {
+      "text": "The increasing influence of Western thought and institutions in the 19th and 20th centuries gave rise to the intellectual movement of Islamic modernism, which aims to understand the relation between traditional Islamic beliefs and modernity."
+    },
+    {
+      "text": "Indian",
+      "heading_level": 3
+    },
+    {
+      "text": "One of the distinguishing features of Indian philosophy is that it integrates the exploration of the nature of reality, the ways of arriving at knowledge, and the spiritual question of how to reach enlightenment."
+    },
+    {
+      "text": "It started in the second and first millennia BCE, when the Vedas and Upanishads were composed."
+    },
+    {
+      "text": "They are the foundational scriptures of Hinduism and contemplate issues concerning the relation between the self and ultimate reality as well as the question of how souls are reborn based on their past actions."
+    },
+    {
+      "text": "This period also saw the emergence of non-Vedic teachings, like Buddhism and Jainism."
+    },
+    {
+      "text": "Buddhism was founded by Gautama Siddhartha (563–483 BCE), who challenged the Vedic idea of a permanent self and proposed a path to liberate oneself from suffering."
+    },
+    {
+      "text": "Jainism was founded by Mahavira (599–527 BCE), who emphasized non-violence as well as respect toward all forms of life."
+    },
+    {
+      "text": "The subsequent classical period started roughly 200 BCE and was characterized by the emergence of the six orthodox schools of Hinduism: Nyāyá, Vaiśeṣika, Sāṃkhya, Yoga, Mīmāṃsā, and Vedanta."
+    },
+    {
+      "text": "The school of Advaita Vedanta developed later in this period."
+    },
+    {
+      "text": "It was systematized by Adi Shankara (c. 700–750 CE), who held that everything is one and that the impression of a universe consisting of many distinct entities is an illusion."
+    },
+    {
+      "text": "A slightly different perspective was defended by Ramanuja (1017–1137 CE), who founded the school of Vishishtadvaita Vedanta and argued that individual entities are real as aspects or parts of the underlying unity."
+    },
+    {
+      "text": "He also helped to popularize the Bhakti movement, which taught devotion toward the divine as a spiritual path and lasted until the 17th to 18th centuries CE."
+    },
+    {
+      "text": "The modern period began roughly 1800 CE and was shaped by encounters with Western thought."
+    },
+    {
+      "text": "Philosophers tried to formulate comprehensive systems to harmonize diverse philosophical and religious teachings."
+    },
+    {
+      "text": "For example, Swami Vivekananda (1863–1902 CE) used the teachings of Advaita Vedanta to argue that all the different religions are valid paths toward the one divine."
+    },
+    {
+      "text": "Chinese",
+      "heading_level": 3
+    },
+    {
+      "text": "Chinese philosophy is particularly interested in practical questions associated with right social conduct, government, and self-cultivation."
+    },
+    {
+      "text": "Many schools of thought emerged in the 6th century BCE in competing attempts to resolve the political turbulence of that period."
+    },
+    {
+      "text": "The most prominent among them were Confucianism and Daoism."
+    },
+    {
+      "text": "Confucianism was founded by Confucius (551–479 BCE)."
+    },
+    {
+      "text": "It focused on different forms of moral virtues and explored how they lead to harmony in society."
+    },
+    {
+      "text": "Daoism was founded by Laozi (6th century BCE) and examined how humans can live in harmony with nature by following the Dao or the natural order of the universe."
+    },
+    {
+      "text": "Other influential early schools of thought were Mohism, which developed an early form of altruistic consequentialism, and Legalism, which emphasized the importance of a strong state and strict laws."
+    },
+    {
+      "text": "Buddhism was introduced to China in the 1st century CE and diversified into new forms of Buddhism."
+    },
+    {
+      "text": "Starting in the 3rd century CE, the school of Xuanxue emerged."
+    },
+    {
+      "text": "It interpreted earlier Daoist works with a specific emphasis on metaphysical explanations."
+    },
+    {
+      "text": "Neo-Confucianism developed in the 11th century CE."
+    },
+    {
+      "text": "It systematized previous Confucian teachings and sought a metaphysical foundation of ethics."
+    },
+    {
+      "text": "The modern period in Chinese philosophy began in the early 20th century and was shaped by the influence of and reactions to Western philosophy."
+    },
+    {
+      "text": "The emergence of Chinese Marxism—which focused on class struggle, socialism, and communism—resulted in a significant transformation of the political landscape."
+    },
+    {
+      "text": "Another development was the emergence of New Confucianism, which aims to modernize and rethink Confucian teachings to explore their compatibility with democratic ideals and modern science."
+    },
+    {
+      "text": "Other traditions",
+      "heading_level": 3
+    },
+    {
+      "text": "Traditional Japanese philosophy assimilated and synthesized ideas from different traditions, including the indigenous Shinto religion and Chinese and Indian thought in the forms of Confucianism and Buddhism, both of which entered Japan in the 6th and 7th centuries."
+    },
+    {
+      "text": "Its practice is characterized by active interaction with reality rather than disengaged examination."
+    },
+    {
+      "text": "Neo-Confucianism became an influential school of thought in the 16th century and the following Edo period and prompted a greater focus on language and the natural world."
+    },
+    {
+      "text": "The Kyoto School emerged in the 20th century and integrated Eastern spirituality with Western philosophy in its exploration of concepts like absolute nothingness (zettai-mu), place (basho), and the self."
+    },
+    {
+      "text": "Latin American philosophy in the pre-colonial period was practiced by indigenous civilizations and explored questions concerning the nature of reality and the role of humans."
+    },
+    {
+      "text": "It has similarities to indigenous North American philosophy, which covered themes such as the interconnectedness of all things."
+    },
+    {
+      "text": "Latin American philosophy during the colonial period, starting around 1550, was dominated by religious philosophy in the form of scholasticism."
+    },
+    {
+      "text": "Influential topics in the post-colonial period were positivism, the philosophy of liberation, and the exploration of identity and culture."
+    },
+    {
+      "text": "Early African philosophy was primarily conducted and transmitted orally."
+    },
+    {
+      "text": "It focused on community, morality, and ancestral ideas, encompassing folklore, wise sayings, religious ideas, and philosophical concepts like Ubuntu."
+    },
+    {
+      "text": "Systematic African philosophy emerged at the beginning of the 20th century."
+    },
+    {
+      "text": "It discusses topics such as ethnophilosophy, négritude, pan-Africanism, Marxism, postcolonialism, the role of cultural identity, relativism, African epistemology, and the critique of Eurocentrism."
+    },
+    {
+      "text": "Core branches",
+      "heading_level": 2
+    },
+    {
+      "text": "Philosophical questions can be grouped into several branches."
+    },
+    {
+      "text": "These groupings allow philosophers to focus on a set of similar topics and interact with other thinkers who are interested in the same questions."
+    },
+    {
+      "text": "Epistemology, ethics, logic, and metaphysics are sometimes listed as the main branches."
+    },
+    {
+      "text": "There are many other subfields besides them, and the different divisions are neither exhaustive nor mutually exclusive."
+    },
+    {
+      "text": "For example, political philosophy, ethics, and aesthetics are sometimes linked under the general heading of value theory as they investigate normative or evaluative aspects."
+    },
+    {
+      "text": "Furthermore, philosophical inquiry sometimes overlaps with other disciplines in the natural and social sciences, religion, and mathematics."
+    },
+    {
+      "text": "Epistemology",
+      "heading_level": 3
+    },
+    {
+      "text": "Epistemology is the branch of philosophy that studies knowledge."
+    },
+    {
+      "text": "It is also known as the theory of knowledge and aims to understand what knowledge is, how it arises, what its limits are, and what value it has."
+    },
+    {
+      "text": "It further examines the nature of truth, belief, justification, and rationality."
+    },
+    {
+      "text": "Some of the questions addressed by epistemologists include \"By what method(s) can one acquire knowledge?\"; \"How is truth established?\"; and \"Can we prove causal relations?\""
+    },
+    {
+      "text": "Epistemology is primarily interested in declarative knowledge or knowledge of facts, like knowing that Princess Diana died in 1997."
+    },
+    {
+      "text": "But it also investigates practical knowledge, such as knowing how to ride a bicycle, and knowledge by acquaintance, for example, knowing a celebrity personally."
+    },
+    {
+      "text": "One area in epistemology is the analysis of knowledge."
+    },
+    {
+      "text": "It assumes that declarative knowledge is a combination of different parts and attempts to identify what those parts are."
+    },
+    {
+      "text": "An influential theory in this area claims that knowledge has three components: it is a belief that is justified and true."
+    },
+    {
+      "text": "This theory is controversial, and the difficulties associated with it are known as the Gettier problem."
+    },
+    {
+      "text": "Alternative views state that knowledge requires additional components, like the absence of luck; different components, like the manifestation of cognitive virtues instead of justification; or they deny that knowledge can be analyzed in terms of other phenomena."
+    },
+    {
+      "text": "Another area in epistemology asks how people acquire knowledge."
+    },
+    {
+      "text": "Often-discussed sources of knowledge are perception, introspection, memory, inference, and testimony."
+    },
+    {
+      "text": "According to empiricists, all knowledge is based on some form of experience."
+    },
+    {
+      "text": "Rationalists reject this view and hold that some forms of knowledge, like innate knowledge, are not acquired through experience."
+    },
+    {
+      "text": "The regress problem is a common issue in relation to the sources of knowledge and the justification they offer."
+    },
+    {
+      "text": "It is based on the idea that beliefs require some kind of reason or evidence to be justified."
+    },
+    {
+      "text": "The problem is that the source of justification may itself be in need of another source of justification."
+    },
+    {
+      "text": "This leads to an infinite regress or circular reasoning."
+    },
+    {
+      "text": "Foundationalists avoid this conclusion by arguing that some sources can provide justification without requiring justification themselves."
+    },
+    {
+      "text": "Another solution is presented by coherentists, who state that a belief is justified if it coheres with other beliefs of the person."
+    },
+    {
+      "text": "Many discussions in epistemology touch on the topic of philosophical skepticism, which raises doubts about some or all claims to knowledge."
+    },
+    {
+      "text": "These doubts are often based on the idea that knowledge requires absolute certainty and that humans are unable to acquire it."
+    },
+    {
+      "text": "Ethics",
+      "heading_level": 3
+    },
+    {
+      "text": "Ethics, also known as moral philosophy, studies what constitutes right conduct."
+    },
+    {
+      "text": "It is also concerned with the moral evaluation of character traits and institutions."
+    },
+    {
+      "text": "It explores what the standards of morality are and how to live a good life."
+    },
+    {
+      "text": "Philosophical ethics addresses such basic questions as \"Are moral obligations relative?\", \"Which has priority: well-being or obligation?\", and \"What gives life meaning?\""
+    },
+    {
+      "text": "The main branches of ethics are metaethics, normative ethics, and applied ethics."
+    },
+    {
+      "text": "Metaethics asks abstract questions about the nature and sources of morality."
+    },
+    {
+      "text": "It analyzes the meaning of ethical concepts, like right action and obligation."
+    },
+    {
+      "text": "It also investigates whether ethical theories can be true in an absolute sense and how to acquire knowledge of them."
+    },
+    {
+      "text": "Normative ethics encompasses general theories of how to distinguish between right and wrong conduct."
+    },
+    {
+      "text": "It helps guide moral decisions by examining what moral obligations and rights people have."
+    },
+    {
+      "text": "Applied ethics studies the consequences of the general theories developed by normative ethics in specific situations, for example, in the workplace or for medical treatments."
+    },
+    {
+      "text": "Within contemporary normative ethics, consequentialism, deontology, and virtue ethics are influential schools of thought."
+    },
+    {
+      "text": "Consequentialists judge actions based on their consequences."
+    },
+    {
+      "text": "One such view is utilitarianism, which argues that actions should increase overall happiness while minimizing suffering."
+    },
+    {
+      "text": "Deontologists judge actions based on whether they follow moral duties, such as abstaining from lying or killing."
+    },
+    {
+      "text": "According to them, what matters is that actions are in tune with those duties and not what consequences they have."
+    },
+    {
+      "text": "Virtue theorists judge actions based on how the moral character of the agent is expressed."
+    },
+    {
+      "text": "According to this view, actions should conform to what an ideally virtuous agent would do by manifesting virtues like generosity and honesty."
+    },
+    {
+      "text": "Logic",
+      "heading_level": 3
+    },
+    {
+      "text": "Logic is the study of correct reasoning."
+    },
+    {
+      "text": "It aims to understand how to distinguish good from bad arguments."
+    },
+    {
+      "text": "It is usually divided into formal and informal logic."
+    },
+    {
+      "text": "Formal logic uses artificial languages with a precise symbolic representation to investigate arguments."
+    },
+    {
+      "text": "In its search for exact criteria, it examines the structure of arguments to determine whether they are correct or incorrect."
+    },
+    {
+      "text": "Informal logic uses non-formal criteria and standards to assess the correctness of arguments."
+    },
+    {
+      "text": "It relies on additional factors such as content and context."
+    },
+    {
+      "text": "Logic examines a variety of arguments."
+    },
+    {
+      "text": "Deductive arguments are mainly studied by formal logic."
+    },
+    {
+      "text": "An argument is deductively valid if the truth of its premises ensures the truth of its conclusion."
+    },
+    {
+      "text": "Deductively valid arguments follow a rule of inference, like modus ponens, which has the following logical form: \"p; if p then q; therefore q\"."
+    },
+    {
+      "text": "An example is the argument \"today is Sunday; if today is Sunday then I don't have to go to work today; therefore I don't have to go to work today\"."
+    },
+    {
+      "text": "The premises of non-deductive arguments also support their conclusion, although this support does not guarantee that the conclusion is true."
+    },
+    {
+      "text": "One form is inductive reasoning."
+    },
+    {
+      "text": "It starts from a set of individual cases and uses generalization to arrive at a universal law governing all cases."
+    },
+    {
+      "text": "An example is the inference that \"all ravens are black\" based on observations of many individual black ravens."
+    },
+    {
+      "text": "Another form is abductive reasoning."
+    },
+    {
+      "text": "It starts from an observation and concludes that the best explanation of this observation must be true."
+    },
+    {
+      "text": "This happens, for example, when a doctor diagnoses a disease based on the observed symptoms."
+    },
+    {
+      "text": "Logic also investigates incorrect forms of reasoning."
+    },
+    {
+      "text": "They are called fallacies and are divided into formal and informal fallacies based on whether the source of the error lies only in the form of the argument or also in its content and context."
+    },
+    {
+      "text": "Metaphysics",
+      "heading_level": 3
+    },
+    {
+      "text": "Metaphysics is the study of the most general features of reality, such as existence, objects and their properties, wholes and their parts, space and time, events, and causation."
+    },
+    {
+      "text": "There are disagreements about the precise definition of the term, and its meaning has changed throughout the ages."
+    },
+    {
+      "text": "Metaphysicians attempt to answer basic questions including \"Why is there something rather than nothing?\", \"Of what does reality ultimately consist?\", and \"Are humans free?\""
+    },
+    {
+      "text": "Metaphysics is sometimes divided into general metaphysics and specific or special metaphysics."
+    },
+    {
+      "text": "General metaphysics investigates being as such."
+    },
+    {
+      "text": "It examines the features that all entities have in common."
+    },
+    {
+      "text": "Specific metaphysics is interested in different kinds of being, the features they have, and how they differ from one another."
+    },
+    {
+      "text": "An important area in metaphysics is ontology."
+    },
+    {
+      "text": "Some theorists identify it with general metaphysics."
+    },
+    {
+      "text": "Ontology investigates concepts like being, becoming, and reality."
+    },
+    {
+      "text": "It studies the categories of being and asks what exists on the most fundamental level."
+    },
+    {
+      "text": "Another subfield of metaphysics is philosophical cosmology."
+    },
+    {
+      "text": "It is interested in the essence of the world as a whole."
+    },
+    {
+      "text": "It asks questions including whether the universe has a beginning and an end and whether it was created by something else."
+    },
+    {
+      "text": "A key topic in metaphysics concerns the question of whether reality only consists of physical things like matter and energy."
+    },
+    {
+      "text": "Alternative suggestions are that mental entities (such as souls and experiences) and abstract entities (such as numbers) exist apart from physical things."
+    },
+    {
+      "text": "Another topic in metaphysics concerns the problem of identity."
+    },
+    {
+      "text": "One question is how much an entity can change while still remaining the same entity."
+    },
+    {
+      "text": "According to one view, entities have essential and accidental features."
+    },
+    {
+      "text": "They can change their accidental features, but they cease to be the same entity if they lose an essential feature."
+    },
+    {
+      "text": "A central distinction in metaphysics is between particulars and universals."
+    },
+    {
+      "text": "Universals, like the color red, can exist at different locations at the same time."
+    },
+    {
+      "text": "This is not the case for particulars, including individual persons or specific objects."
+    },
+    {
+      "text": "Other metaphysical questions are whether the past fully determines the present and what implications this would have for the existence of free will."
+    },
+    {
+      "text": "Other major branches",
+      "heading_level": 3
+    },
+    {
+      "text": "There are many other subfields of philosophy besides its core branches."
+    },
+    {
+      "text": "Some of the most prominent are aesthetics, philosophy of language, philosophy of mind, philosophy of religion, philosophy of science, and political philosophy."
+    },
+    {
+      "text": "Aesthetics in the philosophical sense is the field that studies the nature and appreciation of beauty and other aesthetic properties, like the sublime."
+    },
+    {
+      "text": "Although it is often treated together with the philosophy of art, aesthetics is a broader category that encompasses other aspects of experience, such as natural beauty."
+    },
+    {
+      "text": "In a more general sense, aesthetics is \"critical reflection on art, culture, and nature\"."
+    },
+    {
+      "text": "A key question in aesthetics is whether beauty is an objective feature of entities or a subjective aspect of experience."
+    },
+    {
+      "text": "Aesthetic philosophers also investigate the nature of aesthetic experiences and judgments."
+    },
+    {
+      "text": "Further topics include the essence of works of art and the processes involved in creating them."
+    },
+    {
+      "text": "The philosophy of language studies the nature and function of language."
+    },
+    {
+      "text": "It examines the concepts of meaning, reference, and truth."
+    },
+    {
+      "text": "It aims to answer questions such as how words are related to things and how language affects human thought and understanding."
+    },
+    {
+      "text": "It is closely related to the disciplines of logic and linguistics."
+    },
+    {
+      "text": "The philosophy of language rose to particular prominence in the early 20th century in analytic philosophy due to the works of Frege and Russell."
+    },
+    {
+      "text": "One of its central topics is to understand how sentences get their meaning."
+    },
+    {
+      "text": "There are two broad theoretical camps: those emphasizing the formal truth conditions of sentences and those investigating circumstances that determine when it is suitable to use a sentence, the latter of which is associated with speech act theory."
+    },
+    {
+      "text": "The philosophy of mind studies the nature of mental phenomena and how they are related to the physical world."
+    },
+    {
+      "text": "It aims to understand different types of conscious and unconscious mental states, like beliefs, desires, intentions, feelings, sensations, and free will."
+    },
+    {
+      "text": "An influential intuition in the philosophy of mind is that there is a distinction between the inner experience of objects and their existence in the external world."
+    },
+    {
+      "text": "The mind-body problem is the problem of explaining how these two types of things—mind and matter—are related."
+    },
+    {
+      "text": "The main traditional responses are materialism, which assumes that matter is more fundamental; idealism, which assumes that mind is more fundamental; and dualism, which assumes that mind and matter are distinct types of entities."
+    },
+    {
+      "text": "In contemporary philosophy, another common view is functionalism, which understands mental states in terms of the functional or causal roles they play."
+    },
+    {
+      "text": "The mind-body problem is closely related to the hard problem of consciousness, which asks how the physical brain can produce qualitatively subjective experiences."
+    },
+    {
+      "text": "The philosophy of religion investigates the basic concepts, assumptions, and arguments associated with religion."
+    },
+    {
+      "text": "It critically reflects on what religion is, how to define the divine, and whether one or more gods exist."
+    },
+    {
+      "text": "It also includes the discussion of worldviews that reject religious doctrines."
+    },
+    {
+      "text": "Further questions addressed by the philosophy of religion are: \"How are we to interpret religious language, if not literally?\"; \"Is divine omniscience compatible with free will?\"; and \"Are the great variety of world religions in some way compatible in spite of their apparently contradictory theological claims?\""
+    },
+    {
+      "text": "It includes topics from nearly all branches of philosophy."
+    },
+    {
+      "text": "It differs from theology since theological debates typically take place within one religious tradition, whereas debates in the philosophy of religion transcend any particular set of theological assumptions."
+    },
+    {
+      "text": "The philosophy of science examines the fundamental concepts, assumptions, and problems associated with science."
+    },
+    {
+      "text": "It reflects on what science is and how to distinguish it from pseudoscience."
+    },
+    {
+      "text": "It investigates the methods employed by scientists, how their application can result in knowledge, and on what assumptions they are based."
+    },
+    {
+      "text": "It also studies the purpose and implications of science."
+    },
+    {
+      "text": "Some of its questions are \"What counts as an adequate explanation?\", \"Is a scientific law anything more than a description of a regularity?\", and \"Can some special sciences be explained entirely in the terms of a more general science?\""
+    },
+    {
+      "text": "It is a vast field that is commonly divided into the philosophy of the natural sciences and the philosophy of the social sciences, with further subdivisions for each of the individual sciences under these headings."
+    },
+    {
+      "text": "How these branches are related to one another is also a question in the philosophy of science."
+    },
+    {
+      "text": "Many of its philosophical issues overlap with the fields of metaphysics or epistemology."
+    },
+    {
+      "text": "Political philosophy is a branch of philosophy that aims to seek knowledge about the essence of politics."
+    },
+    {
+      "text": "It examines the basic concepts, assumptions, and arguments in the field of politics."
+    },
+    {
+      "text": "It investigates the nature and purpose of government and compares its different forms."
+    },
+    {
+      "text": "It further asks under what circumstances the use of political power is legitimate, rather than a form of simple violence."
+    },
+    {
+      "text": "In this regard, it is concerned with the distribution of political power, social and material goods, and legal rights."
+    },
+    {
+      "text": "Other topics are justice, liberty, equality, sovereignty, and nationalism."
+    },
+    {
+      "text": "Political philosophy involves a general inquiry into normative matters and differs in this respect from political science, which aims to provide empirical descriptions of actually existing states."
+    },
+    {
+      "text": "Political philosophy is often treated as a subfield of ethics."
+    },
+    {
+      "text": "Influential schools of thought in political philosophy are liberalism, conservatism, socialism, and anarchism."
+    },
+    {
+      "text": "Methods",
+      "heading_level": 2
+    },
+    {
+      "text": "Methods of philosophy are ways of conducting philosophical inquiry."
+    },
+    {
+      "text": "They include techniques for arriving at philosophical knowledge and justifying philosophical claims as well as principles used for choosing between competing theories."
+    },
+    {
+      "text": "A great variety of methods have been employed throughout the history of philosophy."
+    },
+    {
+      "text": "Many of them differ significantly from the methods used in the natural sciences in that they do not use experimental data obtained through measuring equipment."
+    },
+    {
+      "text": "The choice of one's method usually has important implications both for how philosophical theories are constructed and for the arguments cited for or against them."
+    },
+    {
+      "text": "This choice is often guided by epistemological considerations about what constitutes philosophical evidence."
+    },
+    {
+      "text": "Methodological disagreements can cause conflicts among philosophical theories or about the answers to philosophical questions."
+    },
+    {
+      "text": "The discovery of new methods has often had important consequences both for how philosophers conduct their research and for what claims they defend."
+    },
+    {
+      "text": "Some philosophers engage in most of their theorizing using one particular method while others employ a wider range of methods based on which one fits the specific problem investigated best."
+    },
+    {
+      "text": "Conceptual analysis is a common method in analytic philosophy."
+    },
+    {
+      "text": "It aims to clarify the meaning of concepts by analyzing them into their component parts."
+    },
+    {
+      "text": "Another method often employed in analytic philosophy is based on common sense."
+    },
+    {
+      "text": "It starts with commonly accepted beliefs and tries to draw unexpected conclusions from them, which it often employs in a negative sense to criticize philosophical theories that are too far removed from how the average person sees the issue."
+    },
+    {
+      "text": "It is similar to how ordinary language philosophy approaches philosophical questions by investigating how ordinary language is used."
+    },
+    {
+      "text": "Various methods in philosophy give particular importance to intuitions, that is, non-inferential impressions about the correctness of specific claims or general principles."
+    },
+    {
+      "text": "For example, they play an important role in thought experiments, which employ counterfactual thinking to evaluate the possible consequences of an imagined situation."
+    },
+    {
+      "text": "These anticipated consequences can then be used to confirm or refute philosophical theories."
+    },
+    {
+      "text": "The method of reflective equilibrium also employs intuitions."
+    },
+    {
+      "text": "It seeks to form a coherent position on a certain issue by examining all the relevant beliefs and intuitions, some of which often have to be deemphasized or reformulated to arrive at a coherent perspective."
+    },
+    {
+      "text": "Pragmatists stress the significance of concrete practical consequences for assessing whether a philosophical theory is true."
+    },
+    {
+      "text": "According to the pragmatic maxim as formulated by Charles Sanders Peirce, the idea a person has of an object is nothing more than the totality of practical consequences they associate with this object."
+    },
+    {
+      "text": "Pragmatists have also used this method to expose disagreements as merely verbal, that is, to show they make no genuine difference on the level of consequences."
+    },
+    {
+      "text": "Phenomenologists seek knowledge of the realm of appearance and the structure of human experience."
+    },
+    {
+      "text": "They insist upon the first-person character of all experience and proceed by suspending theoretical judgments about the external world."
+    },
+    {
+      "text": "This technique of phenomenological reduction is known as \"bracketing\" or epoché."
+    },
+    {
+      "text": "The goal is to give an unbiased description of the appearance of things."
+    },
+    {
+      "text": "Methodological naturalism places great emphasis on the empirical approach and the resulting theories found in the natural sciences."
+    },
+    {
+      "text": "In this way, it contrasts with methodologies that give more weight to pure reasoning and introspection."
+    },
+    {
+      "text": "Relation to other fields",
+      "heading_level": 2
+    },
+    {
+      "text": "Philosophy is closely related to many other fields."
+    },
+    {
+      "text": "It is sometimes understood as a meta-discipline that clarifies the nature and limits of other disciplines."
+    },
+    {
+      "text": "It does this by critically examining their basic concepts, background assumptions, and methods."
+    },
+    {
+      "text": "In this regard, it plays a key role in providing an interdisciplinary perspective."
+    },
+    {
+      "text": "It bridges the gap between different disciplines by analyzing which concepts and problems they have in common."
+    },
+    {
+      "text": "It shows how they overlap while also delimiting their scope."
+    },
+    {
+      "text": "Historically, most of the individual sciences originated from philosophy."
+    },
+    {
+      "text": "The influence of philosophy is felt in several fields that require difficult practical decisions."
+    },
+    {
+      "text": "In medicine, philosophical considerations related to bioethics affect issues like whether an embryo is already a person and under what conditions abortion is morally permissible."
+    },
+    {
+      "text": "A closely related philosophical problem is how humans should treat other animals, for instance, whether it is acceptable to use non-human animals as food or for research experiments."
+    },
+    {
+      "text": "In relation to business and professional life, philosophy has contributed by providing ethical frameworks."
+    },
+    {
+      "text": "They contain guidelines on which business practices are morally acceptable and cover the issue of corporate social responsibility."
+    },
+    {
+      "text": "Philosophical inquiry is relevant to many fields that are concerned with what to believe and how to arrive at evidence for one's beliefs."
+    },
+    {
+      "text": "This is a key issue for the sciences, which have as one of their prime objectives the creation of scientific knowledge."
+    },
+    {
+      "text": "Scientific knowledge is based on empirical evidence, but it is often not clear whether empirical observations are neutral or already include theoretical assumptions."
+    },
+    {
+      "text": "A closely connected problem is whether the available evidence is sufficient to decide between competing theories."
+    },
+    {
+      "text": "Epistemological problems in relation to the law include what counts as evidence and how much evidence is required to find a person guilty of a crime."
+    },
+    {
+      "text": "A related issue in journalism is how to ensure truth and objectivity when reporting on events."
+    },
+    {
+      "text": "In the fields of theology and religion, there are many doctrines associated with the existence and nature of God as well as rules governing correct behavior."
+    },
+    {
+      "text": "A key issue is whether a rational person should believe these doctrines, for example, whether revelation in the form of holy books and religious experiences of the divine are sufficient evidence for these beliefs."
+    },
+    {
+      "text": "Philosophy in the form of logic has been influential in the fields of mathematics and computer science."
+    },
+    {
+      "text": "Further fields influenced by philosophy include psychology, sociology, linguistics, education, and the arts."
+    },
+    {
+      "text": "The close relation between philosophy and other fields in the contemporary period is reflected in the fact that many philosophy graduates go on to work in related fields rather than in philosophy itself."
+    },
+    {
+      "text": "In the field of politics, philosophy addresses issues such as how to assess whether a government policy is just."
+    },
+    {
+      "text": "Philosophical ideas have prepared and shaped various political developments."
+    },
+    {
+      "text": "For example, ideals formulated in Enlightenment philosophy laid the foundation for constitutional democracy and played a role in the American Revolution and the French Revolution."
+    },
+    {
+      "text": "Marxist philosophy, with its exposition of communism, was one of the factors in the Russian Revolution and the Chinese Communist Revolution."
+    },
+    {
+      "text": "In India, Mahatma Gandhi's philosophy of non-violence shaped the Indian independence movement."
+    },
+    {
+      "text": "An example of the cultural and critical role of philosophy is found in its influence on the feminist movement through philosophers such as Mary Wollstonecraft, Simone de Beauvoir, and Judith Butler."
+    },
+    {
+      "text": "It has shaped the understanding of key concepts in feminism, for instance, the meaning of gender, how it differs from biological sex, and what role it plays in the formation of personal identity."
+    },
+    {
+      "text": "Philosophers have also investigated the concepts of justice and equality and their implications with respect to the prejudicial treatment of women in male-dominated societies."
+    },
+    {
+      "text": "The idea that philosophy is useful for many aspects of life and society is sometimes rejected."
+    },
+    {
+      "text": "According to some academics, philosophy is mainly undertaken for its own sake and does not make significant contributions to existing practices or external goals."
+    }
+  ]
+}
