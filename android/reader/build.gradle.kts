@@ -33,7 +33,7 @@ kotlin {
 }
 
 // The reader must stay buildable and testable on its own: no dependency on
-// any other module of this project (DIRECTION.md). Wired into `check` so
+// any other module of this project. Wired into `check` so
 // `./gradlew check`/CI fails the moment someone adds one.
 val checkReaderIsolation by tasks.registering {
     val projectDeps =
