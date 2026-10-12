@@ -87,7 +87,7 @@ class ReaderScreenGestureTest {
             down(center)
         }
         // Advance past hold threshold (200ms).
-        clock.advanceBy(201)
+        clock.advanceBy(151)
         compose.waitForIdle()
 
         // A PLAY event should have been emitted.
@@ -108,7 +108,7 @@ class ReaderScreenGestureTest {
         compose.onNodeWithTag("readerSurface").performTouchInput {
             down(center)
         }
-        clock.advanceBy(201)
+        clock.advanceBy(151)
         compose.waitForIdle()
 
         // Lift to pause.
@@ -131,7 +131,7 @@ class ReaderScreenGestureTest {
         compose.onNodeWithTag("readerSurface").performTouchInput {
             down(center)
         }
-        clock.advanceBy(201)
+        clock.advanceBy(151)
         compose.waitForIdle()
         compose.onNodeWithTag("readerSurface").performTouchInput {
             up()
@@ -171,7 +171,7 @@ class ReaderScreenGestureTest {
         compose.onNodeWithTag("readerSurface").performTouchInput {
             down(center)
         }
-        clock.advanceBy(201)
+        clock.advanceBy(151)
         compose.waitForIdle()
 
         // Let a few words advance (250 wpm → ~240ms per word base).
@@ -215,7 +215,7 @@ class ReaderScreenGestureTest {
         compose.onNodeWithTag("readerSurface").performTouchInput {
             down(center)
         }
-        clock.advanceBy(201)
+        clock.advanceBy(151)
         compose.waitForIdle()
 
         assertTrue(
@@ -232,7 +232,7 @@ class ReaderScreenGestureTest {
         compose.onNodeWithTag("readerSurface").performTouchInput {
             down(center)
         }
-        clock.advanceBy(201)
+        clock.advanceBy(151)
         compose.waitForIdle()
 
         val playEvent = events.first { it.type == EventType.PLAY }
@@ -254,7 +254,7 @@ class ReaderScreenGestureTest {
         compose.onNodeWithTag("readerSurface").performTouchInput {
             down(center)
         }
-        clock.advanceBy(201)
+        clock.advanceBy(151)
         compose.waitForIdle()
 
         // Pause.

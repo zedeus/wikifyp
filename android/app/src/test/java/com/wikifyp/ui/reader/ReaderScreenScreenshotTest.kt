@@ -141,7 +141,7 @@ class ReaderScreenScreenshotTest {
         compose.onNodeWithTag("readerSurface").performTouchInput {
             down(center)
         }
-        clock.advanceBy(201)
+        clock.advanceBy(151)
         compose.waitForIdle()
         // Advance a few words.
         clock.advanceBy(800)
@@ -170,7 +170,7 @@ class ReaderScreenScreenshotTest {
         compose.onNodeWithTag("readerSurface").performTouchInput {
             down(center)
         }
-        clock.advanceBy(201)
+        clock.advanceBy(151)
         compose.waitForIdle()
         // Advance a couple of words.
         clock.advanceBy(500)
@@ -194,7 +194,7 @@ class ReaderScreenScreenshotTest {
         compose.onNodeWithTag("readerSurface").performTouchInput {
             down(center)
         }
-        clock.advanceBy(201)
+        clock.advanceBy(151)
         compose.waitForIdle()
         // Advance several words.
         clock.advanceBy(1500)

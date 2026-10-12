@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performTouchInput
 import com.wikifyp.reader.EventListener
 import com.wikifyp.reader.EventType
 import com.wikifyp.reader.FakeClock
@@ -79,8 +80,11 @@ class ReaderScreenTest {
             }
         }
 
-        // Total tokens: 4 + 5 + 4 = 13. Position 0 → "1 / 13".
-        compose.onNodeWithTag("progressText").assertIsDisplayed()
+        // Progress hidden in IDLE; hold to start, then check percentage.
+        compose.onNodeWithTag("readerSurface").performTouchInput { down(center) }
+        clock.advanceBy(151)
+        compose.waitForIdle()
+        compose.onNodeWithText("0%").assertIsDisplayed()
     }
 
     @Test
