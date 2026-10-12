@@ -1,0 +1,41 @@
+android/reader/src/main/java/com/wikifyp/reader/TokenAddress.kt
+  s_d43d9b3836855f::t_358912a9961021 1-18
+android/reader/build.gradle.kts
+  s_d43d9b3836855f::t_37ddb7df9b904f 22
+  s_d43d9b3836855f::t_b9c70ffb0ef72a 3,43-45
+  s_d43d9b3836855f::t_0f39b3397ac7df 18-21,23-24
+  s_d43d9b3836855f::t_c7215bad3e4f42 46-47
+android/reader/src/test/java/com/wikifyp/reader/TokensTest.kt
+  s_d43d9b3836855f::t_be0c82ba002fa8 1-22,26-69
+  s_d43d9b3836855f::t_aa78c3e7a9f33e 23-25
+android/build.gradle.kts
+  s_d43d9b3836855f::t_bb11b8d76505b0 9
+android/gradle/libs.versions.toml
+  s_d43d9b3836855f::t_558f53be6b90ed 12
+  s_d43d9b3836855f::t_0a40288fd86fba 41
+  s_d43d9b3836855f::t_76b3ed0c3b5230 32
+server/internal/text/tokens_fixture_test.go
+  s_d43d9b3836855f::t_a817e4e70a2993 1-6,8-35,37-48
+  s_d43d9b3836855f::t_4258b04960d205 7,36
+android/reader/src/main/java/com/wikifyp/reader/Tokens.kt
+  s_d43d9b3836855f::t_aa78c3e7a9f33e 18
+  s_d43d9b3836855f::t_68d07ba36f0c63 1-17
+fixtures/tokens.json
+  s_d43d9b3836855f::t_505224b09d289c 1-62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2cb4e41ca0393caaf3c56b73638948f2332cc4e6",
+  "prompts": {},
+  "sessions": {
+    "s_d43d9b3836855f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eae88f0b-e7f9-4009-b072-618c96d72856",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
