@@ -35,6 +35,9 @@ class ReaderEngine(
     private val clock: ReaderClock,
     private val listener: EventListener,
     private val idGenerator: () -> String = { UUID.randomUUID().toString() },
+    /** Called after every state change (position, state, WPM). UI layers
+     *  use this to sync observable state instead of polling. */
+    private val onStateChanged: (() -> Unit)? = null,
 ) {
     var state: ReaderState = ReaderState.IDLE
         private set
@@ -84,6 +87,7 @@ class ReaderEngine(
         this.position = 0
         this.state = ReaderState.IDLE
         this.sessionId = idGenerator()
+        notifyChanged()
     }
 
     /**
@@ -113,6 +117,7 @@ class ReaderEngine(
                 // Already playing — ignore
             }
         }
+        notifyChanged()
     }
 
     /**
@@ -141,6 +146,7 @@ class ReaderEngine(
                 // Lift in idle/paused without hold threshold met = tap = nothing
             }
         }
+        notifyChanged()
     }
 
     /**
@@ -156,6 +162,7 @@ class ReaderEngine(
             dragStartMs = clock.nowMs()
             state = ReaderState.SCRUBBING
         }
+        notifyChanged()
     }
 
     /**
@@ -165,6 +172,7 @@ class ReaderEngine(
     fun onDragMove(tokenOffset: Int) {
         if (state != ReaderState.SCRUBBING) return
         position = (position + tokenOffset).coerceIn(0, (totalTokens - 1).coerceAtLeast(0))
+        notifyChanged()
     }
 
     /**
@@ -174,6 +182,7 @@ class ReaderEngine(
         if (state == ReaderState.IDLE) return
         if (sentences.isEmpty()) return
         emitEvent(EventType.ASK)
+        notifyChanged()
     }
 
     /**
@@ -184,6 +193,7 @@ class ReaderEngine(
         cancelPending()
         emitEvent(EventType.SKIP)
         state = ReaderState.IDLE
+        notifyChanged()
     }
 
     /**
@@ -197,12 +207,19 @@ class ReaderEngine(
     /** Current position as a flat token index. */
     fun currentPosition(): Int = position
 
+    /** Whether the current token belongs to a heading sentence. */
+    fun currentIsHeading(): Boolean {
+        val (sentIdx, _) = flatToAddress(position) ?: return false
+        return sentences.getOrNull(sentIdx)?.isHeading == true
+    }
+
     // --- internals ---
 
     private fun startPlaying() {
         if (totalTokens == 0) return
         state = ReaderState.PLAYING
         emitEvent(EventType.PLAY)
+        notifyChanged()
         scheduleNextAdvance()
     }
 
@@ -227,10 +244,12 @@ class ReaderEngine(
             // Finished the article
             emitEvent(EventType.FINISH)
             state = ReaderState.IDLE
+            notifyChanged()
             return
         }
 
         position = next
+        notifyChanged()
         scheduleNextAdvance()
     }
 
@@ -285,6 +304,10 @@ class ReaderEngine(
         return null
     }
 
+    private fun notifyChanged() {
+        onStateChanged?.invoke()
+    }
+
     private fun cancelPending() {
         pendingAdvance?.cancel()
         pendingAdvance = null
@@ -301,7 +324,11 @@ class ReaderEngine(
 /**
  * A sentence's tokens for playback. The engine does not need the full
  * sentence text, only the token strings and their count per sentence.
+ *
+ * @param isHeading true for section headings; the UI may display these
+ *   in a distinct colour so the reader knows what kind of text they're in.
  */
 data class SentenceTokens(
     val tokens: List<String>,
+    val isHeading: Boolean = false,
 )
