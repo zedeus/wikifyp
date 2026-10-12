@@ -1,0 +1,26 @@
+android/reader/src/main/java/com/wikifyp/reader/ReaderEngine.kt
+  s_d43d9b3836855f::t_7582d611f0526d 242
+  s_d43d9b3836855f::t_39512324683fe7 57-58
+  s_d43d9b3836855f::t_65d4e7ec101023 86
+  s_d43d9b3836855f::t_97a95023e1a1a5 260
+android/reader/src/test/java/com/wikifyp/reader/TokensTest.kt
+  s_d43d9b3836855f::t_c64731dd13ac8e 40
+android/reader/src/main/java/com/wikifyp/reader/WordTiming.kt
+  s_d43d9b3836855f::t_1518e294a63c87 89,92,103-104
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c9b0e8b3a1f412bb0e33cb9e4893c1e1d4c250e0",
+  "prompts": {},
+  "sessions": {
+    "s_d43d9b3836855f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eae88f0b-e7f9-4009-b072-618c96d72856",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
