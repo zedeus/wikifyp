@@ -19,8 +19,8 @@ import com.wikifyp.reader.ReaderEngine
  */
 fun Modifier.readerGestures(engine: ReaderEngine): Modifier =
     this.pointerInput(engine) {
-        val dragThresholdPx = 20.dp.toPx()
-        val tokensPerPx = 30.dp.toPx()
+        val dragThresholdPx = 12.dp.toPx()
+        val tokensPerPx = 24.dp.toPx()
         val doubleTapWindowMs = 300L
         var lastTapTimeMs = 0L
 
@@ -79,7 +79,8 @@ fun Modifier.readerGestures(engine: ReaderEngine): Modifier =
                         dragAccumulator += dx
                         val tokensMoved = (dragAccumulator / tokensPerPx).toInt()
                         if (tokensMoved != 0) {
-                            engine.onDragMove(-tokensMoved)
+                            // Drag left (negative dx) = scroll back = negative offset.
+                            engine.onDragMove(tokensMoved)
                             dragAccumulator -= tokensMoved * tokensPerPx
                         }
                     }

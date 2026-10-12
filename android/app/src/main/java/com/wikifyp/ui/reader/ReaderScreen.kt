@@ -37,7 +37,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.wikifyp.reader.EventListener
 import com.wikifyp.reader.ReaderClock
 import com.wikifyp.reader.ReaderEngine
@@ -49,8 +48,8 @@ import com.wikifyp.theme.Spacing
 /**
  * The RSVP reader screen. The current word stays centred at a fixed size.
  * On pause, ghost words fade in on either side on the same line, plus a
- * context line above and below, so the reader can see where they are in
- * the text without the focal word moving or changing size.
+ * continuous context line above and below so the reader can see where they
+ * are in the text without the focal word moving or changing size.
  */
 @Composable
 fun ReaderScreen(
@@ -97,15 +96,23 @@ fun ReaderScreen(
     }
 
     val totalTokens = remember(sentences) { sentences.sumOf { it.tokens.size } }
-    val showGhost = readerState != ReaderState.PLAYING
+    val isPausedOrScrubbing =
+        readerState == ReaderState.PAUSED || readerState == ReaderState.SCRUBBING
     val ghostAlpha by animateFloatAsState(
-        targetValue = if (showGhost) 0.22f else 0f,
-        animationSpec = tween(if (showGhost) Motion.STANDARD_MS else Motion.QUICK_MS),
+        targetValue = if (isPausedOrScrubbing) 0.22f else 0f,
+        animationSpec =
+            tween(if (isPausedOrScrubbing) Motion.STANDARD_MS else Motion.QUICK_MS),
         label = "ghostAlpha",
     )
 
     // Flatten tokens once for ghost word lookups.
     val allTokens = remember(sentences) { sentences.flatMap { it.tokens } }
+
+    // Ghost window bounds: how many tokens left/right of current position.
+    val ghostCount = 5
+    val pos = position.coerceIn(0, (allTokens.size - 1).coerceAtLeast(0))
+    val ghostLeft = (pos - ghostCount).coerceAtLeast(0)
+    val ghostRight = (pos + ghostCount).coerceAtMost(allTokens.size - 1)
 
     Box(
         modifier =
@@ -149,30 +156,26 @@ fun ReaderScreen(
 
             Spacer(Modifier.weight(1f))
 
-            // Ghost context line above.
-            if (allTokens.isNotEmpty()) {
-                val aboveLine =
-                    remember(position, allTokens) {
-                        buildContextLine(position, allTokens, linesBack = 1)
-                    }
-                if (aboveLine.isNotEmpty()) {
-                    Text(
-                        text = aboveLine,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color =
-                            MaterialTheme.colorScheme.onBackground.copy(
-                                alpha = ghostAlpha * 0.7f,
-                            ),
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = Spacing.lg),
-                    )
-                    Spacer(Modifier.height(Spacing.md))
-                }
+            // Context line above: continuous with the ghost window's left edge.
+            if (ghostAlpha > 0.01f && ghostLeft > 0) {
+                val aboveStart = (ghostLeft - 12).coerceAtLeast(0)
+                val aboveText = allTokens.subList(aboveStart, ghostLeft).joinToString(" ")
+                Text(
+                    text = aboveText,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color =
+                        MaterialTheme.colorScheme.onBackground.copy(
+                            alpha = ghostAlpha * 0.6f,
+                        ),
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Clip,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.lg),
+                )
+                Spacer(Modifier.height(Spacing.sm))
             }
 
             // Main reading line: left ghosts | focal word | right ghosts.
@@ -193,39 +196,37 @@ fun ReaderScreen(
                     )
                 } else if (currentWord.isNotEmpty()) {
                     FocalLine(
-                        position = position,
+                        position = pos,
                         allTokens = allTokens,
                         isHeading = isHeading,
                         ghostAlpha = ghostAlpha,
+                        ghostCount = ghostCount,
                         modifier = Modifier.testTag("currentWord"),
                     )
                 }
             }
 
-            // Ghost context line below.
-            if (allTokens.isNotEmpty()) {
-                val belowLine =
-                    remember(position, allTokens) {
-                        buildContextLine(position, allTokens, linesBack = -1)
-                    }
-                if (belowLine.isNotEmpty()) {
-                    Spacer(Modifier.height(Spacing.md))
-                    Text(
-                        text = belowLine,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color =
-                            MaterialTheme.colorScheme.onBackground.copy(
-                                alpha = ghostAlpha * 0.7f,
-                            ),
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = Spacing.lg),
-                    )
-                }
+            // Context line below: continuous with the ghost window's right edge.
+            if (ghostAlpha > 0.01f && ghostRight < allTokens.size - 1) {
+                Spacer(Modifier.height(Spacing.sm))
+                val belowEnd = (ghostRight + 13).coerceAtMost(allTokens.size)
+                val belowText =
+                    allTokens.subList(ghostRight + 1, belowEnd).joinToString(" ")
+                Text(
+                    text = belowText,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color =
+                        MaterialTheme.colorScheme.onBackground.copy(
+                            alpha = ghostAlpha * 0.6f,
+                        ),
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Clip,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.lg),
+                )
             }
 
             Spacer(Modifier.weight(1f))
@@ -280,9 +281,9 @@ fun ReaderScreen(
 }
 
 /**
- * The main reading line: focal word dead-centre, ghost words on either side.
- * Uses a three-segment Row so the focal word never shifts regardless of how
- * many ghost words are visible. Ghost words fade via [ghostAlpha].
+ * Focal word dead-centre with ghost words on either side. Uses a
+ * three-segment Row so the word never shifts. Ghost words fade via
+ * [ghostAlpha].
  */
 @Composable
 private fun FocalLine(
@@ -290,6 +291,7 @@ private fun FocalLine(
     allTokens: List<String>,
     isHeading: Boolean,
     ghostAlpha: Float,
+    ghostCount: Int,
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -301,7 +303,6 @@ private fun FocalLine(
     val word = allTokens.getOrElse(pos) { "" }
     val focal = focalPosition(word)
 
-    val ghostCount = 5
     val leftStart = (pos - ghostCount).coerceAtLeast(0)
     val rightEnd = (pos + ghostCount).coerceAtMost(allTokens.size - 1)
 
@@ -364,34 +365,6 @@ private fun FocalLine(
             overflow = TextOverflow.Clip,
             modifier = Modifier.weight(1f),
         )
-    }
-}
-
-/**
- * Builds a single line of context text from tokens near [position].
- * [linesBack] = 1 means the line before (tokens preceding the current
- * window), -1 means the line after. Returns empty if at the boundary.
- */
-internal fun buildContextLine(
-    position: Int,
-    allTokens: List<String>,
-    linesBack: Int,
-    wordsPerLine: Int = 10,
-): String {
-    if (allTokens.isEmpty()) return ""
-
-    return if (linesBack > 0) {
-        // Line above: tokens before the ghost window.
-        val end = (position - 6).coerceAtLeast(0)
-        val start = (end - wordsPerLine).coerceAtLeast(0)
-        if (start >= end) return ""
-        allTokens.subList(start, end).joinToString(" ")
-    } else {
-        // Line below: tokens after the ghost window.
-        val start = (position + 7).coerceAtMost(allTokens.size)
-        val end = (start + wordsPerLine).coerceAtMost(allTokens.size)
-        if (start >= end) return ""
-        allTokens.subList(start, end).joinToString(" ")
     }
 }
 
