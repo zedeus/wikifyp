@@ -1,0 +1,33 @@
+android/app/src/test/java/com/wikifyp/ui/PlaceholderScreenTest.kt
+  s_6c4118a54b5556::t_893656139c60fc 1-43
+android/app/src/test/java/com/wikifyp/ui/PlaceholderScreenshotTest.kt
+  s_201ef5cbf1b55b::t_64e2a23a98fae0 5-6
+  s_6c4118a54b5556::t_9c8fc9baa2504e 1-4,8-35
+  s_201ef5cbf1b55b::t_3f70ef951fc582 7
+android/app/src/androidTest/java/com/wikifyp/MainActivityTest.kt
+  s_6c4118a54b5556::t_77ab1b13a8c187 1-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ded7dcebe5ad20668c42be4df9fb9a0184846c38",
+  "prompts": {},
+  "sessions": {
+    "s_201ef5cbf1b55b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "324c2069-093c-4a15-83ae-c080f30c2f3c",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    },
+    "s_6c4118a54b5556": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "94b4b82d-a721-4d74-b7dc-811285a96b05",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
