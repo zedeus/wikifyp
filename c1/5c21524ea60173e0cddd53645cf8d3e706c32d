@@ -1,0 +1,40 @@
+fixtures/events/invalid-unknown-type.json
+  s_d43d9b3836855f::t_ef4af7954e1928 1-13
+fixtures/events/invalid-v0.json
+  s_d43d9b3836855f::t_4fc6633cbe6dd2 1-13
+fixtures/events/invalid-missing-id.json
+  s_d43d9b3836855f::t_cab073056990b3 1-12
+android/reader/src/test/java/com/wikifyp/reader/ReadingEventTest.kt
+  s_d43d9b3836855f::t_27481a8c7077fc 1-15,20-77,87-93,106-114,128-164
+  s_d43d9b3836855f::t_aa78c3e7a9f33e 16-19,78-86,94-105,115-127
+fixtures/events/finish.json
+  s_d43d9b3836855f::t_c01af1583bd573 1-13
+fixtures/events/play.json
+  s_d43d9b3836855f::t_8dec559d986b02 1-13
+fixtures/events/scroll_back.json
+  s_d43d9b3836855f::t_4b85a400cf70a7 1-20
+docs/events.md
+  s_d43d9b3836855f::t_1c1561b14c0062 1-90
+fixtures/events/skip.json
+  s_d43d9b3836855f::t_4308a40b25e096 1-13
+fixtures/events/ask.json
+  s_d43d9b3836855f::t_871ef20cb7eaa9 1-13
+fixtures/events/pause.json
+  s_d43d9b3836855f::t_1678598a85ac29 1-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c15c21524ea60173e0cddd53645cf8d3e706c32d",
+  "prompts": {},
+  "sessions": {
+    "s_d43d9b3836855f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eae88f0b-e7f9-4009-b072-618c96d72856",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
