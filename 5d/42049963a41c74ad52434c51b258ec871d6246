@@ -1,0 +1,27 @@
+android/reader/src/main/java/com/wikifyp/reader/WordTiming.kt
+  s_d43d9b3836855f::t_ebff77fd7620f3 3-4,6-46,56-59,61-62,64-86,88-89,91-92,94-106
+android/reader/src/test/java/com/wikifyp/reader/WordTimingTest.kt
+  s_d43d9b3836855f::t_8da1cf2980c967 193-197
+  s_d43d9b3836855f::t_d4563e81fc94fb 4,6,8-11,15-17,20-24,28-30,34-36,40-42,46-50,54-56,60-62,65-66,69-79,83-85,89-90,94-95,99-100,104-105,109-110,113-124,126-130,132-142,146-171,178-192,198-204
+android/reader/src/test/java/com/wikifyp/reader/ReaderEngineEdgeCaseTest.kt
+  s_d43d9b3836855f::t_cf2ca847036642 168-174
+  s_d43d9b3836855f::t_78142029c324b9 5
+android/reader/src/main/java/com/wikifyp/reader/Tokens.kt
+  s_d43d9b3836855f::t_8da1cf2980c967 27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5d42049963a41c74ad52434c51b258ec871d6246",
+  "prompts": {},
+  "sessions": {
+    "s_d43d9b3836855f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eae88f0b-e7f9-4009-b072-618c96d72856",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
