@@ -1,0 +1,53 @@
+android/app/build.gradle.kts
+  s_c447953a5816aa::t_448b43bca0db90 85
+  s_c447953a5816aa::t_673502d0b7068b 4
+  s_c447953a5816aa::t_e37f45a4487862 75-76
+android/app/src/main/assets/articles/dna.json
+  s_c447953a5816aa::t_1e888539f33475 1-1455
+android/app/src/main/java/com/wikifyp/data/FixtureArticles.kt
+  s_c447953a5816aa::t_9cae6f2abe135a 1-38,44-50
+  s_c447953a5816aa::t_02f8f70e5498cd 39-43,51
+android/app/src/main/java/com/wikifyp/ui/reader/ReaderGestures.kt
+  s_c447953a5816aa::t_02fd22b3556109 1-99
+android/app/src/main/assets/articles/marie-curie.json
+  s_c447953a5816aa::t_1e888539f33475 1-1007
+android/app/src/main/assets/articles/roman-empire.json
+  s_c447953a5816aa::t_1e888539f33475 1-2435
+android/app/src/main/assets/articles/philosophy.json
+  s_c447953a5816aa::t_1e888539f33475 1-1099
+android/app/src/main/java/com/wikifyp/ui/reader/ReaderScreen.kt
+  s_c447953a5816aa::t_38e85f8131434e 75,110,112-113,157-160,162,193-196,198,253-286,298,303,313,333-334,345
+  s_c447953a5816aa::t_45a143ac2b4e3f 74,79-81,84
+  s_c447953a5816aa::t_7ee09d3561bc9b 1-36,38-50,53-65,70-73,87-89,95-96,99-102,104-107,115-121,123-128,130-137,139-140,146-155,161,163,165-167,169-176,178-182,188-191,197,199,201-203,205-212,221-236,239-242,245-252,287,290-297,300-302,304-306,310-312,314-332,335-336,338-344,346-354,356-369
+  s_c447953a5816aa::t_084847ec13f26c 51-52,66-69,76-78,82-83,85-86,90,92-94,97,108,122,237-238,243-244,307-309
+  s_c447953a5816aa::t_89c3068ce7c482 177,183-187
+  s_c447953a5816aa::t_d9272ce8d0dcbc 37,91,98,103,109,111,114,129,138,141-145,156,164,168,192,200,204,213-220,288-289,299,337,355
+android/app/src/main/java/com/wikifyp/ui/ArticleListScreen.kt
+  s_c447953a5816aa::t_a905e0684a1730 1-74
+android/app/src/main/java/com/wikifyp/ui/reader/FocalPoint.kt
+  s_c447953a5816aa::t_ea6f50fbd3ad15 1-15
+android/app/src/main/java/com/wikifyp/ui/reader/SyncingClock.kt
+  s_c447953a5816aa::t_2d5e62d4e8feb0 5,11-13,17,19-21,30
+  s_c447953a5816aa::t_02f8f70e5498cd 24-27
+  s_c447953a5816aa::t_f5b5f72cf95174 1-4,6-10,14-16,18,22-23,28-29,31-32
+android/app/src/main/java/com/wikifyp/ui/reader/HandlerClock.kt
+  s_c447953a5816aa::t_ce74036adfb027 1-26
+android/app/src/main/assets/articles/photosynthesis.json
+  s_c447953a5816aa::t_1e888539f33475 1-1118
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8c0576f2e9a75f0ddc63cdee5ac910705d78c29e",
+  "prompts": {},
+  "sessions": {
+    "s_c447953a5816aa": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97564575-d1a7-426a-b877-e7eb64c61493",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
