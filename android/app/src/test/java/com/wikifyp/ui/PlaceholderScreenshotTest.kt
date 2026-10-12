@@ -15,9 +15,12 @@ import org.robolectric.annotation.GraphicsMode
 // Golden images live in src/test/screenshots (the roborazzi outputDir).
 // `./gradlew test` verifies against them (roborazzi.test.verify=true in
 // gradle.properties); re-record with `./gradlew recordRoborazziDebug`.
+// MediumPhone = the generic 411x914dp @ 420dpi profile (identical qualifiers
+// to Pixel 7/8/8a — phone screens have converged); matches the medium_phone
+// emulator AVD used for instrumented tests.
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(qualifiers = RobolectricDeviceQualifiers.Pixel7)
+@Config(qualifiers = RobolectricDeviceQualifiers.MediumPhone)
 class PlaceholderScreenshotTest {
     @get:Rule val compose = createComposeRule()
 
