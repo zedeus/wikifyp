@@ -25,15 +25,6 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-        }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.toVersion(libs.versions.jdk.get())
-        targetCompatibility = JavaVersion.toVersion(libs.versions.jdk.get())
-    }
     buildFeatures {
         compose = true
     }
@@ -56,13 +47,14 @@ android {
     }
 }
 
-// `check` would otherwise run every JVM test (Robolectric boot, Roborazzi
-// screenshot verify) twice — once per build type — for identical coverage:
-// there is no release-specific code. Debug unit tests are the suite.
+// Debug unit tests are THE JVM suite; `check` would otherwise run every
+// Robolectric/Roborazzi test once per build type for identical coverage.
+// Stated as an include-rule so a future build type doesn't silently
+// reintroduce the duplicate runs.
 androidComponents {
-    beforeVariants(selector().withBuildType("release")) { variant ->
+    beforeVariants { variant ->
         variant.hostTests[com.android.build.api.variant.HostTestBuilder.UNIT_TEST_TYPE]
-            ?.enable = false
+            ?.enable = variant.buildType == "debug"
     }
 }
 

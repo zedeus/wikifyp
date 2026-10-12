@@ -4,6 +4,7 @@ import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 
 // Type tokens. Serif for anything a reader dwells on (article text, titles),
@@ -14,126 +15,37 @@ import androidx.compose.ui.unit.sp
 val Reading = FontFamily.Serif
 val Label = FontFamily.SansSerif
 
+private fun style(
+    family: FontFamily,
+    size: TextUnit,
+    line: TextUnit,
+    spacing: TextUnit = 0.sp,
+    weight: FontWeight = FontWeight.Normal,
+) = TextStyle(
+    fontFamily = family,
+    fontWeight = weight,
+    fontSize = size,
+    lineHeight = line,
+    letterSpacing = spacing,
+)
+
+private val Medium = FontWeight.Medium
+
 val Typography =
     Typography(
-        displayLarge =
-            TextStyle(
-                fontFamily = Reading,
-                fontWeight = FontWeight.Normal,
-                fontSize = 44.sp,
-                lineHeight = 52.sp,
-                letterSpacing = (-0.5).sp,
-            ),
-        displayMedium =
-            TextStyle(
-                fontFamily = Reading,
-                fontWeight = FontWeight.Normal,
-                fontSize = 36.sp,
-                lineHeight = 44.sp,
-                letterSpacing = (-0.25).sp,
-            ),
-        displaySmall =
-            TextStyle(
-                fontFamily = Reading,
-                fontWeight = FontWeight.Normal,
-                fontSize = 30.sp,
-                lineHeight = 38.sp,
-                letterSpacing = 0.sp,
-            ),
-        headlineLarge =
-            TextStyle(
-                fontFamily = Reading,
-                fontWeight = FontWeight.Medium,
-                fontSize = 30.sp,
-                lineHeight = 38.sp,
-                letterSpacing = 0.sp,
-            ),
-        headlineMedium =
-            TextStyle(
-                fontFamily = Reading,
-                fontWeight = FontWeight.Medium,
-                fontSize = 26.sp,
-                lineHeight = 34.sp,
-                letterSpacing = 0.sp,
-            ),
-        headlineSmall =
-            TextStyle(
-                fontFamily = Reading,
-                fontWeight = FontWeight.Medium,
-                fontSize = 23.sp,
-                lineHeight = 31.sp,
-                letterSpacing = 0.sp,
-            ),
-        titleLarge =
-            TextStyle(
-                fontFamily = Reading,
-                fontWeight = FontWeight.Medium,
-                fontSize = 21.sp,
-                lineHeight = 28.sp,
-                letterSpacing = 0.sp,
-            ),
-        titleMedium =
-            TextStyle(
-                fontFamily = Label,
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp,
-                lineHeight = 24.sp,
-                letterSpacing = 0.1.sp,
-            ),
-        titleSmall =
-            TextStyle(
-                fontFamily = Label,
-                fontWeight = FontWeight.Medium,
-                fontSize = 14.sp,
-                lineHeight = 20.sp,
-                letterSpacing = 0.1.sp,
-            ),
-        bodyLarge =
-            TextStyle(
-                fontFamily = Reading,
-                fontWeight = FontWeight.Normal,
-                fontSize = 17.sp,
-                lineHeight = 27.sp,
-                letterSpacing = 0.2.sp,
-            ),
-        bodyMedium =
-            TextStyle(
-                fontFamily = Reading,
-                fontWeight = FontWeight.Normal,
-                fontSize = 15.sp,
-                lineHeight = 23.sp,
-                letterSpacing = 0.2.sp,
-            ),
-        bodySmall =
-            TextStyle(
-                fontFamily = Reading,
-                fontWeight = FontWeight.Normal,
-                fontSize = 13.sp,
-                lineHeight = 20.sp,
-                letterSpacing = 0.2.sp,
-            ),
-        labelLarge =
-            TextStyle(
-                fontFamily = Label,
-                fontWeight = FontWeight.Medium,
-                fontSize = 14.sp,
-                lineHeight = 20.sp,
-                letterSpacing = 0.2.sp,
-            ),
-        labelMedium =
-            TextStyle(
-                fontFamily = Label,
-                fontWeight = FontWeight.Medium,
-                fontSize = 12.sp,
-                lineHeight = 16.sp,
-                letterSpacing = 0.4.sp,
-            ),
-        labelSmall =
-            TextStyle(
-                fontFamily = Label,
-                fontWeight = FontWeight.Medium,
-                fontSize = 11.sp,
-                lineHeight = 16.sp,
-                letterSpacing = 0.4.sp,
-            ),
+        displayLarge = style(Reading, 44.sp, 52.sp, (-0.5).sp),
+        displayMedium = style(Reading, 36.sp, 44.sp, (-0.25).sp),
+        displaySmall = style(Reading, 30.sp, 38.sp),
+        headlineLarge = style(Reading, 30.sp, 38.sp, weight = Medium),
+        headlineMedium = style(Reading, 26.sp, 34.sp, weight = Medium),
+        headlineSmall = style(Reading, 23.sp, 31.sp, weight = Medium),
+        titleLarge = style(Reading, 21.sp, 28.sp, weight = Medium),
+        titleMedium = style(Label, 16.sp, 24.sp, 0.1.sp, Medium),
+        titleSmall = style(Label, 14.sp, 20.sp, 0.1.sp, Medium),
+        bodyLarge = style(Reading, 17.sp, 27.sp, 0.2.sp),
+        bodyMedium = style(Reading, 15.sp, 23.sp, 0.2.sp),
+        bodySmall = style(Reading, 13.sp, 20.sp, 0.2.sp),
+        labelLarge = style(Label, 14.sp, 20.sp, 0.2.sp, Medium),
+        labelMedium = style(Label, 12.sp, 16.sp, 0.4.sp, Medium),
+        labelSmall = style(Label, 11.sp, 16.sp, 0.4.sp, Medium),
     )

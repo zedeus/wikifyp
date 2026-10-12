@@ -14,9 +14,13 @@ android {
                 .get()
                 .toInt()
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.toVersion(libs.versions.jdk.get())
-        targetCompatibility = JavaVersion.toVersion(libs.versions.jdk.get())
+}
+
+// No instrumented tests here yet; skip building and installing an empty test
+// APK on every emulator run. Re-enable when the reader grows UI tests.
+androidComponents {
+    beforeVariants { variant ->
+        variant.androidTest.enable = false
     }
 }
 
@@ -48,13 +52,9 @@ val checkReaderIsolation by tasks.registering {
     }
 }
 
-// Hooked into both `check` (CI) and `test` (the local verification command),
-// so an added dependency fails before the commit, not after the push.
-tasks.named("check") {
-    dependsOn(checkReaderIsolation)
-}
-
-// AGP registers `test` after evaluation, so match lazily instead of named().
+// Hooked into `test`, which both the local command and CI's `check` reach
+// (check depends on test). AGP registers `test` after evaluation, so match
+// lazily instead of named().
 tasks.matching { it.name == "test" }.configureEach {
     dependsOn(checkReaderIsolation)
 }
