@@ -317,7 +317,7 @@ class ReaderEngine(
 
     companion object {
         /** Milliseconds a touch must be held before it counts as a hold. */
-        const val HOLD_THRESHOLD_MS = 200L
+        const val HOLD_THRESHOLD_MS = 150L
     }
 }
 
