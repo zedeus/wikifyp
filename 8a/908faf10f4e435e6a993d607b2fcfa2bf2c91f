@@ -1,0 +1,19 @@
+android/reader/build.gradle.kts
+  s_bb8ba166d34cf5::t_bdcef45a16c198 36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8a908faf10f4e435e6a993d607b2fcfa2bf2c91f",
+  "prompts": {},
+  "sessions": {
+    "s_bb8ba166d34cf5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6f379b6e-f684-4e85-b459-ed8f56ce42c1",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
