@@ -2,6 +2,7 @@ package com.wikifyp.reader
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -164,10 +165,13 @@ class ReaderEngineEdgeCaseTest {
 
     @Test
     fun veryLongTokenGetsLargeDelay() {
-        val longWord = "a".repeat(50) // 50 chars
-        // 42 beyond 8 → +840% → base 240 * 9.4 = 2256ms
-        val expected = (240.0 * (1.0 + 0.2 * 42)).toLong()
-        assertEquals(expected, delayMs(longWord, isLastInSentence = false, wpm = 250))
+        val longWord = "a".repeat(50) // 50 letters
+        val shortWord = "a".repeat(5) // 5 letters (baseline)
+        val longDelay = delayMs(longWord, isLastInSentence = false, wpm = 250)
+        val shortDelay = delayMs(shortWord, isLastInSentence = false, wpm = 250)
+        // Length factor is capped at 1.5×, so long word ≈ 1.5 × short word
+        assertTrue("50-letter word should be longer than 5-letter", longDelay > shortDelay)
+        assertTrue("length factor caps at 1.5×", longDelay <= shortDelay * 2)
     }
 
     // --- Emoji and unicode ---

@@ -24,5 +24,4 @@ private val WHITESPACE = Regex("[\\s\\u0085\\u00A0\\p{Z}]+")
  * (which uses `strings.Fields`). The whitespace definition matches Go's
  * `unicode.IsSpace` so token addresses agree across platforms.
  */
-fun normalize(text: String): String =
-    text.split(WHITESPACE).filter { it.isNotEmpty() }.joinToString(" ")
+fun normalize(text: String): String = text.split(WHITESPACE).filter { it.isNotEmpty() }.joinToString(" ")
