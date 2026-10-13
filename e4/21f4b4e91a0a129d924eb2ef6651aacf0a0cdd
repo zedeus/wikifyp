@@ -1,0 +1,58 @@
+android/app/src/main/java/com/wikifyp/ui/reader/ReaderScreen.kt
+  s_c447953a5816aa::t_1dda447ff82715 282-285,319-327,344-346
+  s_c447953a5816aa::t_8f46f15ae81f4a 172,199-202,211,215,217-218,231-237,267,273-277,280,380-383,388-390,419,512
+  s_c447953a5816aa::t_2c3de2dd180c78 329-331
+  s_c447953a5816aa::t_c038bf05ba912c 281,286,291-313,316-318,347-348
+  s_c447953a5816aa::t_3b50604ae73bdf 203-210,212
+  s_c447953a5816aa::t_084847ec13f26c 477-478
+  s_c447953a5816aa::t_9238b4cfcc8728 32
+  s_c447953a5816aa::t_f7424af0fd446b 433
+  s_c447953a5816aa::t_8fc7b7236c7ab8 420-421
+  s_c447953a5816aa::t_a810a886e59f72 30,34
+  s_c447953a5816aa::t_9bfe143fe7d880 384-387
+  s_c447953a5816aa::t_7648783203439e 493-494,511
+  s_c447953a5816aa::t_d9272ce8d0dcbc 360,422
+  s_c447953a5816aa::t_b7643c7ae688cb 175-198
+  s_c447953a5816aa::t_1a710bdaf016ec 106,108-114
+  s_c447953a5816aa::t_1b351395443943 483
+  s_c447953a5816aa::t_31e5cfec6a28c1 485-491,516-522
+  s_c447953a5816aa::t_d3879295e9e78b 358
+  s_c447953a5816aa::t_80998a1b92f9df 278-279
+  s_c447953a5816aa::t_9fca1add3ab1ac 42
+  s_c447953a5816aa::t_19eb558397f85c 393-396,398,400,404
+  s_c447953a5816aa::t_7ee09d3561bc9b 479
+  s_c447953a5816aa::t_bd8192c48828bb 290
+  s_c447953a5816aa::t_8be6e8e6165131 315,359,362-363
+  s_c447953a5816aa::t_b81c0298c4b985 171
+  s_c447953a5816aa::t_6cd70cd8114151 238-240,246,248,250,252-266
+  s_c447953a5816aa::t_18d33261991b69 328,332-343
+  s_c447953a5816aa::t_e278d79361bfcc 391-392,397,399,401-403,405-418
+  s_c447953a5816aa::t_624f49774385f3 241-245,247,249,251
+  s_c447953a5816aa::t_9c7fb86d932c7f 268-272,287-289,349-357,361,364-373,376-379
+  s_c447953a5816aa::t_89efa09b0eb6ba 53-57,166,213-214,216,220-229,314,474,484,497,507
+  s_c447953a5816aa::t_04dd51090b4404 374-375
+  s_c447953a5816aa::t_9f60b51d5ed97e 116
+android/app/src/test/java/com/wikifyp/ui/reader/ReaderScreenGestureTest.kt
+  s_c447953a5816aa::t_e26d1eabda41b7 90,111,134,174,218,235,257
+android/app/src/test/java/com/wikifyp/ui/reader/ReaderScreenScreenshotTest.kt
+  s_c447953a5816aa::t_f87e3ba267d969 144,173,197
+android/app/src/test/java/com/wikifyp/ui/reader/ReaderScreenTest.kt
+  s_c447953a5816aa::t_c44afa8d7108c0 8
+  s_c447953a5816aa::t_23720f0f850718 83-86
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e421f4b4e91a0a129d924eb2ef6651aacf0a0cdd",
+  "prompts": {},
+  "sessions": {
+    "s_c447953a5816aa": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97564575-d1a7-426a-b877-e7eb64c61493",
+        "model": "metr-model"
+      },
+      "human_author": null
+    }
+  }
+}
