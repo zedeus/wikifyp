@@ -1,0 +1,56 @@
+android/app/src/test/java/com/wikifyp/ui/reader/ReaderScreenScreenshotTest.kt
+  s_c447953a5816aa::t_f87e3ba267d969 144,173,197
+android/app/src/test/java/com/wikifyp/ui/reader/ReaderScreenTest.kt
+  s_c447953a5816aa::t_c44afa8d7108c0 8
+  s_c447953a5816aa::t_23720f0f850718 83-86
+android/app/src/main/java/com/wikifyp/ui/reader/ReaderScreen.kt
+  s_c447953a5816aa::t_9c7fb86d932c7f 256-260,275-277,337-345,349,352-361,364-367
+  s_c447953a5816aa::t_b81c0298c4b985 164
+  s_c447953a5816aa::t_f7424af0fd446b 417
+  s_c447953a5816aa::t_27adef77de36c1 237
+  s_c447953a5816aa::t_084847ec13f26c 461-462
+  s_c447953a5816aa::t_b7643c7ae688cb 168-191
+  s_c447953a5816aa::t_7648783203439e 477-478,495
+  s_c447953a5816aa::t_d3879295e9e78b 346
+  s_c447953a5816aa::t_3b50604ae73bdf 196-203,205
+  s_c447953a5816aa::t_8fc7b7236c7ab8 404-405
+  s_c447953a5816aa::t_8be6e8e6165131 303,347,350-351
+  s_c447953a5816aa::t_6cd70cd8114151 231-236,238-254
+  s_c447953a5816aa::t_04dd51090b4404 362-363
+  s_c447953a5816aa::t_bd8192c48828bb 278
+  s_c447953a5816aa::t_18d33261991b69 316,320-331
+  s_c447953a5816aa::t_7ee09d3561bc9b 463
+  s_c447953a5816aa::t_8f46f15ae81f4a 165,192-195,204,208,210-211,224-230,255,261-265,268,368-371,376-378,403,496
+  s_c447953a5816aa::t_1dda447ff82715 270-273,307-315,332-334
+  s_c447953a5816aa::t_e278d79361bfcc 379-383,385-402
+  s_c447953a5816aa::t_89efa09b0eb6ba 53-57,107,159,206-207,209,213-222,302,458,468,481,491
+  s_c447953a5816aa::t_9fca1add3ab1ac 42
+  s_c447953a5816aa::t_80998a1b92f9df 266-267
+  s_c447953a5816aa::t_d9272ce8d0dcbc 348,406
+  s_c447953a5816aa::t_9bfe143fe7d880 372-375
+  s_c447953a5816aa::t_9238b4cfcc8728 32
+  s_c447953a5816aa::t_77feb262a27e2f 384
+  s_c447953a5816aa::t_a810a886e59f72 30,34
+  s_c447953a5816aa::t_2c3de2dd180c78 317-319
+  s_c447953a5816aa::t_31e5cfec6a28c1 469-475,500-506
+  s_c447953a5816aa::t_c038bf05ba912c 269,274,279-301,304-306,335-336
+  s_c447953a5816aa::t_1b351395443943 467
+android/app/src/test/java/com/wikifyp/ui/reader/ReaderScreenGestureTest.kt
+  s_c447953a5816aa::t_e26d1eabda41b7 90,111,134,174,218,235,257
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1040f969e2da443f24a93cfb76e95a2b9129865a",
+  "prompts": {},
+  "sessions": {
+    "s_c447953a5816aa": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97564575-d1a7-426a-b877-e7eb64c61493",
+        "model": "metr-model"
+      },
+      "human_author": null
+    }
+  }
+}
