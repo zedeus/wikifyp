@@ -1,0 +1,28 @@
+fixtures/articles/chemistry.json
+  s_7935716af77ff6::t_b216f263c79679 5
+fixtures/articles/computer.json
+  s_7935716af77ff6::t_b216f263c79679 5
+server/internal/source/source_test.go
+  s_7935716af77ff6::t_be8aa751d09b7c 13,35
+fixtures/articles/barack-obama.json
+  s_7935716af77ff6::t_b216f263c79679 5
+server/internal/source/source.go
+  s_7935716af77ff6::t_2816e3059a0e07 33
+  s_7935716af77ff6::t_4c349b1751de55 55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d4f18705d19e0da62dea07243f137bf634d59f9f",
+  "prompts": {},
+  "sessions": {
+    "s_7935716af77ff6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c85afa8a-4475-4404-b547-dfc931870e5e",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
