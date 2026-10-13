@@ -1,0 +1,49 @@
+android/app/src/test/java/com/wikifyp/ui/reader/ReaderScreenGestureTest.kt
+  s_c447953a5816aa::t_e26d1eabda41b7 90,111,134,174,218,235,257
+android/app/src/main/java/com/wikifyp/ui/reader/ReaderScreen.kt
+  s_c447953a5816aa::t_d9272ce8d0dcbc 374
+  s_c447953a5816aa::t_b81c0298c4b985 164
+  s_c447953a5816aa::t_a810a886e59f72 30,34
+  s_c447953a5816aa::t_8fc7b7236c7ab8 168-176,372-373
+  s_c447953a5816aa::t_89efa09b0eb6ba 53-57,107,159,193-194,196,200-210,287,426,436,449,459
+  s_c447953a5816aa::t_1622dbe3781da3 253
+  s_c447953a5816aa::t_7648783203439e 178,445-446,463
+  s_c447953a5816aa::t_04dd51090b4404 333-334
+  s_c447953a5816aa::t_1b351395443943 435
+  s_c447953a5816aa::t_3b50604ae73bdf 183-190,192
+  s_c447953a5816aa::t_9238b4cfcc8728 32
+  s_c447953a5816aa::t_9c7fb86d932c7f 243-247,261-263,309-317,320,323-332,335-338
+  s_c447953a5816aa::t_084847ec13f26c 429-430
+  s_c447953a5816aa::t_31e5cfec6a28c1 437-443,468-474
+  s_c447953a5816aa::t_7ee09d3561bc9b 431
+  s_c447953a5816aa::t_c038bf05ba912c 255,260,264-286,289-291,307-308
+  s_c447953a5816aa::t_f7424af0fd446b 385
+  s_c447953a5816aa::t_8be6e8e6165131 288,318,321-322
+  s_c447953a5816aa::t_e278d79361bfcc 347-370
+  s_c447953a5816aa::t_6cd70cd8114151 218-241
+  s_c447953a5816aa::t_9fca1add3ab1ac 42
+  s_c447953a5816aa::t_1dda447ff82715 256-259,292-306
+  s_c447953a5816aa::t_8f46f15ae81f4a 165,179-182,191,195,197-199,211-217,242,248-252,254,339-342,344-346,371,464
+  s_c447953a5816aa::t_9f178aaf276646 343
+android/app/src/test/java/com/wikifyp/ui/reader/ReaderScreenScreenshotTest.kt
+  s_c447953a5816aa::t_f87e3ba267d969 144,173,197
+android/app/src/test/java/com/wikifyp/ui/reader/ReaderScreenTest.kt
+  s_c447953a5816aa::t_c44afa8d7108c0 8
+  s_c447953a5816aa::t_23720f0f850718 83-86
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2309f54665f8f2340234d545c182ed71421b96d9",
+  "prompts": {},
+  "sessions": {
+    "s_c447953a5816aa": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97564575-d1a7-426a-b877-e7eb64c61493",
+        "model": "metr-model"
+      },
+      "human_author": null
+    }
+  }
+}
