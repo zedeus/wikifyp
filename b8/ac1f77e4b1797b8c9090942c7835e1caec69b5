@@ -1,0 +1,27 @@
+server/internal/testdb/testdb.go
+  s_7935716af77ff6::t_eeae8bf39374ec 57
+server/internal/ingest/ingest.go
+  s_7935716af77ff6::t_d0717e30dae58a 112-115,117-118
+  s_7935716af77ff6::t_7fc30f6c17c4c5 76-83,85-89,95-96,100-101
+  s_7935716af77ff6::t_97b356f6274e53 60
+  s_7935716af77ff6::t_4e98e7dcb6cca5 43-44
+server/internal/ingest/ingest_test.go
+  s_7935716af77ff6::t_97ac9c9073023f 370,382-405
+  s_7935716af77ff6::t_60ec91d2c5e868 406
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b8ac1f77e4b1797b8c9090942c7835e1caec69b5",
+  "prompts": {},
+  "sessions": {
+    "s_7935716af77ff6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c85afa8a-4475-4404-b547-dfc931870e5e",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
