@@ -1,0 +1,52 @@
+android/app/src/test/java/com/wikifyp/ui/reader/ReaderScreenTest.kt
+  s_c447953a5816aa::t_23720f0f850718 83-86
+  s_c447953a5816aa::t_c44afa8d7108c0 8
+android/app/src/test/java/com/wikifyp/ui/reader/ReaderScreenScreenshotTest.kt
+  s_c447953a5816aa::t_f87e3ba267d969 144,173,197
+android/app/src/main/java/com/wikifyp/ui/reader/ReaderScreen.kt
+  s_c447953a5816aa::t_d9272ce8d0dcbc 332,387
+  s_c447953a5816aa::t_e278d79361bfcc 360-364,366-383
+  s_c447953a5816aa::t_9238b4cfcc8728 32
+  s_c447953a5816aa::t_1b351395443943 448
+  s_c447953a5816aa::t_b81c0298c4b985 164
+  s_c447953a5816aa::t_7ee09d3561bc9b 444
+  s_c447953a5816aa::t_f7424af0fd446b 398
+  s_c447953a5816aa::t_04dd51090b4404 346-347
+  s_c447953a5816aa::t_9fca1add3ab1ac 42
+  s_c447953a5816aa::t_1dda447ff82715 269-272,305-319
+  s_c447953a5816aa::t_31e5cfec6a28c1 450-456,481-487
+  s_c447953a5816aa::t_7648783203439e 458-459,476
+  s_c447953a5816aa::t_3b50604ae73bdf 196-203,205
+  s_c447953a5816aa::t_1622dbe3781da3 266
+  s_c447953a5816aa::t_89efa09b0eb6ba 53-57,107,159,206-207,209,213-222,300,439,449,462,472
+  s_c447953a5816aa::t_8be6e8e6165131 301,331,334-335
+  s_c447953a5816aa::t_a810a886e59f72 30,34
+  s_c447953a5816aa::t_6cd70cd8114151 231-236,238-254
+  s_c447953a5816aa::t_9f178aaf276646 356
+  s_c447953a5816aa::t_8fc7b7236c7ab8 385-386
+  s_c447953a5816aa::t_27adef77de36c1 237
+  s_c447953a5816aa::t_b7643c7ae688cb 168-191
+  s_c447953a5816aa::t_084847ec13f26c 442-443
+  s_c447953a5816aa::t_77feb262a27e2f 365
+  s_c447953a5816aa::t_8f46f15ae81f4a 165,192-195,204,208,210-211,224-230,255,261-265,267,352-355,357-359,384,477
+  s_c447953a5816aa::t_9c7fb86d932c7f 256-260,274-276,322-330,333,336-345,348-351
+  s_c447953a5816aa::t_c038bf05ba912c 268,273,277-299,302-304,320-321
+android/app/src/test/java/com/wikifyp/ui/reader/ReaderScreenGestureTest.kt
+  s_c447953a5816aa::t_e26d1eabda41b7 90,111,134,174,218,235,257
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cab204d395830d3570c66a16820105b279186c40",
+  "prompts": {},
+  "sessions": {
+    "s_c447953a5816aa": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97564575-d1a7-426a-b877-e7eb64c61493",
+        "model": "metr-model"
+      },
+      "human_author": null
+    }
+  }
+}
