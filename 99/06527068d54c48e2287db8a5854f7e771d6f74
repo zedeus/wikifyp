@@ -1,0 +1,32 @@
+server/internal/feed/score.go
+  s_7935716af77ff6::t_e461256a65b3b7 117-120,123-124,141-142,145,155,158,162,186,188,190,207,217-218,222-224,226-227
+  s_7935716af77ff6::t_4a807cf11b960e 146-147,150-151,153-154,156-157,161,165-177
+  s_7935716af77ff6::t_5373870314c5cc 127-131
+  s_7935716af77ff6::t_4679e21778e6c1 178,262-270,275-279,288,300-316,332-334,341-348,350-378,383-388,391-393,400
+  s_7935716af77ff6::t_16dbb129e03bc8 349
+  s_7935716af77ff6::t_9bda53e51a23bd 423,428
+server/internal/feed/score_test.go
+  s_7935716af77ff6::t_73476f8a911d6c 249,277,305-306,312,324,360,388,441-450,453,458-462,465,472-503,507
+  s_7935716af77ff6::t_9bda53e51a23bd 332,335,338
+  s_7935716af77ff6::t_f3155371e82c73 508-532
+  s_7935716af77ff6::t_b79f56e638167d 533-534
+server/internal/feed/store.go
+  s_7935716af77ff6::t_9bda53e51a23bd 86,102
+  s_7935716af77ff6::t_16dbb129e03bc8 133
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9906527068d54c48e2287db8a5854f7e771d6f74",
+  "prompts": {},
+  "sessions": {
+    "s_7935716af77ff6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c85afa8a-4475-4404-b547-dfc931870e5e",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
