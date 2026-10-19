@@ -1,0 +1,30 @@
+server/internal/feed/score_test.go
+  s_7935716af77ff6::t_047f289e4c9a7a 204-241
+  s_7935716af77ff6::t_7e0e6cc318ee41 516-538
+server/internal/feed/score.go
+  s_7935716af77ff6::t_1c2511f3e93c5b 143-147
+  s_7935716af77ff6::t_69eaa8f607f241 322-324,331
+  s_7935716af77ff6::t_e07e09f5ed7657 283-285,291-293
+  s_7935716af77ff6::t_e51adb6c09b737 177-178
+  s_7935716af77ff6::t_67df2ba8348f0c 315-320
+  s_7935716af77ff6::t_398afef38b1479 407-421
+  s_7935716af77ff6::t_ac66bde1da007c 69-78,80
+  s_7935716af77ff6::t_7e4530fca68326 157-159,162,172
+  s_7935716af77ff6::t_a8dbcd6be8c1da 79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "996b082ae5f15c145ae7719bdf4b99248bc88805",
+  "prompts": {},
+  "sessions": {
+    "s_7935716af77ff6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c85afa8a-4475-4404-b547-dfc931870e5e",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
