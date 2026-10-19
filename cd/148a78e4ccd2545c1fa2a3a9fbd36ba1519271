@@ -1,0 +1,35 @@
+server/cmd/wikifyp/fetchcategories.go
+  s_7935716af77ff6::t_ec72067efe3acf 4
+  s_7935716af77ff6::t_791e84115d2748 1-3,5-126
+server/internal/ingest/ingest.go
+  s_7935716af77ff6::t_63bceecfb014c8 100-117
+server/internal/ingest/ingest_test.go
+  s_7935716af77ff6::t_4d2d87909596bb 329-366
+server/internal/migrate/migrations/0004_category_pages.sql
+  s_7935716af77ff6::t_4a9a956e7fce60 1-16
+server/internal/source/dump.go
+  s_7935716af77ff6::t_4138e6b092dd5e 54-58
+server/internal/source/mediawiki.go
+  s_7935716af77ff6::t_82a9b85316c81e 183-239
+  s_7935716af77ff6::t_2ca556366e4421 80
+server/internal/source/mediawiki_test.go
+  s_7935716af77ff6::t_2c86efccf5ac00 257-298
+server/cmd/wikifyp/main.go
+  s_7935716af77ff6::t_75f6b3e21ce508 36-37,40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cd148a78e4ccd2545c1fa2a3a9fbd36ba1519271",
+  "prompts": {},
+  "sessions": {
+    "s_7935716af77ff6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c85afa8a-4475-4404-b547-dfc931870e5e",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
