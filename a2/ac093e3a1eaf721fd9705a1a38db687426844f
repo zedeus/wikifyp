@@ -1,0 +1,27 @@
+server/internal/feed/walk.go
+  s_7935716af77ff6::t_d1025641b2858a 24-25,129-137
+  s_7935716af77ff6::t_67cda110634333 110,223,228-234,236-238,261-274,277,303,309-317,325,328-330
+  s_7935716af77ff6::t_8d7daac582fa65 1-23,26-34,41-109,111-128,138-159,161-222,224-227,235,239-260,275-276,278-302,304-308,318-324,326-327,331-397
+  s_7935716af77ff6::t_b8f97e4eff483d 35-40,160
+server/internal/migrate/migrations/0006_category_probe.sql
+  s_7935716af77ff6::t_25bc5cedd89a05 1-7
+server/internal/feed/store_test.go
+  s_7935716af77ff6::t_c2c6818b55fa8b 424-429,436-441,443-450,452-469
+  s_7935716af77ff6::t_176dd5bd20ede6 430-435,442,451
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a2ac093e3a1eaf721fd9705a1a38db687426844f",
+  "prompts": {},
+  "sessions": {
+    "s_7935716af77ff6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c85afa8a-4475-4404-b547-dfc931870e5e",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
