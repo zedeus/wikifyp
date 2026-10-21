@@ -1,0 +1,32 @@
+server/internal/feed/score.go
+  s_1a73b5df333a13::t_2c56f8dba16311 130-204,530,534
+  s_1a73b5df333a13::t_aad7b0c192349a 499-505
+  s_1a73b5df333a13::t_95e0c2d6cd76a0 488-498,506-507,511
+  s_1a73b5df333a13::t_fbf0de90f2e0b5 624-628
+  s_1a73b5df333a13::t_842c07118e3918 660-661
+  s_1a73b5df333a13::t_5958ea98475a52 519-529,531-533,535,649-650,652-659,662-665
+server/internal/feed/score_test.go
+  s_1a73b5df333a13::t_8d27e351110d39 613-615,618
+  s_1a73b5df333a13::t_3d28769ccfb868 508-511
+  s_1a73b5df333a13::t_94a4aa3664250a 640
+  s_1a73b5df333a13::t_7afe46db473fb1 673-753
+  s_1a73b5df333a13::t_007c3202a2907e 754-787
+  s_1a73b5df333a13::t_187b47f975c32b 617,619-621,623-624,627
+  s_1a73b5df333a13::t_216b2f9be1fb1e 514-521
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5305ddb9801b9f8952a590c18551b614b6f3aedd",
+  "prompts": {},
+  "sessions": {
+    "s_1a73b5df333a13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "132dee9e-51bb-4fe6-b9d6-1bd0218732f7",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
