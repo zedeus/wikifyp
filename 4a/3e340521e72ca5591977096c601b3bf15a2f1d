@@ -1,0 +1,24 @@
+server/internal/feed/walk_test.go
+  s_1a73b5df333a13::t_0164eed0cd1a97 1-101
+server/internal/feed/walk.go
+  s_1a73b5df333a13::t_82600e26a4c6fd 376-378
+  s_1a73b5df333a13::t_eaf70412110435 4
+  s_1a73b5df333a13::t_5d6a9c3f7e2df6 267-271
+  s_1a73b5df333a13::t_c19fa48ad19cca 193-199
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4a3e340521e72ca5591977096c601b3bf15a2f1d",
+  "prompts": {},
+  "sessions": {
+    "s_1a73b5df333a13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "132dee9e-51bb-4fe6-b9d6-1bd0218732f7",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
