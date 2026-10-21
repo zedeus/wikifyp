@@ -1,0 +1,20 @@
+server/cmd/feedsim/main.go
+  s_7935716af77ff6::t_cddb1c58c02bc1 103-213,228,247-248,250,252
+  s_7935716af77ff6::t_bf175f7635188c 249,251
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9b3d78ca0d838cc9f50758502042e8a1f50f2e99",
+  "prompts": {},
+  "sessions": {
+    "s_7935716af77ff6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c85afa8a-4475-4404-b547-dfc931870e5e",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
