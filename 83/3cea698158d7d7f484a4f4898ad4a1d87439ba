@@ -1,0 +1,20 @@
+server/internal/feed/store.go
+  s_7935716af77ff6::t_d1025641b2858a 151
+  s_7935716af77ff6::t_df6276b18ef698 48-58,146-150,152-159
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "833cea698158d7d7f484a4f4898ad4a1d87439ba",
+  "prompts": {},
+  "sessions": {
+    "s_7935716af77ff6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c85afa8a-4475-4404-b547-dfc931870e5e",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
