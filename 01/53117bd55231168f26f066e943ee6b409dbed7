@@ -1,0 +1,31 @@
+server/cmd/feedsim/main.go
+  s_1a73b5df333a13::t_b383b3d3c7926d 398-402
+  s_1a73b5df333a13::t_9a2254e17bf09c 306,317-321
+  s_1a73b5df333a13::t_6e772ebd217dc5 385-387
+  s_1a73b5df333a13::t_daba60bd7ea76c 287-288,293,296-297,299,339-354
+  s_1a73b5df333a13::t_7f5053961f0526 366-367
+  s_1a73b5df333a13::t_b27d31d4330963 284,286,368-370,372-375,377,379-384,388-391,393-397,403-423
+  s_1a73b5df333a13::t_84c4965db75d99 281-283
+  s_1a73b5df333a13::t_613444db69f12c 285
+  s_1a73b5df333a13::t_cb9b2410903926 289-292
+  s_1a73b5df333a13::t_d9a1df882dc095 294-295
+  s_1a73b5df333a13::t_2f1a81010feca0 298
+  s_1a73b5df333a13::t_4d7854a620d9b6 365
+  s_1a73b5df333a13::t_e565ae407cb26e 268,272-280
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0153117bd55231168f26f066e943ee6b409dbed7",
+  "prompts": {},
+  "sessions": {
+    "s_1a73b5df333a13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "132dee9e-51bb-4fe6-b9d6-1bd0218732f7",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
