@@ -1,0 +1,34 @@
+server/internal/source/mediawiki_test.go
+  s_7935716af77ff6::t_ee4005421f1f73 10
+  s_7935716af77ff6::t_0a8a0b7d0ee64a 259-262,265,267-268,270-273,275,279-280,299,301-302,304-331
+server/internal/ingest/ingest_test.go
+  s_7935716af77ff6::t_33499b87acd97f 334-336,352-355,369-371
+server/internal/migrate/migrations/0005_explore_domains.sql
+  s_7935716af77ff6::t_3c2c72ac987967 1-21
+server/internal/source/mediawiki.go
+  s_7935716af77ff6::t_bd6f4f17bd17a7 22,40,45,186-188,190-192,199-201,210,212,229-237
+server/internal/source/source.go
+  s_7935716af77ff6::t_bd6f4f17bd17a7 27-32
+server/internal/ingest/ingest.go
+  s_7935716af77ff6::t_33499b87acd97f 120-137
+server/internal/source/domains.go
+  s_7935716af77ff6::t_35850786b79e75 1-45
+server/cmd/wikifyp/fetchcategories.go
+  s_7935716af77ff6::t_5ea70f3a6c4339 5,66-69,71-96,99,105-108,111,114,116-118,142-167,174-175
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ef4627f8f232e5e0e4ce50585a94ca8443df637e",
+  "prompts": {},
+  "sessions": {
+    "s_7935716af77ff6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c85afa8a-4475-4404-b547-dfc931870e5e",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
