@@ -1,0 +1,25 @@
+server/cmd/feedsim/main.go
+  s_1a73b5df333a13::t_dd462d4fda79ce 646-658
+  s_1a73b5df333a13::t_ae38f16b07e81e 780-783
+  s_1a73b5df333a13::t_ed6cd52cf09395 428
+  s_1a73b5df333a13::t_31bb6ea740a673 380
+  s_1a73b5df333a13::t_ee4e615aa531b4 538-542
+  s_1a73b5df333a13::t_36e5a019c480d8 441
+  s_1a73b5df333a13::t_eec0b712978ea2 49-57,59-63,65,68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f173a16aac8d2d19e6b0e98e50df245de405b22b",
+  "prompts": {},
+  "sessions": {
+    "s_1a73b5df333a13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "132dee9e-51bb-4fe6-b9d6-1bd0218732f7",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
