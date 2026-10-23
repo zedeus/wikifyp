@@ -1,0 +1,23 @@
+server/internal/devui/devui.go
+  s_1a73b5df333a13::t_ab25d4a47e3348 1-650
+server/internal/devui/devui_test.go
+  s_1a73b5df333a13::t_93fb916cc61f3b 1-219
+server/internal/devui/templates.go
+  s_1a73b5df333a13::t_5f16e75901c500 1-193
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b23ef39ab307d1d45ec44256d13817ad76e16472",
+  "prompts": {},
+  "sessions": {
+    "s_1a73b5df333a13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "132dee9e-51bb-4fe6-b9d6-1bd0218732f7",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
