@@ -19,6 +19,10 @@ var metaSections = map[string]bool{
 	"further reading": true,
 	"external links":  true,
 	"see also":        true,
+	// The Simple English Wikipedia's names for "see also" and
+	// "external links".
+	"related pages":  true,
+	"other websites": true,
 }
 
 // Clean strips what the extract format leaves behind in otherwise plain

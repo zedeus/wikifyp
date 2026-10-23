@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -252,5 +253,81 @@ func TestMediaWikiSimpleWikiParse(t *testing.T) {
 	}
 	if err := a.Validate(); err != nil {
 		t.Errorf("fetched article invalid: %v", err)
+	}
+}
+
+// TestMediaWikiCategoryPages covers streaming the wiki's category pages —
+// hidden flag and parents — across a continuation boundary, including a
+// page whose parent list is split over two responses (clcontinue mid-batch,
+// the generator standing still) and so is emitted twice.
+func TestMediaWikiCategoryPages(t *testing.T) {
+	responses := []string{
+		`{"continue":{"clcontinue":"2|Music","continue":"gapcontinue||"},
+		  "query":{"pages":[
+		   {"pageid":1,"title":"Category:Black metal bands","pageprops":{},
+		    "categories":[{"title":"Category:Heavy metal"}]},
+		   {"pageid":2,"title":"Category:Articles with hCards","pageprops":{"hiddencat":""}}]}}`,
+		`{"continue":{"gapcontinue":"Cities","continue":"gapcontinue||"},
+		  "query":{"pages":[
+		   {"pageid":2,"title":"Category:Articles with hCards","pageprops":{"hiddencat":""},
+		    "categories":[{"title":"Category:Tracking"}]}]}}`,
+		`{"query":{"pages":[
+		   {"pageid":3,"title":"Category:Cities","categories":[{"title":"Category:Geography"}]}]}}`,
+	}
+	n := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if n == 2 && r.URL.Query().Get("gapcontinue") != "Cities" {
+			t.Errorf("request 3: gapcontinue = %q, want %q", r.URL.Query().Get("gapcontinue"), "Cities")
+		}
+		if n >= len(responses) {
+			t.Fatalf("request %d: more requests than responses", n+1)
+		}
+		w.Write([]byte(responses[n]))
+		n++
+	}))
+	t.Cleanup(srv.Close)
+
+	var got []CategoryPage
+	err := testClient(SimpleWiki(), srv.URL).CategoryPages(context.Background(), func(p CategoryPage) error {
+		got = append(got, p)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []CategoryPage{
+		{Name: "Black metal bands", Parents: []string{"Heavy metal"}},
+		{Name: "Articles with hCards", Hidden: true},
+		{Name: "Articles with hCards", Hidden: true, Parents: []string{"Tracking"}},
+		{Name: "Cities", Parents: []string{"Geography"}},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("category pages = %+v, want %+v", got, want)
+	}
+}
+
+// TestDomainMap: the walk starts at the root's non-hidden children, breadth
+// first; hidden categories neither become domains nor relay one; unreached
+// categories get none.
+func TestDomainMap(t *testing.T) {
+	pages := []CategoryPage{
+		{Name: "Nature", Parents: []string{"Articles"}},
+		{Name: "People", Parents: []string{"Articles"}},
+		{Name: "Very good articles", Hidden: true, Parents: []string{"Articles"}},
+		{Name: "Fungi", Parents: []string{"Nature"}},
+		{Name: "Mushrooms", Parents: []string{"Fungi", "Food"}},
+		{Name: "Hidden relay", Hidden: true, Parents: []string{"Nature"}},
+		{Name: "Behind the relay", Parents: []string{"Hidden relay"}},
+		{Name: "Orphan", Parents: []string{"Nowhere"}},
+	}
+	got := DomainMap(pages, "Articles")
+	want := map[string]string{
+		"Nature":    "Nature",
+		"People":    "People",
+		"Fungi":     "Nature",
+		"Mushrooms": "Nature",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("DomainMap = %v, want %v", got, want)
 	}
 }

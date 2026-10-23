@@ -19,6 +19,7 @@ type MediaWiki struct {
 	Name      string        // source name stored with articles, e.g. "wikipedia"
 	Site      string        // human-readable site name for attribution
 	API       string        // api.php endpoint
+	Root      string        // top content category; its children are the topic domains
 	UserAgent string        // descriptive UA, per Wikimedia etiquette
 	Interval  time.Duration // minimum gap between requests
 	Client    *http.Client
@@ -28,19 +29,20 @@ type MediaWiki struct {
 
 // Wikipedia returns a source for the English Wikipedia.
 func Wikipedia() *MediaWiki {
-	return newMediaWiki("wikipedia", "Wikipedia", "https://en.wikipedia.org/w/api.php")
+	return newMediaWiki(wikis["enwiki"])
 }
 
 // SimpleWiki returns a source for the Simple English Wikipedia.
 func SimpleWiki() *MediaWiki {
-	return newMediaWiki("simplewiki", "Simple English Wikipedia", "https://simple.wikipedia.org/w/api.php")
+	return newMediaWiki(wikis["simplewiki"])
 }
 
-func newMediaWiki(name, site, api string) *MediaWiki {
+func newMediaWiki(w struct{ source, site, api, root string }) *MediaWiki {
 	return &MediaWiki{
-		Name:      name,
-		Site:      site,
-		API:       api,
+		Name:      w.source,
+		Site:      w.site,
+		API:       w.api,
+		Root:      w.root,
 		UserAgent: "wikifyp/0.1 (https://github.com/zedeus/wikifyp; article ingest)",
 		Interval:  time.Second,
 		Client:    &http.Client{Timeout: 30 * time.Second},
@@ -77,6 +79,7 @@ type apiResponse struct {
 			Categories []struct {
 				Title string `json:"title"`
 			} `json:"categories"`
+			PageProps map[string]any `json:"pageprops"`
 		} `json:"pages"`
 	} `json:"query"`
 }
@@ -175,9 +178,78 @@ func (w *MediaWiki) Fetch(ctx context.Context, title string) (*Article, error) {
 			contKeys = append(contKeys, k)
 		}
 	}
-	a.Attribution = fmt.Sprintf("Text from the %s article %q, %s (revision %d), licensed %s",
-		w.Site, a.Title, a.URL, a.RevisionID, license)
+	a.Attribution = attribution(w.Site, a.Title, a.URL, a.RevisionID, license)
 	return a, nil
+}
+
+// CategoryPage is one category page on the wiki: its name without the
+// "Category:" prefix, whether the wiki marks it hidden (the __HIDDENCAT__
+// page prop that keeps maintenance categories off article pages), and its
+// parent categories (the wiki's own topic tree).
+type CategoryPage struct {
+	Name    string
+	Hidden  bool
+	Parents []string
+}
+
+// CategoryPages streams every category page of the wiki, in API order,
+// following continuation. The wiki's own metadata is what separates content
+// categories from maintenance ones: tracking categories are hidden, and a
+// category used only by templates usually has no page at all, so absence
+// from this stream is itself a signal. The parent lists can be split
+// across continuation responses, so the same page may be emitted more than
+// once with further parents — callers accumulate by name.
+func (w *MediaWiki) CategoryPages(ctx context.Context, fn func(CategoryPage) error) error {
+	params := url.Values{
+		"action":        {"query"},
+		"format":        {"json"},
+		"formatversion": {"2"},
+		"generator":     {"allpages"},
+		"gapnamespace":  {"14"},
+		"gaplimit":      {"max"},
+		"prop":          {"pageprops|categories"},
+		"ppprop":        {"hiddencat"},
+		"cllimit":       {"max"},
+	}
+	var contKeys []string
+	for {
+		resp, err := w.get(ctx, params)
+		if err != nil {
+			return fmt.Errorf("%s: category pages: %w", w.Name, err)
+		}
+		if resp.Error != nil {
+			return fmt.Errorf("%s: category pages: API error %s: %s", w.Name, resp.Error.Code, resp.Error.Info)
+		}
+		for _, page := range resp.Query.Pages {
+			name := page.Title
+			if _, after, found := strings.Cut(page.Title, ":"); found && after != "" {
+				name = after
+			}
+			_, hidden := page.PageProps["hiddencat"]
+			p := CategoryPage{Name: name, Hidden: hidden}
+			for _, c := range page.Categories {
+				parent := c.Title
+				if _, after, found := strings.Cut(c.Title, ":"); found && after != "" {
+					parent = after
+				}
+				p.Parents = append(p.Parents, parent)
+			}
+			if err := fn(p); err != nil {
+				return err
+			}
+		}
+		if len(resp.Continue) == 0 {
+			return nil
+		}
+		for _, k := range contKeys {
+			params.Del(k)
+		}
+		contKeys = contKeys[:0]
+		for k, v := range resp.Continue {
+			params.Set(k, fmt.Sprint(v))
+			contKeys = append(contKeys, k)
+		}
+	}
 }
 
 // get performs one rate-limited API request.

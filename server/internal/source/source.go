@@ -19,6 +19,25 @@ import (
 // ErrNotFound reports that a source has no article with the requested title.
 var ErrNotFound = errors.New("article not found")
 
+// wikis is the one table of wiki identity: a wiki's dump identifier mapped
+// to the source name stored with its articles, the site name attribution
+// uses and its API endpoint. The MediaWiki constructors and the dump reader
+// both read it, so articles of one wiki are identical whichever way they
+// arrived.
+var wikis = map[string]struct{ source, site, api, root string }{
+	// root is the wiki's top content category: its non-hidden child
+	// categories are the topic branches (domains) stratified exploration
+	// rotates through.
+	"enwiki":     {"wikipedia", "Wikipedia", "https://en.wikipedia.org/w/api.php", "Main topic classifications"},
+	"simplewiki": {"simplewiki", "Simple English Wikipedia", "https://simple.wikipedia.org/w/api.php", "Articles"},
+}
+
+// attribution builds the attribution line stored with every article.
+func attribution(site, title, url string, revisionID int64, license string) string {
+	return fmt.Sprintf("Text from the %s article %q, %s (revision %d), licensed %s",
+		site, title, url, revisionID, license)
+}
+
 // Article is one revision of a wiki article, as fetched from a source.
 // Text is the raw plain-text extract; cleaning happens at ingest so every
 // source goes through the same pipeline.
@@ -30,7 +49,7 @@ type Article struct {
 	Title       string   `json:"title"`                // canonical title, redirects resolved
 	Source      string   `json:"source"`               // which wiki: "wikipedia" or "simplewiki"
 	URL         string   `json:"url"`                  // canonical page URL
-	PageID      int64    `json:"page_id,omitempty"`    // wiki page ID; 0 when unknown (older fixtures)
+	PageID      int64    `json:"page_id"`              // wiki page ID, the key grouping revisions of one page
 	RevisionID  int64    `json:"revision_id"`          // revision the text was taken from
 	License     string   `json:"license"`              // e.g. "CC BY-SA 4.0"
 	Attribution string   `json:"attribution"`          // human-readable attribution line
@@ -52,6 +71,7 @@ func (a *Article) Validate() error {
 		{"source", a.Source != ""},
 		{"title", a.Title != ""},
 		{"url", a.URL != ""},
+		{"page_id", a.PageID > 0},
 		{"revision_id", a.RevisionID > 0},
 		{"license", a.License != ""},
 		{"attribution", a.Attribution != ""},

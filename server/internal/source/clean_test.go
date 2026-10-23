@@ -256,3 +256,29 @@ func lastLine(s string) string {
 	}
 	return s
 }
+
+// TestCleanSimplewikiSections checks the Simple English Wikipedia's names
+// for the trailing apparatus sections ("Related pages" for see-also,
+// "Other websites" for external links), which every real simplewiki
+// article uses.
+func TestCleanSimplewikiSections(t *testing.T) {
+	cleaned := Clean(strings.Join([]string{
+		"Chemistry is a science.",
+		"== Related pages ==",
+		"Physics",
+		"== Other websites ==",
+		"An external link",
+		"== History ==",
+		"It is old.",
+	}, "\n"))
+	for _, gone := range []string{"Related pages", "Physics", "Other websites", "An external link"} {
+		if strings.Contains(cleaned, gone) {
+			t.Errorf("cleaned text still contains %q", gone)
+		}
+	}
+	for _, kept := range []string{"Chemistry is a science.", "== History ==", "It is old."} {
+		if !strings.Contains(cleaned, kept) {
+			t.Errorf("cleaned text lost %q", kept)
+		}
+	}
+}
