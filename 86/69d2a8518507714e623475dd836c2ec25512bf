@@ -1,0 +1,21 @@
+android/app/src/main/java/com/wikifyp/ui/WikifypApp.kt
+  s_1a73b5df333a13::t_4316117e2a9e90 9,32-37,52-67,76,82-83
+android/app/src/main/java/com/wikifyp/data/CachedFeedRepository.kt
+  s_1a73b5df333a13::t_c286b0beba8ac6 106-114
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8669d2a8518507714e623475dd836c2ec25512bf",
+  "prompts": {},
+  "sessions": {
+    "s_1a73b5df333a13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "132dee9e-51bb-4fe6-b9d6-1bd0218732f7",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
