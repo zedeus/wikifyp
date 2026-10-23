@@ -54,7 +54,7 @@ func Main(m *testing.M) int {
 // package's throwaway Postgres container, starting the container if needed.
 // The connection is closed via t.Cleanup; the database itself is discarded
 // with the container.
-func New(t *testing.T) *sql.DB {
+func New(t testing.TB) *sql.DB {
 	t.Helper()
 	// The lock covers container startup, the counter and CREATE DATABASE
 	// (Postgres refuses concurrent creation from the same template); the

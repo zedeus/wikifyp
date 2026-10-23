@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -69,16 +70,16 @@ func TestIngestStoresSentencesInOrder(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer rows.Close()
-	want := []sentenceRow{
-		{idx: 0, heading: 0, text: "Sentence one."},
-		{idx: 1, heading: 0, text: "Sentence two."},
-		{idx: 2, heading: 2, text: "History"},
-		{idx: 3, heading: 0, text: "Body sentence."},
+	want := []SentenceRow{
+		{Idx: 0, Heading: 0, Text: "Sentence one."},
+		{Idx: 1, Heading: 0, Text: "Sentence two."},
+		{Idx: 2, Heading: 2, Text: "History"},
+		{Idx: 3, Heading: 0, Text: "Body sentence."},
 	}
-	var got []sentenceRow
+	var got []SentenceRow
 	for rows.Next() {
-		var r sentenceRow
-		if err := rows.Scan(&r.idx, &r.heading, &r.text); err != nil {
+		var r SentenceRow
+		if err := rows.Scan(&r.Idx, &r.Heading, &r.Text); err != nil {
 			t.Fatal(err)
 		}
 		got = append(got, r)
@@ -326,6 +327,51 @@ func TestIngestDuplicateLinksAndCategories(t *testing.T) {
 	}
 }
 
+func TestIngestFiltersMaintenanceCategories(t *testing.T) {
+	db := newDB(t)
+	// The wiki's category metadata knows one visible and one hidden
+	// category; "Articles with VIAF identifiers" has no category page at
+	// all, which is how most tracking categories look.
+	if _, err := db.Exec(`INSERT INTO category_pages (source, category, hidden, domain) VALUES
+		('wikipedia', 'Tests', false, 'Knowledge'),
+		('wikipedia', 'Pages needing to be simplified', true, NULL)`); err != nil {
+		t.Fatal(err)
+	}
+	a := testArticle()
+	a.Categories = []string{"Tests", "Pages needing to be simplified", "Articles with VIAF identifiers"}
+	res, err := Article(context.Background(), db, &a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got string
+	if err := db.QueryRow("SELECT category FROM article_categories WHERE article_id = $1", res.ArticleID).Scan(&got); err != nil {
+		t.Fatal(err)
+	}
+	if got != "Tests" {
+		t.Errorf("stored category = %q, want %q", got, "Tests")
+	}
+	var domain string
+	if err := db.QueryRow("SELECT domain FROM article_domains WHERE article_id = $1", res.ArticleID).Scan(&domain); err != nil || domain != "Knowledge" {
+		t.Errorf("article domain = %q, %v; want Knowledge", domain, err)
+	}
+
+	// A source with no fetched metadata keeps every category: an empty
+	// table must not silently strip a corpus.
+	b := testArticle()
+	b.Source, b.RevisionID, b.PageID = "simplewiki", 2000, 43
+	b.Categories = []string{"Tests", "Articles with VIAF identifiers"}
+	resB, err := Article(context.Background(), db, &b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n := count(t, db, "SELECT count(*) FROM article_categories WHERE article_id = $1", resB.ArticleID); n != 2 {
+		t.Errorf("unfetched source: categories = %d, want 2", n)
+	}
+	if n := count(t, db, "SELECT count(*) FROM article_domains WHERE article_id = $1", resB.ArticleID); n != 0 {
+		t.Errorf("unfetched source: article_domains rows = %d, want 0", n)
+	}
+}
+
 func TestIngestCRLFText(t *testing.T) {
 	db := newDB(t)
 	a := testArticle()
@@ -367,7 +413,7 @@ func TestIngestCRLFText(t *testing.T) {
 // BenchmarkSentenceRows measures the CPU side of ingest (clean + split +
 // row assembly) on a full real article. At ~7M articles a dump import does
 // this once per article; the database inserts, not this, are the known
-// bottleneck (see the comment at the prepared insert in Article).
+// bottleneck (measured by BenchmarkArticle).
 func BenchmarkSentenceRows(b *testing.B) {
 	raw, err := os.ReadFile(filepath.Join(fixturesDir, "chemistry.txt"))
 	if err != nil {
@@ -376,6 +422,144 @@ func BenchmarkSentenceRows(b *testing.B) {
 	cleaned := source.Clean(string(raw))
 	b.ReportAllocs()
 	for b.Loop() {
-		sentenceRows(cleaned)
+		SentenceRows(cleaned)
+	}
+}
+
+// BenchmarkArticle measures a whole ingest including the database writes,
+// on a full real article (one transaction, one array-valued insert per
+// table). This is the per-article cost of a dump import: multiply by the
+// corpus (simplewiki ~250k, enwiki ~7M) for the wall-clock floor.
+func BenchmarkArticle(b *testing.B) {
+	db := testdb.New(b)
+	if err := migrate.Apply(context.Background(), db); err != nil {
+		b.Fatal(err)
+	}
+	src := &source.Fixtures{Dir: fixturesDir}
+	a, err := src.Fetch(context.Background(), "Chemistry")
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ReportAllocs()
+	for i := 0; b.Loop(); i++ {
+		// A fresh revision each round, so every ingest takes the full
+		// insert path rather than the already-stored short circuit.
+		a.RevisionID = int64(i + 1)
+		if _, err := Article(context.Background(), db, a); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+// TestSentenceRowsDropEmptySections: a section whose only content was
+// stripped (a gallery, a reference list) loses its heading too, and the
+// indices are assigned after the drop, with no holes. A parent heading
+// stays when a subsection has prose.
+func TestSentenceRowsDropEmptySections(t *testing.T) {
+	rows := SentenceRows(strings.Join([]string{
+		"Intro prose.",
+		"== Gallery ==", // nothing left in it
+		"== History ==", // empty itself, but a subsection has prose
+		"=== Early ===",
+		"Old prose.",
+		"== Notes and references ==", // trailing empty section
+	}, "\n"))
+	want := []SentenceRow{
+		{Idx: 0, Heading: 0, Text: "Intro prose."},
+		{Idx: 1, Heading: 2, Text: "History"},
+		{Idx: 2, Heading: 3, Text: "Early"},
+		{Idx: 3, Heading: 0, Text: "Old prose."},
+	}
+	if len(rows) != len(want) {
+		t.Fatalf("got %d rows, want %d: %+v", len(rows), len(want), rows)
+	}
+	for i := range want {
+		if rows[i] != want[i] {
+			t.Errorf("row %d = %+v, want %+v", i, rows[i], want[i])
+		}
+	}
+}
+
+// storedCategories reads an article's stored categories, sorted.
+func storedCategories(t *testing.T, db *sql.DB, articleID int64) []string {
+	t.Helper()
+	rows, err := db.Query("SELECT category FROM article_categories WHERE article_id = $1 ORDER BY category", articleID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var got []string
+	for rows.Next() {
+		var c string
+		if err := rows.Scan(&c); err != nil {
+			t.Fatal(err)
+		}
+		got = append(got, c)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	return got
+}
+
+// TestIngestKeepsFeaturedDespiteHidden: the wikis flag their featured
+// markers ("Good articles", "Featured articles") hidden, exactly like
+// maintenance plumbing — but they are what seeds a brand-new reader's
+// feed, so the hidden-category filter must exempt them. Pruning them
+// emptied the featured pool unnoticed: a zero-history reader got an
+// empty feed.
+func TestIngestKeepsFeaturedDespiteHidden(t *testing.T) {
+	db := newDB(t)
+	if _, err := db.Exec(`INSERT INTO category_pages (source, category, hidden, domain) VALUES
+		('wikipedia', 'Tests', false, 'Knowledge'),
+		('wikipedia', 'Featured articles', true, NULL),
+		('wikipedia', 'Pages needing cleanup', true, NULL)`); err != nil {
+		t.Fatal(err)
+	}
+	a := testArticle()
+	a.Categories = []string{"Tests", "Featured articles", "Pages needing cleanup"}
+	res, err := Article(context.Background(), db, &a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := storedCategories(t, db, res.ArticleID)
+	want := []string{"Featured articles", "Tests"}
+	if !slices.Equal(got, want) {
+		t.Errorf("stored categories = %v, want %v", got, want)
+	}
+}
+
+// TestPruneCategoriesKeepsFeatured: the prune that reconciles stored
+// categories with freshly fetched metadata must exempt the featured
+// markers the same way ingest does — one rule, both doors.
+func TestPruneCategoriesKeepsFeatured(t *testing.T) {
+	db := newDB(t)
+	a := testArticle()
+	a.Categories = []string{"Tests", "Featured articles", "Pages needing cleanup"}
+	// Ingested before any metadata existed: everything stored.
+	res, err := Article(context.Background(), db, &a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n := count(t, db, "SELECT count(*) FROM article_categories WHERE article_id = $1", res.ArticleID); n != 3 {
+		t.Fatalf("pre-prune categories = %d, want 3", n)
+	}
+	if _, err := db.Exec(`INSERT INTO category_pages (source, category, hidden, domain) VALUES
+		('wikipedia', 'Tests', false, 'Knowledge'),
+		('wikipedia', 'Featured articles', true, NULL),
+		('wikipedia', 'Pages needing cleanup', true, NULL)`); err != nil {
+		t.Fatal(err)
+	}
+	pruned, err := PruneCategories(context.Background(), db, "wikipedia")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pruned != 1 {
+		t.Errorf("pruned = %d, want 1 (only the cleanup category)", pruned)
+	}
+	got := storedCategories(t, db, res.ArticleID)
+	want := []string{"Featured articles", "Tests"}
+	if !slices.Equal(got, want) {
+		t.Errorf("post-prune categories = %v, want %v", got, want)
 	}
 }
