@@ -1,0 +1,56 @@
+server/internal/feed/score_test.go
+  s_9c6c8807874627::t_428f43117df279 220,256,261,347,388,534,565,567,569,606,613,636,639,671,675,705,709,729,731,783-785,788-789,791-792,818,824,854,870,872,901,903
+  s_9c6c8807874627::t_df1a9a1f72e7ae 571,790,907-908
+  s_9c6c8807874627::t_b350fbf626dd14 33-36,42-43
+server/cmd/feedsim/main.go
+  s_9c6c8807874627::t_68f0ba90739853 613-615
+  s_9c6c8807874627::t_55d009625c8027 881
+  s_9c6c8807874627::t_6226d9f294cf8b 678-679,682
+  s_9c6c8807874627::t_578bbce6019e4a 922,926,929-931,934-936
+  s_9c6c8807874627::t_98f0e366a227b0 835,839,842,850,867,870
+android/app/src/main/java/com/wikifyp/ui/reader/ReaderScreen.kt
+  s_9c6c8807874627::t_e867ae50e86706 158
+  s_9c6c8807874627::t_5a0943e3de59fa 148-157
+  s_9c6c8807874627::t_774ad67aef4084 3
+  s_9c6c8807874627::t_70c4529bbef2ac 104-112
+android/app/src/main/java/com/wikifyp/ui/WikifypApp.kt
+  s_9c6c8807874627::t_fdf6d1e26063da 77-78
+server/internal/feed/store.go
+  s_9c6c8807874627::t_b167d08c8fb0e7 554-556,571
+server/internal/feed/score.go
+  s_9c6c8807874627::t_9f038e4bfe8a5a 398-403,412-414,419-422,424-426,432,435-436
+  s_9c6c8807874627::t_7c3281ebd94293 475-480,482,484,488
+  s_1a73b5df333a13::t_f17baa01bcaac7 155
+  s_9c6c8807874627::t_3ce0c2569741a2 281
+  s_9c6c8807874627::t_9a7965d190dcce 712
+  s_9c6c8807874627::t_3a73fc992f459c 119-124,126-127,134-135,139,142-150,153-154,156
+  s_9c6c8807874627::t_fa76bc214a54a1 188-192
+  s_9c6c8807874627::t_52e6478a9585d5 404-411,415-418,423,427-431,433-434
+  s_9c6c8807874627::t_d14d5d6afd3218 282
+  s_9c6c8807874627::t_ddbc7a3782e9a2 481
+  s_9c6c8807874627::t_4d69f283ec14b8 437
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "792a29a3996c71a87d2b808ec55c483bd0bd2306",
+  "prompts": {},
+  "sessions": {
+    "s_1a73b5df333a13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "132dee9e-51bb-4fe6-b9d6-1bd0218732f7",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    },
+    "s_9c6c8807874627": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4f817860-3004-4aa9-a9fa-31bf659f0bdf",
+        "model": "metr-model"
+      },
+      "human_author": null
+    }
+  }
+}
