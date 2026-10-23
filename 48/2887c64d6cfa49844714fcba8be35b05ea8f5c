@@ -1,0 +1,63 @@
+android/app/build.gradle.kts
+  s_1a73b5df333a13::t_d7af711e836f0f 27-44,49,105,116
+android/app/src/androidTest/java/com/wikifyp/MainActivityTest.kt
+  s_1a73b5df333a13::t_13f2cfc6f41624 17,19
+android/app/src/androidTest/java/com/wikifyp/ReaderTest.kt
+  s_1a73b5df333a13::t_e814700fe788ce 16
+android/app/src/debug/AndroidManifest.xml
+  s_1a73b5df333a13::t_df95f2fce47dce 1-8
+android/app/src/main/AndroidManifest.xml
+  s_1a73b5df333a13::t_284f7fff746a56 4-6
+android/app/src/main/java/com/wikifyp/MainActivity.kt
+  s_1a73b5df333a13::t_24282c6e713d7f 3,8-13,15,17-18,24,30-36,41-75
+android/app/src/main/java/com/wikifyp/data/Article.kt
+  s_1a73b5df333a13::t_b88d1b57810601 9-11,14-15,18,22,28,30
+android/app/src/main/java/com/wikifyp/data/CachedFeedRepository.kt
+  s_1a73b5df333a13::t_7faa93ebafe294 1-118
+android/app/src/main/java/com/wikifyp/data/FeedRepository.kt
+  s_1a73b5df333a13::t_060b7d74b35df6 1-45
+android/app/src/main/java/com/wikifyp/data/FixtureFeedRepository.kt
+  s_1a73b5df333a13::t_e15c6fe2628aff 1-65
+android/app/src/main/java/com/wikifyp/data/HttpFeedRepository.kt
+  s_1a73b5df333a13::t_ae32ee2029bcd8 1-53
+android/app/src/main/java/com/wikifyp/ui/WikifypApp.kt
+  s_1a73b5df333a13::t_f9610df15c7924 1-109
+android/app/src/main/java/com/wikifyp/ui/feed/FeedScreen.kt
+  s_1a73b5df333a13::t_a4bae0ebba9ca8 1,5,7,16,21,23-26,29,32-34,37-41,57-85,88-92,94-96,103-198
+android/app/src/main/java/com/wikifyp/ui/feed/FeedState.kt
+  s_1a73b5df333a13::t_574c3ea46c61ef 1-37
+android/app/src/main/java/com/wikifyp/ui/reader/ReaderScreen.kt
+  s_1a73b5df333a13::t_f4d635460db773 66,379,414-417
+android/app/src/test/java/com/wikifyp/data/CachedFeedRepositoryTest.kt
+  s_1a73b5df333a13::t_7100ae5c9ac4bc 1-122
+android/app/src/test/java/com/wikifyp/data/FakeFeedRepository.kt
+  s_1a73b5df333a13::t_c217b847e80a28 1-42
+android/app/src/test/java/com/wikifyp/data/HttpFeedRepositoryTest.kt
+  s_1a73b5df333a13::t_897c68e94fe9e5 1-89
+android/app/src/test/java/com/wikifyp/ui/WikifypAppTest.kt
+  s_1a73b5df333a13::t_2876b8f551c235 1-143
+android/app/src/test/java/com/wikifyp/ui/feed/FeedScreenScreenshotTest.kt
+  s_1a73b5df333a13::t_6d0d87dbc136fb 1-88
+android/app/src/test/java/com/wikifyp/ui/feed/FeedScreenTest.kt
+  s_1a73b5df333a13::t_52ef04e1d41aea 1-85
+android/app/src/test/java/com/wikifyp/ui/feed/FeedStateTest.kt
+  s_1a73b5df333a13::t_1514894a0698b6 1-45
+android/gradle/libs.versions.toml
+  s_1a73b5df333a13::t_9c77d58c6af48e 12,33-34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "482887c64d6cfa49844714fcba8be35b05ea8f5c",
+  "prompts": {},
+  "sessions": {
+    "s_1a73b5df333a13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "132dee9e-51bb-4fe6-b9d6-1bd0218732f7",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
