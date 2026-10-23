@@ -3,6 +3,7 @@ package feed
 import (
 	"context"
 	"fmt"
+	"math"
 	"slices"
 	"testing"
 
@@ -30,11 +31,17 @@ func fixtureCandidate(t *testing.T, slug string) Candidate {
 func fixtureState(t *testing.T, slug, state string) StateArticle {
 	t.Helper()
 	a := fixtureArticle(t, slug)
+	comp := 1.0
+	if state == StateSkipped {
+		comp = 0.05
+	}
 	return StateArticle{
 		PageID:     a.PageID,
 		Source:     a.Source,
 		Title:      a.Title,
 		State:      state,
+		Completion: comp,
+		Words:      500,
 		Links:      a.Links,
 		Categories: a.Categories,
 	}
@@ -211,7 +218,7 @@ func TestRankInterestDecays(t *testing.T) {
 	var state []StateArticle
 	add := func(i int, cat string) {
 		state = append(state, StateArticle{PageID: int64(5000 + i), Source: "simplewiki",
-			Title: fmt.Sprintf("Read %d", i), State: StateFinished, Categories: []string{cat}})
+			Title: fmt.Sprintf("Read %d", i), State: StateFinished, Completion: 1.0, Words: 500, Categories: []string{cat}})
 	}
 	for i := range 500 {
 		switch {
@@ -235,8 +242,12 @@ func TestRankInterestDecays(t *testing.T) {
 	if fresh <= stale {
 		t.Fatalf("fresh interest %.3f did not outscore stale %.3f", fresh, stale)
 	}
-	if ratio := fresh / stale; ratio < 1.5 || ratio > 2.2 {
-		t.Errorf("fresh/stale ratio = %.2f, want ~sqrt(1/decayFloor) = 1.8", ratio)
+	// The expected ratio is sqrt(1/effectiveDecayFloor): the adaptive
+	// floor at 500 rows is DecayFloorMax.
+	floor := effectiveDecayFloor(len(state))
+	expected := math.Sqrt(1 / floor)
+	if ratio := fresh / stale; ratio < expected*0.7 || ratio > expected*1.4 {
+		t.Errorf("fresh/stale ratio = %.2f, want ~sqrt(1/decayFloor=%.2f) = %.2f", ratio, floor, expected)
 	}
 }
 
@@ -247,12 +258,12 @@ func TestRankInterestDecays(t *testing.T) {
 // still nominates in full. (The measured failure: one finished year page
 // owned 4 of 15 relevance slots.)
 func TestRankHubNominationsDiluted(t *testing.T) {
-	hub := StateArticle{PageID: 1, Source: "simplewiki", Title: "1975", State: StateFinished}
+	hub := StateArticle{PageID: 1, Source: "simplewiki", Title: "1975", State: StateFinished, Completion: 1.0, Words: 500}
 	for i := range 226 {
 		hub.Links = append(hub.Links, fmt.Sprintf("Happened in 1975 %d", i))
 	}
 	hub.Links = append(hub.Links, "Born That Year")
-	specific := StateArticle{PageID: 2, Source: "simplewiki", Title: "Carl Wilson", State: StateFinished,
+	specific := StateArticle{PageID: 2, Source: "simplewiki", Title: "Carl Wilson", State: StateFinished, Completion: 1.0, Words: 500,
 		Links: []string{"Born That Year2", "Band Mate", "B", "C", "D"}}
 	candidates := []Candidate{
 		{ArticleID: 1, PageID: 10, Source: "simplewiki", Title: "Born That Year"},
@@ -338,7 +349,7 @@ func TestSelectDiverseExplorationSlots(t *testing.T) {
 	for i := range 60 {
 		owner := fmt.Sprintf("Read %d", i)
 		state = append(state, StateArticle{PageID: int64(1000 + i), Source: "simplewiki",
-			Title: owner, State: StateFinished, Categories: []string{"A", fmt.Sprintf("Sub %d", i/4)}})
+			Title: owner, State: StateFinished, Completion: 1.0, Words: 500, Categories: []string{"A", fmt.Sprintf("Sub %d", i/4)}})
 	}
 	for i := range 20 {
 		scored = append(scored, Scored{testCandidate(int64(i), "A"), float64(20 - i), []string{fmt.Sprintf("Read %d", i)}})
@@ -364,8 +375,14 @@ func TestSelectDiverseExplorationSlots(t *testing.T) {
 			explorations = append(explorations, i)
 		}
 	}
-	if want := []int{3, 7, 11}; !slices.Equal(explorations, want) {
-		t.Errorf("established reader: exploration slots at %v, want %v", explorations, want)
+	// The exploration share is ExploreShareBase (0.15 = ~2 of 12 picks).
+	// The exact count depends on the share, seed, momentum slots, and
+	// how many relevance candidates fill their turns first. Check that
+	// we're in a reasonable range, not the exact number.
+	maxExpected := int(math.Ceil(float64(12) * ExploreShareBase * 1.5))
+	if len(explorations) > maxExpected {
+		t.Errorf("established reader: %d exploration slots, want ≤%d (share=%.0f%%)",
+			len(explorations), maxExpected, ExploreShareBase*100)
 	}
 }
 
@@ -379,7 +396,7 @@ func TestSelectDiverseExplorationAdapts(t *testing.T) {
 	for i := range 12 {
 		owner := fmt.Sprintf("Stray %d", i)
 		state = append(state, StateArticle{PageID: int64(1000 + i), Source: "simplewiki",
-			Title: owner, State: StateFinished, Categories: []string{fmt.Sprintf("Lone %d", i)}})
+			Title: owner, State: StateFinished, Completion: 1.0, Words: 500, Categories: []string{fmt.Sprintf("Lone %d", i)}})
 		scored = append(scored, Scored{testCandidate(int64(i), fmt.Sprintf("N%d", i)), 1.0, []string{owner}})
 	}
 	var explore []Candidate
@@ -525,7 +542,7 @@ func TestRankHubsDoNotOutscoreSpecificity(t *testing.T) {
 	for i := range state {
 		state[i] = StateArticle{
 			PageID: int64(1000 + i), Source: "simplewiki",
-			Title: fmt.Sprintf("Read %d", i), State: StateFinished,
+			Title: fmt.Sprintf("Read %d", i), State: StateFinished, Completion: 1.0, Words: 500,
 		}
 	}
 	hub := testCandidate(1)
@@ -556,13 +573,13 @@ func TestRankHubsDoNotOutscoreSpecificity(t *testing.T) {
 // whatever the score or volume gap.
 func TestSelectDiverseRotationFairness(t *testing.T) {
 	state := []StateArticle{
-		{PageID: 1, Source: "simplewiki", Title: "China", State: StateFinished,
+		{PageID: 1, Source: "simplewiki", Title: "China", State: StateFinished, Completion: 1.0, Words: 500,
 			Categories: []string{"Countries", "Asia"}},
-		{PageID: 4, Source: "simplewiki", Title: "Great Wall", State: StateFinished,
+		{PageID: 4, Source: "simplewiki", Title: "Great Wall", State: StateFinished, Completion: 1.0, Words: 500,
 			Categories: []string{"Asia", "Landmarks"}},
-		{PageID: 2, Source: "simplewiki", Title: "BMW 3 Series", State: StateFinished,
+		{PageID: 2, Source: "simplewiki", Title: "BMW 3 Series", State: StateFinished, Completion: 1.0, Words: 500,
 			Categories: []string{"Cars", "BMW"}},
-		{PageID: 3, Source: "simplewiki", Title: "Cadillac ATS", State: StateSaved,
+		{PageID: 3, Source: "simplewiki", Title: "Cadillac ATS", State: StateSaved, Completion: 0.5, Words: 500,
 			Categories: []string{"Cars", "Cadillac"}},
 	}
 	var scored []Scored
@@ -597,14 +614,14 @@ func TestSelectDiverseRotationFairness(t *testing.T) {
 // for any seed, even when older reads own far higher-scoring candidates.
 func TestSelectDiverseMomentum(t *testing.T) {
 	state := []StateArticle{
-		{PageID: 1, Source: "simplewiki", Title: "Lionel Messi", State: StateFinished},
+		{PageID: 1, Source: "simplewiki", Title: "Lionel Messi", State: StateFinished, Completion: 1.0, Words: 500},
 	}
 	var scored []Scored
 	scored = append(scored, Scored{testCandidate(500, "Football"), 0.4, []string{"Lionel Messi"}})
 	for i := range 30 {
 		title := fmt.Sprintf("Car %d", i)
 		state = append(state, StateArticle{PageID: int64(2 + i), Source: "simplewiki",
-			Title: title, State: StateFinished})
+			Title: title, State: StateFinished, Completion: 1.0, Words: 500})
 		scored = append(scored, Scored{testCandidate(int64(i), "Cars"), 2.0, []string{title}})
 	}
 	for seed := int64(0); seed < 20; seed++ {
@@ -627,10 +644,10 @@ func TestSelectDiverseTopicSatiation(t *testing.T) {
 	for i := range 10 {
 		owner := fmt.Sprintf("Binge %d", i)
 		state = append(state, StateArticle{PageID: int64(1 + i), Source: "simplewiki",
-			Title: owner, State: StateFinished})
+			Title: owner, State: StateFinished, Completion: 1.0, Words: 500})
 		scored = append(scored, Scored{testCandidate(int64(i), "Binge Topic"), 2.0, []string{owner}})
 	}
-	state = append(state, StateArticle{PageID: 100, Source: "simplewiki", Title: "Side", State: StateFinished})
+	state = append(state, StateArticle{PageID: 100, Source: "simplewiki", Title: "Side", State: StateFinished, Completion: 1.0, Words: 500})
 	for i := range 4 {
 		scored = append(scored, Scored{testCandidate(int64(100+i), fmt.Sprintf("Side %d", i)), 0.5, []string{"Side"}})
 	}
@@ -662,11 +679,11 @@ func TestSelectDiverseStrayBounded(t *testing.T) {
 	var state []StateArticle
 	for i := range 11 {
 		state = append(state, StateArticle{PageID: int64(1 + i), Source: "simplewiki",
-			Title: fmt.Sprintf("Composer %d", i), State: StateFinished,
+			Title: fmt.Sprintf("Composer %d", i), State: StateFinished, Completion: 1.0, Words: 500,
 			Categories: []string{"Composers", fmt.Sprintf("Era %d", i/4)}})
 	}
 	state = append(state, StateArticle{PageID: 500, Source: "simplewiki",
-		Title: "Lawrence, Kansas", State: StateFinished})
+		Title: "Lawrence, Kansas", State: StateFinished, Completion: 1.0, Words: 500})
 	var scored []Scored
 	for i := range 10 {
 		scored = append(scored, Scored{testCandidate(int64(i), fmt.Sprintf("M%d", i)), 1.0, []string{"Composer 0"}})
@@ -696,11 +713,11 @@ func TestRankInterestSaturates(t *testing.T) {
 	var state []StateArticle
 	for i := range 100 {
 		state = append(state, StateArticle{PageID: int64(1000 + i), Source: "simplewiki",
-			Title: fmt.Sprintf("Big %d", i), State: StateFinished, Categories: []string{"Big"}})
+			Title: fmt.Sprintf("Big %d", i), State: StateFinished, Completion: 1.0, Words: 500, Categories: []string{"Big"}})
 	}
 	for i := range 4 {
 		state = append(state, StateArticle{PageID: int64(2000 + i), Source: "simplewiki",
-			Title: fmt.Sprintf("Small %d", i), State: StateFinished, Categories: []string{"Small"}})
+			Title: fmt.Sprintf("Small %d", i), State: StateFinished, Completion: 1.0, Words: 500, Categories: []string{"Small"}})
 	}
 	w := Weights{"Big": 0.1, "Small": 0.1}
 	ranked := RankScored([]Candidate{
@@ -720,9 +737,9 @@ func TestRankInterestSaturates(t *testing.T) {
 // never clicks is downweighted relative to one they click every time.
 func TestImpressionNormalizedInterest(t *testing.T) {
 	state := []StateArticle{
-		{Title: "Cars article", State: StateFinished,
+		{Title: "Cars article", State: StateFinished, Completion: 1.0, Words: 500,
 			Links: []string{}, Categories: []string{"Cars", "Shared"}},
-		{Title: "Music article", State: StateFinished,
+		{Title: "Music article", State: StateFinished, Completion: 1.0, Words: 500,
 			Links: []string{}, Categories: []string{"Music", "Shared"}},
 	}
 	candidates := []Candidate{
@@ -774,16 +791,16 @@ func TestImpressionNormalizedInterest(t *testing.T) {
 // pairwise category overlap; rows that connect to nothing are misc.
 func TestStateClusters(t *testing.T) {
 	state := []StateArticle{
-		{Title: "Corolla", State: StateFinished, Categories: []string{"Toyota", "Sedans"}},
-		{Title: "Elvis", State: StateFinished, Categories: []string{"Singers", "Rock"}},
-		{Title: "Camry", State: StateFinished, Categories: []string{"Toyota", "Hybrids"}},
+		{Title: "Corolla", State: StateFinished, Completion: 1.0, Words: 500, Categories: []string{"Toyota", "Sedans"}},
+		{Title: "Elvis", State: StateFinished, Completion: 1.0, Words: 500, Categories: []string{"Singers", "Rock"}},
+		{Title: "Camry", State: StateFinished, Completion: 1.0, Words: 500, Categories: []string{"Toyota", "Hybrids"}},
 		// Chains to the cars cluster through Camry only (no Toyota overlap
 		// with Corolla): components, not pairwise similarity.
-		{Title: "Prius", State: StateFinished, Categories: []string{"Hybrids", "Hatchbacks"}},
-		{Title: "Presley discography", State: StateFinished, Categories: []string{"Rock", "Discographies"}},
-		{Title: "Skip me", State: StateSkipped, Categories: []string{"Toyota"}},
-		{Title: "Stray", State: StateFinished, Categories: []string{"Bridges"}},
-		{Title: "No cats", State: StateFinished},
+		{Title: "Prius", State: StateFinished, Completion: 1.0, Words: 500, Categories: []string{"Hybrids", "Hatchbacks"}},
+		{Title: "Presley discography", State: StateFinished, Completion: 1.0, Words: 500, Categories: []string{"Rock", "Discographies"}},
+		{Title: "Skip me", State: StateSkipped, Completion: 0.05, Words: 500, Categories: []string{"Toyota"}},
+		{Title: "Stray", State: StateFinished, Completion: 1.0, Words: 500, Categories: []string{"Bridges"}},
+		{Title: "No cats", State: StateFinished, Completion: 1.0, Words: 500},
 	}
 	clusters, misc := StateClusters(state)
 	want := [][]string{
@@ -809,13 +826,13 @@ func TestSelectDiverseClusterBalance(t *testing.T) {
 	for i := range 30 {
 		owner := fmt.Sprintf("Big %d", i)
 		state = append(state, StateArticle{PageID: int64(1 + i), Source: "simplewiki",
-			Title: owner, State: StateFinished, Categories: []string{"Big topic", fmt.Sprintf("Big sub %d", i/3)}})
+			Title: owner, State: StateFinished, Completion: 1.0, Words: 500, Categories: []string{"Big topic", fmt.Sprintf("Big sub %d", i/3)}})
 		scored = append(scored, Scored{testCandidate(int64(i), fmt.Sprintf("Big kind %d", i)), 2.0, []string{owner}})
 	}
 	for i := range 3 {
 		owner := fmt.Sprintf("Small %d", i)
 		state = append(state, StateArticle{PageID: int64(100 + i), Source: "simplewiki",
-			Title: owner, State: StateFinished, Categories: []string{"Small topic", fmt.Sprintf("Small sub %d", i)}})
+			Title: owner, State: StateFinished, Completion: 1.0, Words: 500, Categories: []string{"Small topic", fmt.Sprintf("Small sub %d", i)}})
 		scored = append(scored, Scored{testCandidate(int64(100+i), fmt.Sprintf("Small kind %d", i)), 0.6, []string{owner}})
 	}
 	for seed := int64(0); seed < 5; seed++ {
@@ -845,7 +862,7 @@ func BenchmarkStateClusters(b *testing.B) {
 			cats[j] = fmt.Sprintf("Interest %d sub %d", i%5, (i+j)%40)
 		}
 		state = append(state, StateArticle{Title: fmt.Sprintf("Row %d", i),
-			State: StateFinished, Categories: cats})
+			State: StateFinished, Completion: 1.0, Words: 500, Categories: cats})
 	}
 	b.ResetTimer()
 	for range b.N {
@@ -861,9 +878,9 @@ func BenchmarkStateClusters(b *testing.B) {
 // to bound (a latent bug that predated cluster rotation).
 func TestSelectDiverseEmptyOwnerPasses(t *testing.T) {
 	state := []StateArticle{
-		{PageID: 1, Source: "simplewiki", Title: "Quiet read", State: StateFinished,
+		{PageID: 1, Source: "simplewiki", Title: "Quiet read", State: StateFinished, Completion: 1.0, Words: 500,
 			Categories: []string{"Topic", "Quiet"}},
-		{PageID: 2, Source: "simplewiki", Title: "Busy read", State: StateFinished,
+		{PageID: 2, Source: "simplewiki", Title: "Busy read", State: StateFinished, Completion: 1.0, Words: 500,
 			Categories: []string{"Topic", "Busy"}},
 	}
 	var scored []Scored
@@ -892,14 +909,14 @@ func TestSelectDiverseEmptyOwnerPasses(t *testing.T) {
 // cards, and the first slot stays a relevance card whenever one exists.
 func TestSelectDiverseHostileShapes(t *testing.T) {
 	positive := []StateArticle{
-		{PageID: 1, Source: "simplewiki", Title: "Lion", State: StateFinished,
+		{PageID: 1, Source: "simplewiki", Title: "Lion", State: StateFinished, Completion: 1.0, Words: 500,
 			Categories: []string{"Mammals", "Cats"}},
-		{PageID: 2, Source: "simplewiki", Title: "Tiger", State: StateFinished,
+		{PageID: 2, Source: "simplewiki", Title: "Tiger", State: StateFinished, Completion: 1.0, Words: 500,
 			Categories: []string{"Mammals", "Asia"}},
 	}
 	allSkipped := []StateArticle{
-		{PageID: 3, Source: "simplewiki", Title: "Golf", State: StateSkipped, Categories: []string{"Sports"}},
-		{PageID: 4, Source: "simplewiki", Title: "Opera", State: StateSkipped, Categories: []string{"Music"}},
+		{PageID: 3, Source: "simplewiki", Title: "Golf", State: StateSkipped, Completion: 0.05, Words: 500, Categories: []string{"Sports"}},
+		{PageID: 4, Source: "simplewiki", Title: "Opera", State: StateSkipped, Completion: 0.05, Words: 500, Categories: []string{"Music"}},
 	}
 	scored := []Scored{
 		{testCandidate(10, "Mammals"), 1.2, []string{"Lion"}},

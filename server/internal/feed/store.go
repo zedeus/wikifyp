@@ -551,7 +551,9 @@ func suppressedPagesAll(ctx context.Context, db *sql.DB, readerID string) (map[p
 // the interest profile the ranking works from.
 func readerState(ctx context.Context, db *sql.DB, readerID string) ([]StateArticle, error) {
 	rows, err := db.QueryContext(ctx, `
-		SELECT a.id, a.page_id, a.source, a.title, s.state
+		SELECT a.id, a.page_id, a.source, a.title, s.state, s.completion,
+			(SELECT coalesce(sum(array_length(string_to_array(se.text, ' '), 1)), 0)
+			 FROM sentences se WHERE se.article_id = a.id) AS words
 		FROM reader_article_state s
 		JOIN latest_articles a USING (source, page_id)
 		WHERE s.reader_id = $1
@@ -566,7 +568,7 @@ func readerState(ctx context.Context, db *sql.DB, readerID string) ([]StateArtic
 	for rows.Next() {
 		var s StateArticle
 		var id int64
-		if err := rows.Scan(&id, &s.PageID, &s.Source, &s.Title, &s.State); err != nil {
+		if err := rows.Scan(&id, &s.PageID, &s.Source, &s.Title, &s.State, &s.Completion, &s.Words); err != nil {
 			return nil, fmt.Errorf("feed: reader state: %w", err)
 		}
 		state = append(state, s)

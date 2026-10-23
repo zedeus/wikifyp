@@ -1,5 +1,6 @@
 package com.wikifyp.ui.reader
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -100,6 +101,15 @@ fun ReaderScreen(
         onDispose {}
     }
 
+    // System back emits a skip event (if the reader has started) before
+    // navigating back, so the server knows the article was abandoned.
+    BackHandler {
+        if (readerState != ReaderState.IDLE) {
+            engine.skip()
+        }
+        onBack()
+    }
+
     val totalTokens = remember(sentences) { sentences.sumOf { it.tokens.size } }
     val allTokens = remember(sentences) { sentences.flatMap { it.tokens } }
     val ghostLeftCount = 4
@@ -135,8 +145,17 @@ fun ReaderScreen(
                     color = Color.White.copy(alpha = 0.6f),
                     modifier =
                         Modifier
-                            .pointerInput(onBack) { detectTapGestures { onBack() } }
-                            .padding(end = Spacing.sm)
+                            .pointerInput(onBack) {
+                                detectTapGestures {
+                                    // If the reader has started (not idle and not finished),
+                                    // emit a skip event before navigating back so the server
+                                    // knows the reader abandoned this article.
+                                    if (readerState != ReaderState.IDLE) {
+                                        engine.skip()
+                                    }
+                                    onBack()
+                                }
+                            }.padding(end = Spacing.sm)
                             .testTag("backButton"),
                 )
                 Text(

@@ -1,6 +1,5 @@
 package com.wikifyp.ui
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -75,9 +74,8 @@ fun WikifypApp(
         }
     }
 
-    // The system back gesture closes the article, never the app, while
-    // one is open; with the feed showing it falls through to the default.
-    BackHandler(enabled = article != null) { openArticleId = null }
+    // The system back gesture is handled inside ReaderScreen (which
+    // emits a skip event before navigating back). No BackHandler here.
 
     val current = article
     if (current != null) {

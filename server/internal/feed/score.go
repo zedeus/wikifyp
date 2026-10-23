@@ -33,13 +33,22 @@ const (
 // categories.
 const linkWeight = 1.0
 
-// similarityPenalty scales how hard a candidate is pushed down for
+// SimilarityPenalty scales how hard a candidate is pushed down for
 // resembling what the feed already picked (greedy MMR in SelectDiverse).
 // Similarity is a cosine in [0,1] and relevance scores sit around
 // linkWeight, so at 1.0 a near-clone of an already-picked card forfeits a
 // direct link's worth of score — which is what breaks the all-composers /
 // all-countries feeds without hiding the genuinely best neighbours.
-const similarityPenalty = 1.0
+// Swept 0.0–2.0: 0.5 maximizes appeal across all persona types.
+// Halving the penalty lets a reader's few strong candidates rank higher
+// without being pushed down by MMR; the picky reader benefits most
+// (42.5→71.5%) because its sparse state produces few relevant candidates
+// that the full penalty was displacing.
+// Swept 0.5–0.7 with adaptive decay: 0.6 gives the best balance —
+// every persona ≥ 70% in fast mode. At 0.5 picky drops to 63; at 0.7
+// picky drops to 51. The 0.6 sweet spot lets strong candidates rank
+// high without killing diversity for focused readers.
+var SimilarityPenalty = 0.6
 
 // RelevanceFloor is the minimum raw relevance that can occupy a relevance
 // slot. A reader with three interactions has perhaps a dozen genuinely
@@ -63,11 +72,11 @@ const outgoingSaturation = 10
 
 // Exploration's share of the feed adapts to how much corroborated taste
 // the reader has shown. A quarter of the feed being doors they did not
-// open themselves (exploreShareBase) is the dash of serendipity the
+// open themselves (ExploreShareBase) is the dash of serendipity the
 // product wants from a reader whose pattern is established — but serving
 // a brand-new or patternless reader 75% guesses about their taste and 25%
 // doors is backwards, so with little evidence the share climbs toward
-// exploreShareMax. Evidence is CLUSTERED positive rows (StateClusters):
+// ExploreShareMax. Evidence is CLUSTERED positive rows (StateClusters):
 // reads that corroborate each other. A dozen unrelated one-off reads are
 // not a pattern, and they prove it by connecting to nothing. Confidence
 // ramps linearly: the share starts at the max with zero corroborated
@@ -75,11 +84,20 @@ const outgoingSaturation = 10
 // by then the pattern has earned the feed's trust. The reader swipes the
 // feed one card at a time in served order, so the share also spaces the
 // doors evenly through the deck rather than bunching them.
-const (
-	exploreShareBase = 0.25
-	exploreShareMax  = 0.75
-	exploreRampRows  = 25
+var (
+	// Swept 0.10–0.25: 0.15 balances relevance with discovery. At 0.10
+	// cold-start suffers (too few exploration slots after first adoption);
+	// at 0.25 the juggler drops (too much noise). 0.15 gives gundam
+	// enough doors to find its micro-niches while keeping the juggler
+	// above 70%.
+	// Validated at full 600-article benchmark: 0.20 gives the juggler
+	// real interest diversity (music=286, history=178 across 5 interests)
+	// while cold-start reaches 56.5% (vs 43.5% at 0.15).
+	ExploreShareBase = 0.20
+	ExploreShareMax  = 0.75
 )
+
+const exploreRampRows = 25
 
 // nominationGrace is the outgoing degree up to which a state page
 // nominates its neighbours at full strength; beyond it the strength decays
@@ -88,7 +106,7 @@ const (
 // it. See the nomination comment in RankScored.
 const nominationGrace = 50.0
 
-// freshSimCap is the baseline for how similar to this feed's already-picked
+// FreshSimCap is the baseline for how similar to this feed's already-picked
 // cards a candidate may be and still occupy a fresh rotation turn. Turn
 // share used to be proportional to state-row count, so volume compounded: a
 // five-interest reader's feed collapsed onto whichever interest won early
@@ -99,7 +117,7 @@ const nominationGrace = 50.0
 // whole — when everything is alike, everything satiates together, and the
 // feed serves it anyway. The cap each reader actually gets self-tunes
 // around this baseline from their own state: see AdaptiveFreshCap.
-const freshSimCap = 0.5
+var FreshSimCap = 0.5
 
 // AdaptiveFreshCap personalizes the satiation cap from the one thing the
 // reader has already told us — how much their reads resemble each other.
@@ -116,6 +134,9 @@ const freshSimCap = 0.5
 // and cost the broad-single-interest reader its band floor; the fragment
 // spiral needs impression data, not a tighter cap.)
 func AdaptiveFreshCap(state []StateArticle) float64 {
+	// Structural mechanism: uses binary state (not engagement) to avoid
+	// the feedback loop where engagement-weighted coherence amplifies
+	// the dominant interest over long runs.
 	var sets []map[string]bool
 	var cats [][]string
 	for _, s := range state {
@@ -133,7 +154,7 @@ func AdaptiveFreshCap(state []StateArticle) float64 {
 		}
 	}
 	if len(sets) < 2 {
-		return freshSimCap
+		return FreshSimCap
 	}
 	sum, n := 0.0, 0
 	for i := range sets {
@@ -174,6 +195,8 @@ func StateClusters(state []StateArticle) (clusters [][]string, misc []string) {
 	}
 	var rows []row
 	for _, s := range state {
+		// Structural mechanism: uses binary state to avoid the feedback
+		// loop. Engagement only modulates voice in the scoring loop.
 		if s.State == StateSkipped {
 			continue
 		}
@@ -233,7 +256,7 @@ func ClusteredRows(state []StateArticle) int {
 	return n
 }
 
-// stateDecayFloor is the voice the oldest interaction inside the interest
+// StateDecayFloor is the voice the oldest interaction inside the interest
 // window keeps relative to the newest. Interest counting weighs each state
 // article by the exponential decay of its recency rank — 1.0 just read,
 // this at the window's edge (recentStateLimit) — so the profile follows
@@ -243,7 +266,34 @@ func ClusteredRows(state []StateArticle) int {
 // that two pages belong together, and slot rotation already gives every
 // read an equal turn — returning to a topic refreshes its updated_at, so a
 // kept-alive interest never fades.
-const stateDecayFloor = 0.3
+// Adaptive decay floor: new readers get DecayFloorMin (interests must
+// earn their place from evidence, not from being first adopted);
+// established readers get DecayFloorMax (trust the pattern, let weaker
+// interests persist). Ramps linearly by state size.
+//
+// Without adaptation, a fixed 0.7 killed cold-start (first adopted
+// interest dominated forever) and a fixed 0.3 killed picky (sparse
+// signals faded too fast). The adaptive floor gives each reader type
+// the decay that serves them.
+var (
+	DecayFloorMin      = 0.3 // for new readers (0-5 state rows)
+	DecayFloorMax      = 0.6 // for established readers (25+ rows)
+	DecayFloorRampRows = 25  // rows where the ramp reaches the max
+)
+
+// StateDecayFloor is kept for backwards compat with feedsim flag but
+// not used when the adaptive floor is active (DecayFloorMin != DecayFloorMax).
+var StateDecayFloor = 0.3
+
+// effectiveDecayFloor computes the decay floor for a reader with the
+// given number of state rows.
+func effectiveDecayFloor(stateRows int) float64 {
+	if DecayFloorMin == DecayFloorMax {
+		return DecayFloorMin
+	}
+	t := min(1.0, float64(stateRows)/float64(DecayFloorRampRows))
+	return DecayFloorMin + (DecayFloorMax-DecayFloorMin)*t
+}
 
 // Candidate is one article the ranking considers, with the graph data
 // scoring reads: its outgoing links and its categories.
@@ -263,6 +313,8 @@ type StateArticle struct {
 	Source     string
 	Title      string
 	State      string
+	Completion float64 // 0–1: how far through the article the reader got
+	Words      int     // total tokens in the article (for absolute engagement thresholds)
 	Links      []string
 	Categories []string
 }
@@ -335,7 +387,7 @@ func impressionDiscount(liked map[string]float64, impressions map[string]int) ma
 	// (measured: the juggler's music interest collapsed from 143
 	// to 6 interactions without warmup — the first interest to
 	// get a slight edge cannibalized all others).
-	if totalImp < impressionWarmup {
+	if totalImp < ImpressionWarmup {
 		return nil
 	}
 	factors := make(map[string]float64, len(liked))
@@ -349,7 +401,7 @@ func impressionDiscount(liked map[string]float64, impressions map[string]int) ma
 		if excess <= 0 {
 			continue
 		}
-		f := 1 - excess*impressionDamping
+		f := 1 - excess*ImpressionDamping
 		factors[c] = max(impressionDiscountFloor, f)
 	}
 	return factors
@@ -364,7 +416,7 @@ func impressionDiscount(liked map[string]float64, impressions map[string]int) ma
 // the rest (the juggler's music dropped from 143 to 11 interactions
 // at damping=2.0). Gentle damping avoids the spiral while still
 // signaling genuinely over-served categories to the ranker.
-const impressionDamping = 1.0
+var ImpressionDamping = 1.0
 
 // impressionDiscountFloor prevents a category from being discounted
 // below this fraction even at extreme over-serving. At 0.5 no category
@@ -376,7 +428,85 @@ const impressionDiscountFloor = 0.5
 // discount activates. Below this, the reader hasn't seen enough feeds
 // for impression shares to be meaningful, and the discount would amplify
 // whichever interest happened to get clicked first.
-const impressionWarmup = 5000
+var ImpressionWarmup = 5000.0
+
+// Engagement thresholds. Exported so the feedsim can sweep them.
+var (
+	// EngageThreshold: completion fraction for zone 1→2 (bounce→interest).
+	// Swept 0.10–0.40 in the feedsim fast benchmark; 0.20 maximizes
+	// the average across mono/juggler/gundam/picky (64.1% avg appeal).
+	EngageThreshold = 0.20
+	// EngageTokens: absolute token count for zone 1→2.
+	EngageTokens = 200
+	// DeepThreshold: completion fraction for zone 2→3 (interest→deep).
+	DeepThreshold = 0.80
+	// DeepTokens: absolute tokens for zone 2→3.
+	DeepTokens = 500
+	// DeepBoost: extra weight above 1.0 for deep reads (superlinear).
+	DeepBoost = 0.0
+	// EngageOff disables completion-driven engagement: finished/saved → +1,
+	// skipped → -1. The engagement model helps the juggler (+7) but creates
+	// a feedback loop at full length (600 articles) that crushes gundam
+	// (-17) and serial (+quits). Disabled by default until a damping
+	// mechanism breaks the loop. Completion is still stored and available
+	// for future use; the model's signal just isn't routed into the voice.
+	EngageOff = true
+	// TokenSaturation: absolute tokens where token normalization tops out.
+	// Reading this many tokens gives full credit; fewer gives sqrt-scaled.
+	TokenSaturation = 500.0
+)
+
+// engagementWeight converts completion, article size and state into a
+// signed, token-normalized weight.
+//
+// Three zones, no cliff edges:
+//  1. Bounce (below BOTH low thresholds): negative, scales with how
+//     early the reader left. Reading 5% of a stub is full-force negative.
+//  2. Interest (above EITHER low threshold): positive, moderate. The
+//     reader spent real attention — either a meaningful fraction of the
+//     article or a meaningful number of tokens.
+//  3. Deep (above BOTH high thresholds): superlinear boost. The reader
+//     consumed most of a substantial article — strong evidence.
+//
+// Token normalization: the weight is scaled by how many actual tokens
+// were consumed, so 100% of a 60-word stub counts less than 50% of a
+// 3000-word article. The scale saturates at TokenSaturation tokens.
+func engagementWeight(completion float64, words int, state string) float64 {
+	if state == StateSaved {
+		return 1.0
+	}
+	if EngageOff {
+		if state == StateSkipped {
+			return -1.0
+		}
+		return 1.0
+	}
+	tokensRead := completion * float64(words)
+	pctEngaged := completion >= EngageThreshold
+	tokEngaged := int(tokensRead) >= EngageTokens
+
+	if !pctEngaged && !tokEngaged {
+		// Zone 1: bounce. Linear from -1 (0%) to 0 (threshold).
+		return -(1 - completion/EngageThreshold)
+	}
+
+	// Zones 2-3: positive. Base weight scales with completion.
+	w := max(0.2, completion)
+
+	// Zone 3: deep engagement boost — superlinear above both high
+	// thresholds. A reader who consumed 95% of a substantial article
+	// (500+ tokens) gets extra weight. The boost is deliberately mild
+	// (DeepBoost default 0.5) so it rewards depth without biasing the
+	// feed toward topics that happen to have longer articles — measured:
+	// global token normalization dropped the juggler from 69→62% as
+	// history (long) dominated over music/cars (shorter).
+	if DeepBoost > 0 && completion >= DeepThreshold && int(tokensRead) >= DeepTokens {
+		extra := DeepBoost * (completion - DeepThreshold) / (1 - DeepThreshold)
+		w += extra
+	}
+
+	return w
+}
 
 // Scored is one ranked candidate with the relevance score that placed it
 // and the state articles (owners, by title) whose links or categories
@@ -394,7 +524,7 @@ type Scored struct {
 // count their weight (per state article sharing them), and the categories
 // of skipped articles count against. State is ordered newest interaction
 // first (as readerState loads it); category interest decays with that rank
-// (see stateDecayFloor). No acted-on page comes back (see suppressedPages);
+// (see StateDecayFloor). No acted-on page comes back (see suppressedPages);
 // a saved page keeps promoting its neighbourhood, not itself. The order is
 // deterministic: score, then source and page ID.
 //
@@ -412,15 +542,24 @@ func RankScored(candidates []Candidate, state []StateArticle, w Weights, impress
 	catOwners := make(map[string][]string)
 	liked := make(map[string]float64)
 	disliked := make(map[string]float64)
-	decay := math.Log(stateDecayFloor) / float64(max(recentStateLimit, 1))
+	decayFloor := effectiveDecayFloor(len(state))
+	decay := math.Log(decayFloor) / float64(max(recentStateLimit, 1))
 	for i, s := range state {
 		voice := math.Exp(decay * float64(i))
-		if s.State == StateSkipped {
+
+		// Completion is the primary engagement signal: how much of the
+		// article the reader actively consumed (RSVP = thumb down = honest
+		// attention). The engageThreshold is where the signal flips from
+		// negative (bounced) to positive (engaged). Saved articles are
+		// always positive regardless of completion.
+		eng := engagementWeight(s.Completion, s.Words, s.State)
+		if eng < 0 {
 			for _, c := range s.Categories {
-				disliked[c] += voice
+				disliked[c] += voice * (-eng)
 			}
 			continue
 		}
+		voice *= eng
 		stateTitle[titleKey{s.Source, s.Title}] = s.Title
 		// A nomination's strength is the nominating page's specificity:
 		// full inside the grace region (nominationGrace links), decaying
@@ -573,7 +712,7 @@ type Picked struct {
 //     near-ties land in a different order for every reader and every day
 //     while clear favourites stay on top.
 //   - Similarity penalty (greedy MMR): each pick is the best remaining
-//     score minus similarityPenalty times its category-set cosine with the
+//     score minus SimilarityPenalty times its category-set cosine with the
 //     most similar article already picked. A run of composers (or of
 //     anything else that shares most of its categories) prices the next
 //     one out, letting the rest of the reader's neighbourhood through.
@@ -590,7 +729,7 @@ type Picked struct {
 //     go to the newest reads (in recency order) instead of the rotation,
 //     so the last thing the reader finished steers the very next feed.
 //   - Exploration slots: an adaptive share of slots (see
-//     exploreShareBase) is filled from the
+//     ExploreShareBase) is filled from the
 //     explore pool (in its given order, already shuffled by the caller) —
 //     articles from outside the reader's neighbourhood entirely.
 //
@@ -675,8 +814,8 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 	for _, cl := range clusters {
 		clustered += len(cl) // = ClusteredRows, on the clusters already built
 	}
-	exploreShare := exploreShareBase +
-		(exploreShareMax-exploreShareBase)*max(0, 1-float64(clustered)/exploreRampRows)
+	exploreShare := ExploreShareBase +
+		(ExploreShareMax-ExploreShareBase)*max(0, 1-float64(clustered)/exploreRampRows)
 
 	picked := make([]Picked, 0, k)
 	seen := make(map[pageKey]bool)
@@ -708,7 +847,7 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 	// the penalized score deciding.
 	// bestOf picks an owner's strongest eligible candidate. fresh turns
 	// additionally refuse candidates too similar to this feed's picks
-	// (maxSim past freshSimCap): a topic the feed already shows yields its
+	// (maxSim past FreshSimCap): a topic the feed already shows yields its
 	// turn to someone else's. The caller retries every turn without the
 	// cap when no owner has anything fresh, so a reader with one deep love
 	// (every candidate alike) gets exactly the old behavior — the cap
@@ -726,7 +865,7 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 			if fresh && c.maxSim > freshCap {
 				return
 			}
-			if score := c.Score - similarityPenalty*c.maxSim; score > bestScore {
+			if score := c.Score - SimilarityPenalty*c.maxSim; score > bestScore {
 				best, bestScore = i, score
 			}
 		}
@@ -745,7 +884,7 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 		c := &remaining[i]
 		c.picked = true
 		seen[pageKey{c.Source, c.PageID}] = true
-		picked = append(picked, Picked{Candidate: c.Candidate, Score: c.Score - similarityPenalty*c.maxSim})
+		picked = append(picked, Picked{Candidate: c.Candidate, Score: c.Score - SimilarityPenalty*c.maxSim})
 		for j := range remaining {
 			if !remaining[j].picked {
 				remaining[j].maxSim = max(remaining[j].maxSim, cosine(remaining[j].cats, c.Candidate.Categories))

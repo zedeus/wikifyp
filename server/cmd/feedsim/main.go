@@ -467,7 +467,33 @@ func main() {
 	walkReader := flag.String("walklab", "", "run the random-walk config matrix against a reader's state instead of simulating")
 	bench := flag.Bool("bench", false, "run the standard benchmark suite: every persona, fixed lengths, one scorecard")
 	capReader := flag.String("capinfo", "", "dump a reader's state-coherence structure (satiation-cap diagnostics) instead of simulating")
+	engThresh := flag.Float64("engage-threshold", 0.20, "completion fraction for positive engagement")
+	engTokens := flag.Int("engage-tokens", 200, "absolute token count for positive engagement")
+	impDamp := flag.Float64("imp-damping", 1.0, "impression excess-damping multiplier")
+	impWarmup := flag.Float64("imp-warmup", 5000, "total impression count before discount activates")
+	simPenalty := flag.Float64("sim-penalty", 1.0, "MMR similarity penalty strength")
+	decayFloor := flag.Float64("decay-floor", 0.3, "fixed decay floor (overrides adaptive when set)")
+	decayMin := flag.Float64("decay-min", 0.3, "adaptive decay floor minimum (new readers)")
+	decayMax := flag.Float64("decay-max", 0.6, "adaptive decay floor maximum (established readers)")
+	exploreBase := flag.Float64("explore-base", 0.25, "exploration share for established readers")
+	exploreMax := flag.Float64("explore-max", 0.75, "exploration share for new readers")
+	capBase := flag.Float64("fresh-cap", 0.5, "baseline satiation cap")
+	fast := flag.Bool("fast", false, "fast mode: 20 iterations, 4 key personas, no impression recording")
+	engOff := flag.Bool("engage-off", false, "disable completion-driven engagement (v3 baseline: finished=+1, skipped=-1)")
 	flag.Parse()
+	feed.EngageOff = *engOff
+	feed.EngageThreshold = *engThresh
+	feed.EngageTokens = *engTokens
+	feed.ImpressionDamping = *impDamp
+	feed.ImpressionWarmup = *impWarmup
+	feed.SimilarityPenalty = *simPenalty
+	feed.StateDecayFloor = *decayFloor
+	feed.DecayFloorMin = *decayMin
+	feed.DecayFloorMax = *decayMax
+	feed.ExploreShareBase = *exploreBase
+	feed.ExploreShareMax = *exploreMax
+	feed.FreshSimCap = *capBase
+	skipImpressions = *fast
 
 	dsn := config.FromEnv().DatabaseURL
 	if dsn == "" {
@@ -530,7 +556,17 @@ func main() {
 			if *run != "" && p.name != *run {
 				continue
 			}
+			if *fast {
+				switch p.name {
+				case "monomaniac-football", "juggler-five", "gundam-dogs-fungi", "picky", "cold-start":
+				default:
+					continue
+				}
+			}
 			iters := 60
+			if *fast {
+				iters = 20
+			}
 			var runs []runStats
 			for _, sd := range seeds {
 				stats, err := simulate(context.Background(), db, p, iters, *limit, *draws, sd, *verbose)
@@ -610,8 +646,9 @@ func names(is []interest) []string {
 
 // action is one persona reaction to a served card.
 type action struct {
-	card  feed.Card
-	state string
+	card       feed.Card
+	state      string
+	completion float64 // 0–1: simulated reading depth
 }
 
 // runStats accumulates what one persona was served and did.
@@ -640,6 +677,7 @@ const quitThreshold = 10
 // fetches without reporting, leaving the reader's state in the database
 // frozen at an interesting moment for -explain and -capinfo.
 var stopAfter int
+var skipImpressions bool
 
 // topBias weights which feed card the app shows next: position i is drawn
 // with weight topBias^i, so the top of the ranking is likeliest but any
@@ -674,11 +712,11 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 	finish := func(titles []string) error {
 		for _, title := range titles {
 			res, err := db.ExecContext(ctx, `
-				INSERT INTO reader_article_state (reader_id, source, page_id, state)
-				SELECT $1, source, page_id, 'finished' FROM latest_articles
+				INSERT INTO reader_article_state (reader_id, source, page_id, state, completion)
+				SELECT $1, source, page_id, 'finished', 1.0 FROM latest_articles
 				WHERE source = 'simplewiki' AND title = $2
 				ON CONFLICT (reader_id, source, page_id)
-				DO UPDATE SET state = excluded.state, updated_at = now()`, reader, title)
+				DO UPDATE SET state = excluded.state, completion = 1.0, updated_at = now()`, reader, title)
 			if err != nil {
 				return err
 			}
@@ -750,8 +788,10 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 			imps[i].Source = c.Source
 			imps[i].PageID = c.PageID
 		}
-		if err := event.RecordImpressions(ctx, db, reader, imps); err != nil {
-			return stats, err
+		if !skipImpressions {
+			if err := event.RecordImpressions(ctx, db, reader, imps); err != nil {
+				return stats, err
+			}
 		}
 		cats, err := cardCategories(ctx, db, cards)
 		if err != nil {
@@ -831,11 +871,14 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 			// explicitly skipped — a skip is a deliberate "not this" and
 			// real readers don't hand one to every card they scroll by.
 			st := ""
+			comp := 0.0
 			switch {
 			case appeals && rng.Float64() < finishP*p.pickiness:
 				st = feed.StateFinished
+				comp = 0.95 + rng.Float64()*0.05 // 95–100%: RSVP finish = reached the end
 			case appeals && rng.Float64() < 0.05:
 				st = feed.StateSkipped
+				comp = 0.10 + rng.Float64()*0.15 // 10–25%: glanced, not for me today
 			// A reader with no active interests adopts from any matching
 			// card, flag or not: with zero tastes everything is a door
 			// (and a zero-state feed deliberately carries no exploration
@@ -843,6 +886,7 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 			// exploration cards only.
 			case !appeals && (c.Exploration || len(interests) == 0) && len(matching(latent, cats[c.ArticleID])) > 0 && rng.Float64() < 0.7:
 				st = feed.StateFinished
+				comp = 0.90 + rng.Float64()*0.10 // 90–100%: discovery read-through
 				if stats.adoptedAt == 0 {
 					stats.adoptedAt = it
 				}
@@ -859,8 +903,10 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 				latent = dormant
 			case !appeals && rng.Float64() < 0.04:
 				st = feed.StateFinished
+				comp = 0.90 + rng.Float64()*0.10 // 90–100%: accidental read-through
 			case !appeals && rng.Float64() < skipP:
 				st = feed.StateSkipped
+				comp = 0.02 + rng.Float64()*0.13 // 2–15%: bounced early
 			}
 			if !appeals {
 				stats.boringStreak++
@@ -871,7 +917,7 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 				}
 			}
 			if st != "" {
-				actions = append(actions, action{c, st})
+				actions = append(actions, action{c, st, comp})
 			}
 			if verbose {
 				mark := "  "
@@ -912,17 +958,21 @@ func apply(ctx context.Context, db *sql.DB, reader string, actions []action) err
 	}
 	ids := make([]int64, len(actions))
 	states := make([]string, len(actions))
+	completions := make([]float64, len(actions))
 	for i, a := range actions {
 		ids[i] = a.card.ArticleID
 		states[i] = a.state
+		completions[i] = a.completion
 	}
 	_, err := db.ExecContext(ctx, `
-		INSERT INTO reader_article_state (reader_id, source, page_id, state)
-		SELECT $1, a.source, a.page_id, act.state
-		FROM unnest($2::bigint[], $3::text[]) AS act (id, state)
+		INSERT INTO reader_article_state (reader_id, source, page_id, state, completion)
+		SELECT $1, a.source, a.page_id, act.state, act.completion
+		FROM unnest($2::bigint[], $3::text[], $4::real[]) AS act (id, state, completion)
 		JOIN articles a ON a.id = act.id
 		ON CONFLICT (reader_id, source, page_id)
-		DO UPDATE SET state = excluded.state, updated_at = now()`, reader, ids, states)
+		DO UPDATE SET state = excluded.state,
+			completion = GREATEST(reader_article_state.completion, excluded.completion),
+			updated_at = now()`, reader, ids, states, completions)
 	return err
 }
 
