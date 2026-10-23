@@ -2,6 +2,7 @@ package com.wikifyp
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -21,9 +22,11 @@ import org.junit.runner.RunWith
 class ReaderTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
+    @OptIn(androidx.compose.ui.test.ExperimentalTestApi::class)
     @Test
     fun holdPauseDragAndResume() {
-        compose.waitForIdle()
+        // The feed loads asynchronously from bundled assets; wait for it.
+        compose.waitUntilAtLeastOneExists(hasText("DNA"), timeoutMillis = 5_000)
 
         // 1. Open a fixture article.
         compose.onNodeWithText("DNA").performClick()
