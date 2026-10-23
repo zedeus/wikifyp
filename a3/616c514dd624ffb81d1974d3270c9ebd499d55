@@ -1,0 +1,25 @@
+server/cmd/wikifyp/main.go
+  s_1a73b5df333a13::t_41984a3b8e5bdb 20,34-37,40,64,67-68,75-87,90
+server/internal/devui/devui.go
+  s_1a73b5df333a13::t_7924f48f6f9f43 1-650
+server/internal/devui/devui_test.go
+  s_1a73b5df333a13::t_54d6cfcbadf1b3 1-219
+server/internal/devui/templates.go
+  s_1a73b5df333a13::t_fca9d58a4b9453 1-193
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a3616c514dd624ffb81d1974d3270c9ebd499d55",
+  "prompts": {},
+  "sessions": {
+    "s_1a73b5df333a13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "132dee9e-51bb-4fe6-b9d6-1bd0218732f7",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
