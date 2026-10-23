@@ -1,0 +1,39 @@
+server/internal/feed/score_test.go
+  s_1a73b5df333a13::t_f40041a5cd89f8 833-883
+server/internal/feed/store_test.go
+  s_1a73b5df333a13::t_cbbb9269e5292f 25
+server/cmd/feedsim/main.go
+  s_1a73b5df333a13::t_bfa4836aff7feb 379
+server/internal/devui/devui.go
+  s_1a73b5df333a13::t_6905c407e4321b 144-147,480-482,587
+  s_1a73b5df333a13::t_8bb9c8512f7c6e 341-344,365-368,388-391,483
+  s_1a73b5df333a13::t_697ee12492b422 177-180
+  s_1a73b5df333a13::t_25fd6ee899c6bc 509-510,532-552,555
+server/internal/feed/score.go
+  s_1a73b5df333a13::t_bfa4836aff7feb 101,104,118,500
+  s_1a73b5df333a13::t_d9fee127716ce7 506,513,519,617-620
+server/internal/feed/store.go
+  s_1a73b5df333a13::t_0bea4a8cf901cb 40-49,56-59,125-128,147
+  s_1a73b5df333a13::t_93faf2a272d874 116-124,130,132
+  s_1a73b5df333a13::t_0976838a861baf 137,157,165,169,179,188,202,213,221
+  s_1a73b5df333a13::t_a1fbef2f75f0ac 185-187,189,224-227,233-234,236-249,523
+  s_1a73b5df333a13::t_0858bfdd29e25f 12
+server/internal/feed/walk.go
+  s_1a73b5df333a13::t_bd653dbde044a4 53-56,59,66,211-213,222,226,365,368-369
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8edfc8c03867412eebb0599df5b8a464b171f0bb",
+  "prompts": {},
+  "sessions": {
+    "s_1a73b5df333a13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "132dee9e-51bb-4fe6-b9d6-1bd0218732f7",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
