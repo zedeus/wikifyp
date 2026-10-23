@@ -1,0 +1,21 @@
+dev
+  s_1a73b5df333a13::t_a8991f3c8fdf85 1-95
+server/cmd/feedsim/main.go
+  s_1a73b5df333a13::t_a47aa15112187a 1-1017
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "572a6b22ca52f578953d17658c84b238c1235c51",
+  "prompts": {},
+  "sessions": {
+    "s_1a73b5df333a13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "132dee9e-51bb-4fe6-b9d6-1bd0218732f7",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
