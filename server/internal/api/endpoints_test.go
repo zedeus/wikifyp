@@ -305,7 +305,7 @@ func TestEventsEndpoint(t *testing.T) {
 		}
 	})
 
-	t.Run("finish updates feed state", func(t *testing.T) {
+	t.Run("finish updates feed state and completion", func(t *testing.T) {
 		body := fmt.Sprintf(`{"events":[%s]}`, validEvent("fin-1", "finish"))
 		rec := post(t, h, "/v1/events?reader=r-feed", body)
 		if rec.Code != http.StatusOK {
@@ -313,14 +313,20 @@ func TestEventsEndpoint(t *testing.T) {
 		}
 		// Verify feed state was set.
 		var state string
+		var completion float64
 		err := db.QueryRow(
-			"SELECT state FROM reader_article_state WHERE reader_id = 'r-feed'").
-			Scan(&state)
+			"SELECT state, completion FROM reader_article_state WHERE reader_id = 'r-feed'").
+			Scan(&state, &completion)
 		if err != nil {
 			t.Fatalf("no feed state row: %v", err)
 		}
 		if state != "finished" {
 			t.Errorf("state = %q, want finished", state)
+		}
+		// The event is at (sentence_idx=0, token_idx=0), so completion
+		// should be > 0 (at least the first token of the first sentence).
+		if completion <= 0 {
+			t.Errorf("completion = %f, want > 0 after a finish event", completion)
 		}
 	})
 
@@ -344,4 +350,32 @@ func TestEventsEndpoint(t *testing.T) {
 			t.Errorf("bad JSON = %d, want 400", rec.Code)
 		}
 	})
+}
+
+func TestFeedRecordsImpressions(t *testing.T) {
+	h, db := newHandler(t)
+
+	// Fetch a feed — should record impressions.
+	rec := get(t, h, "/v1/feed?reader=r-imps")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET /v1/feed = %d: %s", rec.Code, rec.Body)
+	}
+	var resp feedResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if len(resp.Articles) == 0 {
+		t.Skip("no articles in feed to test impressions")
+	}
+
+	// Verify impressions were recorded.
+	var count int
+	if err := db.QueryRow(
+		"SELECT count(*) FROM reader_impressions WHERE reader_id = 'r-imps'").
+		Scan(&count); err != nil {
+		t.Fatal(err)
+	}
+	if count != len(resp.Articles) {
+		t.Errorf("impressions = %d, want %d (one per card)", count, len(resp.Articles))
+	}
 }

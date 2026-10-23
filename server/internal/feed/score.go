@@ -299,6 +299,85 @@ func CategoryWeights(df map[string]int) Weights {
 	return w
 }
 
+// impressionDiscount computes a per-category multiplier that gently
+// dampens categories the feed over-serves relative to the reader's
+// engagement. The discount only applies to the EXCESS: if a category
+// receives more impression share than its interaction share, the
+// surplus is damped. Categories at or below their fair share are
+// untouched (factor = 1.0).
+//
+// Example: a category with 15% impression share and 5% interaction
+// share has 10% excess, giving factor = 1 - 0.10 * damping ≈ 0.80.
+// A category with 20% impression share and 36% interaction share has
+// no excess: factor = 1.0.
+//
+// This design avoids the juggler problem: a five-interest reader's
+// less-clicked categories (real interests with fewer opportunities)
+// get a mild ~20% discount instead of a harsh 65-90% one. The
+// categories that genuinely dominate the feed without clicks are the
+// ones that get pushed down.
+func impressionDiscount(liked map[string]float64, impressions map[string]int) map[string]float64 {
+	var totalImp float64
+	for _, n := range impressions {
+		totalImp += float64(n)
+	}
+	var totalLiked float64
+	for _, n := range liked {
+		totalLiked += n
+	}
+	if totalImp == 0 || totalLiked == 0 {
+		return nil
+	}
+	// Warmup: don't apply the discount until the reader has seen
+	// enough feeds for their interest pattern to stabilize. Before
+	// this, impression shares are noise and the discount creates
+	// a winner-take-all feedback loop in multi-interest readers
+	// (measured: the juggler's music interest collapsed from 143
+	// to 6 interactions without warmup — the first interest to
+	// get a slight edge cannibalized all others).
+	if totalImp < impressionWarmup {
+		return nil
+	}
+	factors := make(map[string]float64, len(liked))
+	for c := range liked {
+		impShare := float64(impressions[c]) / totalImp
+		if impShare < 1e-9 {
+			continue // never shown — no discount
+		}
+		likedShare := liked[c] / totalLiked
+		excess := impShare - likedShare
+		if excess <= 0 {
+			continue
+		}
+		f := 1 - excess*impressionDamping
+		factors[c] = max(impressionDiscountFloor, f)
+	}
+	return factors
+}
+
+// impressionDamping controls how strongly over-served categories are
+// discounted. At 1.0, a category with 10% excess impression share
+// gets factor ≈ 0.90 — a nudge, not a shove. Higher values (2.0+)
+// were measured to cause a collapse feedback loop in multi-interest
+// readers: the discount reduces serving → reduces clicks → reduces
+// CTR → increases the discount further, until one interest cannibalizes
+// the rest (the juggler's music dropped from 143 to 11 interactions
+// at damping=2.0). Gentle damping avoids the spiral while still
+// signaling genuinely over-served categories to the ranker.
+const impressionDamping = 1.0
+
+// impressionDiscountFloor prevents a category from being discounted
+// below this fraction even at extreme over-serving. At 0.5 no category
+// loses more than half its raw interest — enough to rebalance gently,
+// too little to starve a real interest out of the feed.
+const impressionDiscountFloor = 0.5
+
+// impressionWarmup is the minimum total impression count before the
+// discount activates. Below this, the reader hasn't seen enough feeds
+// for impression shares to be meaningful, and the discount would amplify
+// whichever interest happened to get clicked first.
+const impressionWarmup = 5000
+
 // Scored is one ranked candidate with the relevance score that placed it
 // and the state articles (owners, by title) whose links or categories
 // produced that score — selection rotates the feed's slots across the
@@ -318,7 +397,12 @@ type Scored struct {
 // (see stateDecayFloor). No acted-on page comes back (see suppressedPages);
 // a saved page keeps promoting its neighbourhood, not itself. The order is
 // deterministic: score, then source and page ID.
-func RankScored(candidates []Candidate, state []StateArticle, w Weights) []Scored {
+//
+// impressions (optional, nil OK) is the per-category count of how many
+// times articles in each category have appeared in the reader's feeds.
+// When present, category interest is discounted for categories the reader
+// sees often but never clicks — impression-normalized interest.
+func RankScored(candidates []Candidate, state []StateArticle, w Weights, impressions map[string]int) []Scored {
 	suppressed := suppressedPages(state)
 	// Every structure remembers which state article (owner) it came from,
 	// so each candidate can say whose reading it serves.
@@ -369,9 +453,28 @@ func RankScored(candidates []Candidate, state []StateArticle, w Weights) []Score
 	// simulated two-interest reader measured it); with the square root the
 	// same history argues 4.5:1, which selection then mixes. Skips pull
 	// the same way downward.
+	//
+	// Impression normalization (when impression counts are available):
+	// a category the reader sees proportionally more than they click is
+	// weaker evidence than one they click proportionally to how often
+	// they see it. The discount compares each category's impression
+	// share to its interaction share: a category that gets 30% of all
+	// impressions but only 10% of interactions is over-served and
+	// discounted by 10/30 ≈ 0.33; one at 10%/10% gets no discount.
+	// The floor of 0.1 prevents a zero-interaction category from being
+	// completely silenced (it may simply need more exposure). Categories
+	// at or below their fair share are not boosted (capped at 1.0).
 	interest := make(map[string]float64, len(liked)+len(disliked))
+	var impFactor map[string]float64
+	if impressions != nil {
+		impFactor = impressionDiscount(liked, impressions)
+	}
 	for c, n := range liked {
-		interest[c] = math.Sqrt(n) * w[c]
+		v := math.Sqrt(n) * w[c]
+		if f, ok := impFactor[c]; ok {
+			v *= f
+		}
+		interest[c] = v
 	}
 	for c, n := range disliked {
 		interest[c] -= math.Sqrt(n) * w[c]

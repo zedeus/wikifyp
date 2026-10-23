@@ -64,7 +64,7 @@ func neutralWeights(state []StateArticle) Weights {
 }
 
 func rank(candidates []Candidate, state []StateArticle) []Scored {
-	return RankScored(candidates, state, neutralWeights(state))
+	return RankScored(candidates, state, neutralWeights(state), nil)
 }
 
 // rankOf returns a title's position in the ranking, or -1.
@@ -227,7 +227,7 @@ func TestRankInterestDecays(t *testing.T) {
 	ranked := RankScored([]Candidate{
 		testCandidate(1, "Fresh"),
 		testCandidate(2, "Stale"),
-	}, state, w)
+	}, state, w, nil)
 	fresh, stale := ranked[0].Score, ranked[1].Score
 	if ranked[0].Title != "Article 1" {
 		fresh, stale = stale, fresh
@@ -258,7 +258,7 @@ func TestRankHubNominationsDiluted(t *testing.T) {
 		{ArticleID: 1, PageID: 10, Source: "simplewiki", Title: "Born That Year"},
 		{ArticleID: 2, PageID: 11, Source: "simplewiki", Title: "Band Mate"},
 	}
-	ranked := RankScored(candidates, []StateArticle{hub, specific}, Weights{})
+	ranked := RankScored(candidates, []StateArticle{hub, specific}, Weights{}, nil)
 	scores := map[string]float64{}
 	for _, r := range ranked {
 		scores[r.Title] = r.Score
@@ -706,13 +706,67 @@ func TestRankInterestSaturates(t *testing.T) {
 	ranked := RankScored([]Candidate{
 		testCandidate(1, "Big"),
 		testCandidate(2, "Small"),
-	}, state, w)
+	}, state, w, nil)
 	big, small := ranked[0].Score, ranked[1].Score
 	if ranked[0].Title != "Article 1" {
 		big, small = small, big
 	}
 	if ratio := big / small; ratio > 6 || ratio < 4 {
 		t.Errorf("binge/steady interest ratio = %.1f, want ~sqrt(100/4) = 5", ratio)
+	}
+}
+
+// TestImpressionNormalizedInterest: a category the reader sees often but
+// never clicks is downweighted relative to one they click every time.
+func TestImpressionNormalizedInterest(t *testing.T) {
+	state := []StateArticle{
+		{Title: "Cars article", State: StateFinished,
+			Links: []string{}, Categories: []string{"Cars", "Shared"}},
+		{Title: "Music article", State: StateFinished,
+			Links: []string{}, Categories: []string{"Music", "Shared"}},
+	}
+	candidates := []Candidate{
+		{ArticleID: 10, PageID: 10, Source: "simplewiki", Title: "New car",
+			Links: []string{}, Categories: []string{"Cars"}},
+		{ArticleID: 11, PageID: 11, Source: "simplewiki", Title: "New song",
+			Links: []string{}, Categories: []string{"Music"}},
+	}
+	w := Weights{"Cars": 0.1, "Music": 0.1, "Shared": 0.05}
+
+	// Without impressions: both should score similarly.
+	noImps := RankScored(candidates, state, w, nil)
+	var carNoImp, musicNoImp float64
+	for _, s := range noImps {
+		if s.Title == "New car" {
+			carNoImp = s.Score
+		}
+		if s.Title == "New song" {
+			musicNoImp = s.Score
+		}
+	}
+	if carNoImp == 0 || musicNoImp == 0 {
+		t.Fatal("candidates not scored")
+	}
+
+	// With impressions above the warmup threshold: Cars shown far more
+	// than Music. Cars impression share > its interaction share, so the
+	// excess-damping discount kicks in.
+	imps := map[string]int{"Cars": 4000, "Shared": 2000, "Music": 100}
+	withImps := RankScored(candidates, state, w, imps)
+	var carImp, musicImp float64
+	for _, s := range withImps {
+		if s.Title == "New car" {
+			carImp = s.Score
+		}
+		if s.Title == "New song" {
+			musicImp = s.Score
+		}
+	}
+	if musicImp <= carImp {
+		t.Errorf("impression-normalized: music (%.3f) should outscore cars (%.3f) since cars were shown 100x", musicImp, carImp)
+	}
+	if carImp >= carNoImp {
+		t.Errorf("heavy impressions should discount cars: with=%.3f should be < without=%.3f", carImp, carNoImp)
 	}
 }
 

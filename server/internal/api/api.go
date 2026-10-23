@@ -82,6 +82,22 @@ func handleFeed(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
+
+	// Record impressions: every card the feed serves is one impression.
+	if len(cards) > 0 {
+		imps := make([]struct {
+			Source string
+			PageID int64
+		}, len(cards))
+		for i, c := range cards {
+			imps[i].Source = c.Source
+			imps[i].PageID = c.PageID
+		}
+		if err := event.RecordImpressions(r.Context(), db, readerID, imps); err != nil {
+			log.Printf("api: record impressions: %v", err)
+		}
+	}
+
 	writeJSON(w, map[string]any{"articles": cards})
 }
 
@@ -214,11 +230,10 @@ func handleEvents(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		// Side effects: finish/skip events update the feed state.
-		// Only fire for newly stored events — duplicates were already
-		// processed on the original upload.
+		// Side effects for newly stored events only — duplicates were
+		// already processed on the original upload.
 		for i, e := range valid {
-			if !storeResults[i].Stored || !e.IsFinishOrSkip() {
+			if !storeResults[i].Stored {
 				continue
 			}
 			meta, err := event.LookupArticle(r.Context(), db, e.Token.ArticleID)
@@ -226,8 +241,23 @@ func handleEvents(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 				log.Printf("api: events side effect: %v", err)
 				continue
 			}
-			if err := feed.SetState(r.Context(), db, readerID, meta.Source, meta.PageID, e.FeedState()); err != nil {
-				log.Printf("api: events side effect: %v", err)
+
+			// finish/skip → update feed state
+			if e.IsFinishOrSkip() {
+				if err := feed.SetState(r.Context(), db, readerID, meta.Source, meta.PageID, e.FeedState()); err != nil {
+					log.Printf("api: events feed state: %v", err)
+				}
+			}
+
+			// Every event updates completion: how far through the
+			// article the reader has reached (max-so-far, never regresses).
+			comp, err := event.Completion(r.Context(), db, e.Token.ArticleID, e.Token.SentenceIdx, e.Token.TokenIdx)
+			if err != nil {
+				log.Printf("api: events completion: %v", err)
+				continue
+			}
+			if err := event.UpdateCompletion(r.Context(), db, readerID, meta.Source, meta.PageID, comp); err != nil {
+				log.Printf("api: events completion: %v", err)
 			}
 		}
 	}

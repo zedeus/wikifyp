@@ -34,6 +34,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/zedeus/wikifyp/server/internal/config"
+	"github.com/zedeus/wikifyp/server/internal/event"
 	"github.com/zedeus/wikifyp/server/internal/feed"
 )
 
@@ -530,9 +531,6 @@ func main() {
 				continue
 			}
 			iters := 60
-			if p.name == "gundam-dogs-fungi" {
-				iters = 150
-			}
 			var runs []runStats
 			for _, sd := range seeds {
 				stats, err := simulate(context.Background(), db, p, iters, *limit, *draws, sd, *verbose)
@@ -741,6 +739,19 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 		}
 		if len(cards) == 0 {
 			return stats, fmt.Errorf("empty feed at fetch %d", it)
+		}
+		// Record impressions so the feed's impression-normalized interest
+		// sees the same signal a real reader's feed serves would generate.
+		imps := make([]struct {
+			Source string
+			PageID int64
+		}, len(cards))
+		for i, c := range cards {
+			imps[i].Source = c.Source
+			imps[i].PageID = c.PageID
+		}
+		if err := event.RecordImpressions(ctx, db, reader, imps); err != nil {
+			return stats, err
 		}
 		cats, err := cardCategories(ctx, db, cards)
 		if err != nil {

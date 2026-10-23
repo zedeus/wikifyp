@@ -83,6 +83,7 @@ var recentStateLimit = 500
 // filled an exploration slot rather than scoring in on relevance.
 type Card struct {
 	ArticleID   int64  `json:"id"`
+	PageID      int64  `json:"-"` // not serialized; used for impression tracking
 	Title       string `json:"title"`
 	Source      string `json:"source"`
 	Excerpt     string `json:"excerpt"`
@@ -288,7 +289,11 @@ func Explain(ctx context.Context, db *sql.DB, readerID string) ([]StateArticle, 
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	return state, w, RankScored(pool, state, w), nil
+	imps, err := impressionCategoryCounts(ctx, db, readerID)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return state, w, RankScored(pool, state, w, imps), nil
 }
 
 // stateCategories is the deduplicated list of categories the reader's state
@@ -306,6 +311,36 @@ func stateCategories(state []StateArticle) []string {
 		}
 	}
 	return cats
+}
+
+// impressionCategoryCounts counts how many times articles in each category
+// have been served to this reader. The feed records one impression per card
+// per serve, so a page shown three times counts three times for each of
+// its categories. The result drives impression-normalized interest: a
+// category the reader sees all the time but never clicks is weaker evidence
+// than one they click every time it appears.
+func impressionCategoryCounts(ctx context.Context, db *sql.DB, readerID string) (map[string]int, error) {
+	rows, err := db.QueryContext(ctx, `
+		SELECT ac.category, count(*)
+		FROM reader_impressions ri
+		JOIN latest_articles a ON a.source = ri.source AND a.page_id = ri.page_id
+		JOIN article_categories ac ON ac.article_id = a.id
+		WHERE ri.reader_id = $1
+		GROUP BY ac.category`, readerID)
+	if err != nil {
+		return nil, fmt.Errorf("feed: impression category counts: %w", err)
+	}
+	defer rows.Close()
+	counts := make(map[string]int)
+	for rows.Next() {
+		var c string
+		var n int
+		if err := rows.Scan(&c, &n); err != nil {
+			return nil, fmt.Errorf("feed: impression category counts: %w", err)
+		}
+		counts[c] = n
+	}
+	return counts, rows.Err()
 }
 
 // interestWeights looks up how discriminative each category the reader's
@@ -854,6 +889,7 @@ func cards(ctx context.Context, db *sql.DB, chosen []Candidate) ([]Card, error) 
 		d := details[c.ArticleID]
 		cards = append(cards, Card{
 			ArticleID:   c.ArticleID,
+			PageID:      c.PageID,
 			Title:       c.Title,
 			Source:      c.Source,
 			Excerpt:     d.excerpt,

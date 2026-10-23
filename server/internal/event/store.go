@@ -166,3 +166,89 @@ func LookupArticle(ctx context.Context, db *sql.DB, articleID int64) (ArticleMet
 	}
 	return m, nil
 }
+
+// Completion computes what fraction of an article's tokens precede (and
+// include) the given token address: (tokens in sentences 0..sentence_idx-1
+// + token_idx + 1) / total_tokens. Tokens are derived from sentence text
+// split on spaces, as everywhere. Returns 0 if the article has no tokens.
+func Completion(ctx context.Context, db *sql.DB, articleID int64, sentenceIdx, tokenIdx int) (float64, error) {
+	rows, err := db.QueryContext(ctx,
+		"SELECT sentence_idx, text FROM sentences WHERE article_id = $1 ORDER BY sentence_idx",
+		articleID)
+	if err != nil {
+		return 0, fmt.Errorf("event: completion sentences: %w", err)
+	}
+	defer rows.Close()
+
+	var before, total int
+	pastTarget := false
+	for rows.Next() {
+		var idx int
+		var text string
+		if err := rows.Scan(&idx, &text); err != nil {
+			return 0, fmt.Errorf("event: completion scan: %w", err)
+		}
+		count := TokenCount(text)
+		total += count
+		if !pastTarget {
+			if idx < sentenceIdx {
+				before += count
+			} else if idx == sentenceIdx {
+				before += min(tokenIdx+1, count)
+				pastTarget = true
+			} else {
+				// sentence_idx is past what we've seen — clamp
+				pastTarget = true
+			}
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return 0, fmt.Errorf("event: completion rows: %w", err)
+	}
+	if total == 0 {
+		return 0, nil
+	}
+	return float64(before) / float64(total), nil
+}
+
+// UpdateCompletion sets the completion percentage on reader_article_state
+// to the max of its current value and the given value. It only increases,
+// never regresses.
+func UpdateCompletion(ctx context.Context, db *sql.DB, readerID, source string, pageID int64, completion float64) error {
+	_, err := db.ExecContext(ctx, `
+		UPDATE reader_article_state
+		SET completion = GREATEST(completion, $4)
+		WHERE reader_id = $1 AND source = $2 AND page_id = $3`,
+		readerID, source, pageID, completion)
+	if err != nil {
+		return fmt.Errorf("event: update completion: %w", err)
+	}
+	return nil
+}
+
+// RecordImpressions stores one impression row per card the feed served
+// to the reader.
+func RecordImpressions(ctx context.Context, db *sql.DB, readerID string, cards []struct {
+	Source string
+	PageID int64
+}) error {
+	if len(cards) == 0 {
+		return nil
+	}
+	var b strings.Builder
+	b.WriteString("INSERT INTO reader_impressions (reader_id, source, page_id) VALUES ")
+	args := make([]any, 0, len(cards)*3)
+	for i, c := range cards {
+		if i > 0 {
+			b.WriteString(", ")
+		}
+		base := i * 3
+		fmt.Fprintf(&b, "($%d, $%d, $%d)", base+1, base+2, base+3)
+		args = append(args, readerID, c.Source, c.PageID)
+	}
+	_, err := db.ExecContext(ctx, b.String(), args...)
+	if err != nil {
+		return fmt.Errorf("event: record impressions: %w", err)
+	}
+	return nil
+}
