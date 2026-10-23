@@ -4,10 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -57,6 +59,13 @@ func get(t *testing.T, h http.Handler, url string) *httptest.ResponseRecorder {
 	t.Helper()
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, url, nil))
+	return rec
+}
+
+func post(t *testing.T, h http.Handler, url, body string) *httptest.ResponseRecorder {
+	t.Helper()
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, url, strings.NewReader(body)))
 	return rec
 }
 
@@ -217,4 +226,122 @@ func TestFeedLimitClamped(t *testing.T) {
 	if len(resp.Articles) > 50 {
 		t.Errorf("limit not clamped: %d articles", len(resp.Articles))
 	}
+}
+
+type eventsResponse struct {
+	Results []struct {
+		ID     string `json:"id"`
+		Status string `json:"status"`
+		Error  string `json:"error,omitempty"`
+	} `json:"results"`
+}
+
+func TestEventsEndpoint(t *testing.T) {
+	h, db := newHandler(t)
+
+	// Find a real article to reference.
+	var aid int64
+	if err := db.QueryRow("SELECT id FROM articles LIMIT 1").Scan(&aid); err != nil {
+		t.Fatal(err)
+	}
+
+	validEvent := func(id string, typ string) string {
+		return fmt.Sprintf(`{"id":%q,"schema_version":1,"session_id":"s1","type":%q,"timestamp":1728720000000,"token":{"article_id":%d,"sentence_idx":0,"token_idx":0},"wpm":250}`, id, typ, aid)
+	}
+
+	t.Run("valid batch", func(t *testing.T) {
+		body := fmt.Sprintf(`{"events":[%s,%s]}`, validEvent("e1", "play"), validEvent("e2", "pause"))
+		rec := post(t, h, "/v1/events?reader=r-test", body)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("POST /v1/events = %d: %s", rec.Code, rec.Body)
+		}
+		var resp eventsResponse
+		if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+			t.Fatal(err)
+		}
+		if len(resp.Results) != 2 {
+			t.Fatalf("got %d results, want 2", len(resp.Results))
+		}
+		for _, r := range resp.Results {
+			if r.Status != "ok" {
+				t.Errorf("event %s status = %q, want ok", r.ID, r.Status)
+			}
+		}
+	})
+
+	t.Run("duplicate is idempotent", func(t *testing.T) {
+		body := fmt.Sprintf(`{"events":[%s]}`, validEvent("e1", "play"))
+		rec := post(t, h, "/v1/events?reader=r-test", body)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("POST = %d", rec.Code)
+		}
+		var resp eventsResponse
+		json.Unmarshal(rec.Body.Bytes(), &resp)
+		if resp.Results[0].Status != "duplicate" {
+			t.Errorf("status = %q, want duplicate", resp.Results[0].Status)
+		}
+	})
+
+	t.Run("unknown schema rejected without failing batch", func(t *testing.T) {
+		badSchema := fmt.Sprintf(`{"id":"bad-schema","schema_version":99,"session_id":"s","type":"play","timestamp":1000,"token":{"article_id":%d,"sentence_idx":0,"token_idx":0},"wpm":250}`, aid)
+		body := fmt.Sprintf(`{"events":[%s,%s]}`, badSchema, validEvent("e3", "play"))
+		rec := post(t, h, "/v1/events?reader=r-test", body)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("POST = %d: %s", rec.Code, rec.Body)
+		}
+		var resp eventsResponse
+		json.Unmarshal(rec.Body.Bytes(), &resp)
+		if len(resp.Results) != 2 {
+			t.Fatalf("got %d results, want 2", len(resp.Results))
+		}
+		if resp.Results[0].Status != "rejected" {
+			t.Errorf("bad schema status = %q, want rejected", resp.Results[0].Status)
+		}
+		if resp.Results[0].ID != "bad-schema" {
+			t.Errorf("bad schema id = %q, want bad-schema", resp.Results[0].ID)
+		}
+		if resp.Results[1].Status != "ok" {
+			t.Errorf("good event status = %q, want ok", resp.Results[1].Status)
+		}
+	})
+
+	t.Run("finish updates feed state", func(t *testing.T) {
+		body := fmt.Sprintf(`{"events":[%s]}`, validEvent("fin-1", "finish"))
+		rec := post(t, h, "/v1/events?reader=r-feed", body)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("POST = %d: %s", rec.Code, rec.Body)
+		}
+		// Verify feed state was set.
+		var state string
+		err := db.QueryRow(
+			"SELECT state FROM reader_article_state WHERE reader_id = 'r-feed'").
+			Scan(&state)
+		if err != nil {
+			t.Fatalf("no feed state row: %v", err)
+		}
+		if state != "finished" {
+			t.Errorf("state = %q, want finished", state)
+		}
+	})
+
+	t.Run("missing reader", func(t *testing.T) {
+		rec := post(t, h, "/v1/events", `{"events":[]}`)
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("no reader = %d, want 400", rec.Code)
+		}
+	})
+
+	t.Run("empty events", func(t *testing.T) {
+		rec := post(t, h, "/v1/events?reader=r1", `{"events":[]}`)
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("empty events = %d, want 400", rec.Code)
+		}
+	})
+
+	t.Run("invalid JSON", func(t *testing.T) {
+		rec := post(t, h, "/v1/events?reader=r1", `not json`)
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("bad JSON = %d, want 400", rec.Code)
+		}
+	})
 }

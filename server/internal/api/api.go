@@ -6,11 +6,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/zedeus/wikifyp/server/internal/event"
 	"github.com/zedeus/wikifyp/server/internal/feed"
 )
 
@@ -43,6 +45,7 @@ func New(db *sql.DB, checks ...func(context.Context) error) http.Handler {
 	})
 	mux.HandleFunc("GET /v1/feed", withDB(db, handleFeed))
 	mux.HandleFunc("GET /v1/articles/{id}", withDB(db, handleArticle))
+	mux.HandleFunc("POST /v1/events", withDB(db, handleEvents))
 	return mux
 }
 
@@ -136,6 +139,110 @@ func handleArticle(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, resp)
+}
+
+// maxEventBody caps the request body for event uploads: 50 events at ~300
+// bytes each is well under 1 MiB, and the cap prevents a runaway client
+// from exhausting memory.
+const maxEventBody = 1 << 20
+
+// handleEvents serves POST /v1/events?reader=<id>: a batch of reading
+// events. Each event is decoded and validated independently; a bad event
+// is reported in the per-event results without failing the batch.
+func handleEvents(db *sql.DB, w http.ResponseWriter, r *http.Request) {
+	readerID := r.FormValue("reader")
+	if readerID == "" {
+		http.Error(w, "missing reader parameter", http.StatusBadRequest)
+		return
+	}
+
+	body, err := io.ReadAll(io.LimitReader(r.Body, maxEventBody+1))
+	if err != nil {
+		http.Error(w, "reading body", http.StatusBadRequest)
+		return
+	}
+	if len(body) > maxEventBody {
+		http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
+		return
+	}
+
+	var req struct {
+		Events []json.RawMessage `json:"events"`
+	}
+	if err := json.Unmarshal(body, &req); err != nil {
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		return
+	}
+	if len(req.Events) == 0 {
+		http.Error(w, "empty events array", http.StatusBadRequest)
+		return
+	}
+
+	type eventResult struct {
+		ID     string `json:"id"`
+		Status string `json:"status"`
+		Error  string `json:"error,omitempty"`
+	}
+
+	results := make([]eventResult, 0, len(req.Events))
+	valid := make([]event.Event, 0, len(req.Events))
+	validIdx := make([]int, 0, len(req.Events)) // index into results
+
+	for _, raw := range req.Events {
+		e, err := event.Decode(raw)
+		if err != nil {
+			id := extractID(raw)
+			results = append(results, eventResult{ID: id, Status: "rejected", Error: err.Error()})
+			continue
+		}
+		idx := len(results)
+		results = append(results, eventResult{ID: e.ID, Status: "ok"})
+		valid = append(valid, e)
+		validIdx = append(validIdx, idx)
+	}
+
+	if len(valid) > 0 {
+		storeResults, err := event.Store(r.Context(), db, readerID, valid)
+		if err != nil {
+			serverError(w, err)
+			return
+		}
+		for i, sr := range storeResults {
+			ri := validIdx[i]
+			if !sr.Stored {
+				results[ri].Status = "duplicate"
+			}
+		}
+
+		// Side effects: finish/skip events update the feed state.
+		// Only fire for newly stored events — duplicates were already
+		// processed on the original upload.
+		for i, e := range valid {
+			if !storeResults[i].Stored || !e.IsFinishOrSkip() {
+				continue
+			}
+			meta, err := event.LookupArticle(r.Context(), db, e.Token.ArticleID)
+			if err != nil {
+				log.Printf("api: events side effect: %v", err)
+				continue
+			}
+			if err := feed.SetState(r.Context(), db, readerID, meta.Source, meta.PageID, e.FeedState()); err != nil {
+				log.Printf("api: events side effect: %v", err)
+			}
+		}
+	}
+
+	writeJSON(w, map[string]any{"results": results})
+}
+
+// extractID pulls the "id" field from raw JSON without fully decoding
+// it, so rejected events can still be reported by their client ID.
+func extractID(raw json.RawMessage) string {
+	var partial struct {
+		ID string `json:"id"`
+	}
+	json.Unmarshal(raw, &partial)
+	return partial.ID
 }
 
 func writeJSON(w http.ResponseWriter, v any) {
