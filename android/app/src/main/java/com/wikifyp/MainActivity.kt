@@ -6,14 +6,19 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.content.edit
+import androidx.lifecycle.lifecycleScope
 import com.wikifyp.data.CachedFeedRepository
+import com.wikifyp.data.EventQueue
+import com.wikifyp.data.EventUploader
 import com.wikifyp.data.FeedCache
 import com.wikifyp.data.FeedRepository
 import com.wikifyp.data.FixtureFeedRepository
 import com.wikifyp.data.HttpFeedRepository
+import com.wikifyp.reader.EventListener
 import com.wikifyp.theme.WikifypTheme
 import com.wikifyp.ui.WikifypApp
 import com.wikifyp.ui.reader.HandlerClock
+import kotlinx.coroutines.launch
 import java.io.File
 import java.util.UUID
 
@@ -23,6 +28,14 @@ class MainActivity : ComponentActivity() {
 
         val repository = createRepository(this)
         val clock = HandlerClock()
+        val queue = EventQueue(this)
+        val eventListener = EventListener { event -> queue.enqueue(event) }
+
+        // Upload events in the background when a server is configured.
+        if (BuildConfig.SERVER_URL.isNotEmpty() && !underInstrumentation()) {
+            val uploader = EventUploader(queue, BuildConfig.SERVER_URL, readerId(this))
+            lifecycleScope.launch { uploader.run() }
+        }
 
         enableEdgeToEdge()
         setContent {
@@ -31,6 +44,7 @@ class MainActivity : ComponentActivity() {
                 WikifypApp(
                     repository = repository,
                     clock = clock,
+                    eventListener = eventListener,
                     initialWpm = prefs.getInt("wpm", 250),
                     onWpmChange = { prefs.edit { putInt("wpm", it) } },
                 )

@@ -12,6 +12,7 @@ import androidx.compose.runtime.setValue
 import com.wikifyp.data.Article
 import com.wikifyp.data.FeedRepository
 import com.wikifyp.data.toSentenceTokens
+import com.wikifyp.reader.EventListener
 import com.wikifyp.reader.ReaderClock
 import com.wikifyp.ui.feed.FeedScreen
 import com.wikifyp.ui.feed.FeedState
@@ -27,6 +28,7 @@ import kotlinx.coroutines.CancellationException
 fun WikifypApp(
     repository: FeedRepository,
     clock: ReaderClock,
+    eventListener: EventListener = EventListener {},
     initialWpm: Int = 250,
     onWpmChange: (Int) -> Unit = {},
 ) {
@@ -85,6 +87,7 @@ fun WikifypApp(
             sentences = sentences,
             articleId = current.id,
             clock = clock,
+            onEvent = eventListener,
             onBack = { openArticleId = null },
             initialWpm = wpm,
             onWpmChange = {
