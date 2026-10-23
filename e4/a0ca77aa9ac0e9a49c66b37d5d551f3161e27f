@@ -1,0 +1,41 @@
+server/internal/api/api.go
+  s_9c6c8807874627::t_10d8b08c96b5dd 9,15
+  s_9c6c8807874627::t_458f8bf23f91d2 48
+  s_9c6c8807874627::t_0ebe55de94eea3 144-243
+  s_9c6c8807874627::t_df5de9c94f2414 244-245
+server/internal/event/event.go
+  s_9c6c8807874627::t_040ca1d94f4ad4 1-157
+server/internal/migrate/migrations/0007_reading_events.sql
+  s_9c6c8807874627::t_24b3440d55972f 1-32
+server/internal/event/store.go
+  s_9c6c8807874627::t_12fb00b3f00fda 1-11,15-77,79,81-83,85,91,93,96,98,100-168
+  s_9c6c8807874627::t_5f600764f6fe4f 78,80,84,86-90,92,94-95,97,99
+  s_9c6c8807874627::t_3d654e2509b34e 12-14
+server/internal/event/event_test.go
+  s_9c6c8807874627::t_142de31d000446 1-181
+server/internal/event/store_test.go
+  s_9c6c8807874627::t_452d458602fa6a 1-16,18-99,101-104,107-247
+  s_9c6c8807874627::t_20397f5f90f4c3 17
+  s_9c6c8807874627::t_3fc2c00a6c3667 100,105-106
+server/internal/api/endpoints_test.go
+  s_9c6c8807874627::t_7d51c894f5a801 230-249,251-346
+  s_9c6c8807874627::t_c92be52f4a9d23 65-71
+  s_9c6c8807874627::t_df5de9c94f2414 250,347
+  s_9c6c8807874627::t_463821ccea42ef 7,12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e4a0ca77aa9ac0e9a49c66b37d5d551f3161e27f",
+  "prompts": {},
+  "sessions": {
+    "s_9c6c8807874627": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4f817860-3004-4aa9-a9fa-31bf659f0bdf",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
