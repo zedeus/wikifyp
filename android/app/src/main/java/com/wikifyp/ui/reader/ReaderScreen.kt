@@ -63,6 +63,7 @@ fun ReaderScreen(
     onEvent: EventListener = EventListener {},
     onBack: () -> Unit = {},
     initialWpm: Int = 250,
+    onWpmChange: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var currentWord by remember { mutableStateOf("") }
@@ -375,6 +376,7 @@ fun ReaderScreen(
                                         if (kotlin.math.abs(dx) > kotlin.math.abs(dy)) dx else dy
                                     val delta = (d / 2.dp.toPx()).toInt()
                                     wpm = (wpm + delta).coerceIn(100, 600)
+                                    onWpmChange(wpm)
                                 }
                             }.padding(Spacing.md)
                             .testTag("wpmControl"),
@@ -409,7 +411,10 @@ fun ReaderScreen(
                                 Spacer(Modifier.height(Spacing.sm))
                                 Slider(
                                     value = wpm.toFloat(),
-                                    onValueChange = { wpm = it.toInt() },
+                                    onValueChange = {
+                                        wpm = it.toInt()
+                                        onWpmChange(wpm)
+                                    },
                                     valueRange = 100f..600f,
                                     steps = 0,
                                     modifier =

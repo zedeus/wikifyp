@@ -24,10 +24,29 @@ android {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // Feed server root. Explicit -PserverUrl always wins; an empty
+        // value serves the bundled fixtures.
+        buildConfigField("String", "SERVER_URL", "\"${project.findProperty("serverUrl") ?: ""}\"")
+    }
+
+    buildTypes {
+        debug {
+            // A plain debug install talks to the dev server on the
+            // emulator's host (10.0.2.2 is the emulator's alias for the
+            // host's loopback; `./dev server` and no adb reverse needed).
+            // -PserverUrl still overrides, and instrumented tests fall
+            // back to fixtures at runtime regardless (MainActivity).
+            buildConfigField(
+                "String",
+                "SERVER_URL",
+                "\"${project.findProperty("serverUrl") ?: "http://10.0.2.2:8080"}\"",
+            )
+        }
     }
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     testOptions {
@@ -83,6 +102,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.coroutines.android)
 
     // Compose
     implementation(libs.androidx.compose.ui)
@@ -93,6 +113,7 @@ dependencies {
 
     // Local tests: JUnit, Robolectric, Compose on the JVM, Roborazzi screenshots
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
     testImplementation(libs.roborazzi)
     testImplementation(libs.roborazzi.compose)

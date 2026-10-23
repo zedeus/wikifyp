@@ -13,7 +13,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Emulator test: opens an article from the list, then exercises hold
+ * Emulator test: opens an article from the feed, then exercises hold
  * (play), lift (pause), drag (scroll back) and resume-from-drag gestures
  * against real time.
  */

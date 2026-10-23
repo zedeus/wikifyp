@@ -1,50 +1,75 @@
 package com.wikifyp
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import com.wikifyp.data.FixtureArticle
-import com.wikifyp.data.listFixtureArticles
-import com.wikifyp.data.toSentenceTokens
+import androidx.core.content.edit
+import com.wikifyp.data.CachedFeedRepository
+import com.wikifyp.data.FeedCache
+import com.wikifyp.data.FeedRepository
+import com.wikifyp.data.FixtureFeedRepository
+import com.wikifyp.data.HttpFeedRepository
 import com.wikifyp.theme.WikifypTheme
-import com.wikifyp.ui.ArticleListScreen
+import com.wikifyp.ui.WikifypApp
 import com.wikifyp.ui.reader.HandlerClock
-import com.wikifyp.ui.reader.ReaderScreen
+import java.io.File
+import java.util.UUID
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val articles = listFixtureArticles(this)
+        val repository = createRepository(this)
         val clock = HandlerClock()
 
         enableEdgeToEdge()
         setContent {
             WikifypTheme {
-                var currentArticle by remember { mutableStateOf<FixtureArticle?>(null) }
-
-                val article = currentArticle
-                if (article != null) {
-                    val sentences = remember(article) { article.toSentenceTokens() }
-                    ReaderScreen(
-                        articleTitle = article.title,
-                        sentences = sentences,
-                        articleId = article.id.toLong(),
-                        clock = clock,
-                        onBack = { currentArticle = null },
-                    )
-                } else {
-                    ArticleListScreen(
-                        articles = articles,
-                        onArticleClick = { currentArticle = it },
-                    )
-                }
+                val prefs = getSharedPreferences("wikifyp", Context.MODE_PRIVATE)
+                WikifypApp(
+                    repository = repository,
+                    clock = clock,
+                    initialWpm = prefs.getInt("wpm", 250),
+                    onWpmChange = { prefs.edit { putInt("wpm", it) } },
+                )
             }
         }
     }
+}
+
+/**
+ * The real repository: the server behind an offline cache when one is
+ * configured (debug builds default to the dev server on the emulator's
+ * host; `-PserverUrl=…` overrides), otherwise the bundled fixture
+ * articles. Instrumented tests always get the fixtures: they assert on
+ * fixture content and run on emulators with no server.
+ */
+private fun createRepository(context: Context): FeedRepository {
+    if (BuildConfig.SERVER_URL.isEmpty() || underInstrumentation()) {
+        return FixtureFeedRepository(context)
+    }
+    return CachedFeedRepository(
+        remote = HttpFeedRepository(BuildConfig.SERVER_URL, readerId(context)),
+        cache = FeedCache(File(context.filesDir, "feed-cache")),
+    )
+}
+
+/** Whether an androidTest instrumentation is driving the app. */
+private fun underInstrumentation(): Boolean =
+    try {
+        Class.forName("androidx.test.platform.app.InstrumentationRegistry")
+        true
+    } catch (_: ClassNotFoundException) {
+        false
+    }
+
+/** This install's pseudonymous reader ID: random once, then stable. */
+private fun readerId(context: Context): String {
+    val prefs = context.getSharedPreferences("wikifyp", Context.MODE_PRIVATE)
+    prefs.getString("reader_id", null)?.let { return it }
+    val id = UUID.randomUUID().toString()
+    prefs.edit { putString("reader_id", id) }
+    return id
 }

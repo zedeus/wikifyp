@@ -14,9 +14,9 @@ class MainActivityTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun launch_showsArticleList() {
+    fun launch_showsFeed() {
         compose.onNodeWithText("wikifyp").assertIsDisplayed()
-        // At least one fixture article should appear.
+        // At least one bundled article card should appear in the feed.
         compose.onNodeWithText("DNA").assertIsDisplayed()
     }
 }
