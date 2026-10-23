@@ -1,0 +1,20 @@
+android/app/src/main/java/com/wikifyp/ui/feed/FeedScreen.kt
+  s_9c6c8807874627::t_facda55f2d4bfd 8
+  s_9c6c8807874627::t_79371c74c964f4 132-148
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6fb68d7b88b56ea710ac7270a534b7128c0d97ce",
+  "prompts": {},
+  "sessions": {
+    "s_9c6c8807874627": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4f817860-3004-4aa9-a9fa-31bf659f0bdf",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
