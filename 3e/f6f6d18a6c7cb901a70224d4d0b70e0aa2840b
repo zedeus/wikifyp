@@ -1,0 +1,31 @@
+server/cmd/feedsim/main.go
+  s_1a73b5df333a13::t_089d8ae2fbecdb 982-985
+  s_1a73b5df333a13::t_0034863ef4cf4d 380-381,383,958-960,962-963,965,967-971,973,976-978
+  s_1a73b5df333a13::t_6563afbf0e9c60 979
+server/internal/feed/score_test.go
+  s_1a73b5df333a13::t_831a779c066f9e 330-332
+server/internal/feed/score.go
+  s_1a73b5df333a13::t_68397b7ed59386 114-117
+  s_1a73b5df333a13::t_14f3c4aad22929 223-235,571
+  s_1a73b5df333a13::t_cef6fb46972984 668
+server/internal/ingest/ingest.go
+  s_1a73b5df333a13::t_2c13ae2e7d9435 119,219,234
+server/internal/ingest/ingest_test.go
+  s_1a73b5df333a13::t_831a779c066f9e 483-504,525,560
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3ef6f6d18a6c7cb901a70224d4d0b70e0aa2840b",
+  "prompts": {},
+  "sessions": {
+    "s_1a73b5df333a13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "132dee9e-51bb-4fe6-b9d6-1bd0218732f7",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
