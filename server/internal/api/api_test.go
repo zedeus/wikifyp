@@ -26,7 +26,7 @@ func TestHealthz(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
-			New(tt.checks...).ServeHTTP(rec, req)
+			New(nil, tt.checks...).ServeHTTP(rec, req)
 			if rec.Code != tt.wantStatus {
 				t.Errorf("GET /healthz = %d, want %d", rec.Code, tt.wantStatus)
 			}
@@ -39,7 +39,7 @@ func TestHealthz(t *testing.T) {
 func TestHealthzMethodNotAllowed(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/healthz", nil)
-	New().ServeHTTP(rec, req)
+	New(nil).ServeHTTP(rec, req)
 	if rec.Code != http.StatusMethodNotAllowed {
 		t.Errorf("POST /healthz = %d, want %d", rec.Code, http.StatusMethodNotAllowed)
 	}

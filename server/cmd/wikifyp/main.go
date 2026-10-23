@@ -17,6 +17,7 @@ import (
 
 	"github.com/zedeus/wikifyp/server/internal/api"
 	"github.com/zedeus/wikifyp/server/internal/config"
+	"github.com/zedeus/wikifyp/server/internal/devui"
 	"github.com/zedeus/wikifyp/server/internal/migrate"
 )
 
@@ -30,9 +31,13 @@ func main() {
 		err = serve(ctx)
 	case os.Args[1] == "ingest":
 		err = runIngest(ctx, os.Args[2:])
+	case os.Args[1] == "import-dump":
+		err = runImportDump(ctx, os.Args[2:])
+	case os.Args[1] == "fetch-categories":
+		err = runFetchCategories(ctx, os.Args[2:])
 	default:
 		// A typo must not silently start the server instead of ingesting.
-		err = fmt.Errorf("unknown command %q (the only command is \"ingest\"; run with no arguments to serve)", os.Args[1])
+		err = fmt.Errorf("unknown command %q (commands are \"ingest\", \"import-dump\" and \"fetch-categories\"; run with no arguments to serve)", os.Args[1])
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -56,19 +61,33 @@ func openDB(ctx context.Context, dsn string) (*sql.DB, error) {
 func serve(ctx context.Context) error {
 	cfg := config.FromEnv()
 
+	var db *sql.DB
 	var checks []func(context.Context) error
 	if cfg.DatabaseURL != "" {
-		db, err := openDB(ctx, cfg.DatabaseURL)
-		if err != nil {
+		var err error
+		if db, err = openDB(ctx, cfg.DatabaseURL); err != nil {
 			return err
 		}
 		defer db.Close()
 		checks = append(checks, db.PingContext)
 	}
 
+	handler := http.Handler(api.New(db, checks...))
+	if db != nil {
+		// The development inspection UI. It can write reader state, so it
+		// rides inside the server rather than being exposed separately;
+		// the whole server is a local prototype today.
+		dev := devui.New(db, "")
+		root := http.NewServeMux()
+		root.Handle("/", handler)
+		root.Handle("/dev", dev)
+		root.Handle("/dev/", dev)
+		handler = root
+	}
+
 	srv := &http.Server{
 		Addr:    cfg.Addr,
-		Handler: api.New(checks...),
+		Handler: handler,
 		// A client trickling its header bytes must not hold a connection
 		// open forever.
 		ReadHeaderTimeout: 5 * time.Second,
