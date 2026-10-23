@@ -1,0 +1,35 @@
+server/cmd/wikifyp/importdump.go
+  s_1a73b5df333a13::t_0735d1f1382af0 1-89
+server/internal/migrate/migrations/0004_category_pages.sql
+  s_1a73b5df333a13::t_0735d1f1382af0 1-16
+server/cmd/wikifyp/fetchcategories.go
+  s_1a73b5df333a13::t_0735d1f1382af0 1-170
+server/internal/ingest/ingest_test.go
+  s_1a73b5df333a13::t_0735d1f1382af0 8,73-77,79,81-82,330-374,416,425-563
+server/internal/migrate/migrations/0006_category_probe.sql
+  s_1a73b5df333a13::t_0735d1f1382af0 1-7
+server/internal/testdb/testdb.go
+  s_1a73b5df333a13::t_0735d1f1382af0 57
+server/internal/migrate/migrations/0005_explore_domains.sql
+  s_1a73b5df333a13::t_0735d1f1382af0 1-21
+server/internal/ingest/ingest.go
+  s_1a73b5df333a13::t_0735d1f1382af0 19,29-33,42,44-45,61,77-84,86-90,96-97,101-139,148-151,153-154,159,162-165,170,174,177-182,185-239
+server/internal/wiki/wiki.go
+  s_1a73b5df333a13::t_0735d1f1382af0 1-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "050e20401fc25115c87c054240bf341465d84e41",
+  "prompts": {},
+  "sessions": {
+    "s_1a73b5df333a13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "132dee9e-51bb-4fe6-b9d6-1bd0218732f7",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
