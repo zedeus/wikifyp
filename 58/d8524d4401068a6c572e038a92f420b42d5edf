@@ -1,0 +1,55 @@
+fixtures/articles/barack-obama.json
+  s_1a73b5df333a13::t_f1f8ff507b4a82 5
+fixtures/articles/chemistry.json
+  s_1a73b5df333a13::t_31c0f1b965f0e5 5
+fixtures/articles/computer.json
+  s_1a73b5df333a13::t_953aba30558b8e 5
+fixtures/dumps/README.md
+  s_1a73b5df333a13::t_96a99629633da8 1-27
+fixtures/dumps/cloverleaf-quasar.expected.txt
+  s_1a73b5df333a13::t_2c33199eb283bb 1
+fixtures/dumps/fossil-word.expected.txt
+  s_1a73b5df333a13::t_6bec60e38ae10a 1-7
+server/go.mod
+  s_1a73b5df333a13::t_d868b8ec064100 3,5-8,14-15
+server/go.sum
+  s_1a73b5df333a13::t_1d66dc2088e77a 19-24
+server/internal/source/clean.go
+  s_1a73b5df333a13::t_f97e34662a81a5 22-25
+server/internal/source/clean_test.go
+  s_1a73b5df333a13::t_2ac04178e7493c 259-284
+server/internal/source/domains.go
+  s_1a73b5df333a13::t_fe8e8c233b8375 1-45
+server/internal/source/dump.go
+  s_1a73b5df333a13::t_e57dac3692e848 1-151
+server/internal/source/dump_test.go
+  s_1a73b5df333a13::t_e5aab8608e924e 1-183
+server/internal/source/mediawiki.go
+  s_1a73b5df333a13::t_88345258f9a812 22,32,37,40,42-45,82,181,185-254
+server/internal/source/mediawiki_test.go
+  s_1a73b5df333a13::t_f9f2d772c88f76 10,258-333
+server/internal/source/parsoid.go
+  s_1a73b5df333a13::t_024e752c946008 1-270
+server/internal/source/parsoid_test.go
+  s_1a73b5df333a13::t_d8e2a7cdfe7afd 1-219
+server/internal/source/source.go
+  s_1a73b5df333a13::t_6df7a902dc604a 22-40,52,74
+server/internal/source/source_test.go
+  s_1a73b5df333a13::t_38ddf1a64dfc83 13,35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "58d8524d4401068a6c572e038a92f420b42d5edf",
+  "prompts": {},
+  "sessions": {
+    "s_1a73b5df333a13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "132dee9e-51bb-4fe6-b9d6-1bd0218732f7",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
