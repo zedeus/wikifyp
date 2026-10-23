@@ -1,0 +1,31 @@
+server/internal/feed/store.go
+  s_9c6c8807874627::t_25f1b92591221f 554,569
+server/internal/feed/score.go
+  s_9c6c8807874627::t_c8ee8a8316b178 435-442
+  s_9c6c8807874627::t_9a2aa36e6db3d0 425-429,431
+  s_9c6c8807874627::t_8944a74f16a7fb 382-386
+  s_9c6c8807874627::t_3ce0c2569741a2 266
+android/app/src/main/java/com/wikifyp/ui/reader/ReaderScreen.kt
+  s_9c6c8807874627::t_5a0943e3de59fa 148-157
+  s_9c6c8807874627::t_e867ae50e86706 158
+  s_9c6c8807874627::t_774ad67aef4084 3
+  s_9c6c8807874627::t_70c4529bbef2ac 104-112
+android/app/src/main/java/com/wikifyp/ui/WikifypApp.kt
+  s_9c6c8807874627::t_fdf6d1e26063da 77-78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "57749dbd6f702c1b530302faba3f5e2b306fc121",
+  "prompts": {},
+  "sessions": {
+    "s_9c6c8807874627": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4f817860-3004-4aa9-a9fa-31bf659f0bdf",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
