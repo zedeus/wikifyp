@@ -1,0 +1,33 @@
+server/internal/ingest/ingest.go
+  s_1a73b5df333a13::t_307e7937df3f98 19,106-108,116,119,218-221,230,234
+  s_1a73b5df333a13::t_85ccc5a00c1e43 222-224
+  s_1a73b5df333a13::t_98e23fa3d08d29 214-217,225-229,231-233,235-239
+server/internal/ingest/ingest_test.go
+  s_1a73b5df333a13::t_a4272313547fa6 482-567
+  s_1a73b5df333a13::t_2730efe5ecc143 8
+server/internal/feed/store.go
+  s_1a73b5df333a13::t_9aff4f89668e6d 14
+  s_1a73b5df333a13::t_c4c0f13c6a979e 662
+  s_1a73b5df333a13::t_53cdf6f2c07d09 15
+server/cmd/wikifyp/fetchcategories.go
+  s_1a73b5df333a13::t_85ccc5a00c1e43 128-130,132
+  s_1a73b5df333a13::t_01352ac18182a5 13
+server/internal/wiki/wiki.go
+  s_1a73b5df333a13::t_d8dc9f7819d7f7 1-22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "37ee45eb9cea1353a623a8d05bf1138046427608",
+  "prompts": {},
+  "sessions": {
+    "s_1a73b5df333a13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "132dee9e-51bb-4fe6-b9d6-1bd0218732f7",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
