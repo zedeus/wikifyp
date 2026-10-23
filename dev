@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+# Dev helpers for the local corpus database and server.
+# The database is a persistent Docker container (wikifyp-pg) holding the
+# imported Simple English Wikipedia corpus; tests never use it.
+set -euo pipefail
+
+cd "$(dirname "$0")"
+
+PG_CONTAINER=wikifyp-pg
+PG_PORT=5433
+PG_VOLUME=wikifyp-pgdata
+DSN="${WIKIFYP_DATABASE_URL:-postgres://postgres:wikifyp@127.0.0.1:${PG_PORT}/wikifyp}"
+ADDR="${WIKIFYP_ADDR:-127.0.0.1:8080}"
+
+usage() {
+	cat <<'EOF'
+usage: ./dev <command>
+
+  server            start the corpus db if needed, then run the API server
+                    (dev UI at /dev)
+  db                start (or create) the corpus Postgres container
+  psql              open psql against the corpus database
+  import <dump>     import an Enterprise HTML dump into the corpus db (~18 min)
+  fetch-categories  refresh wiki category metadata and prune junk categories
+  feedsim [args]    run the persona lab against the corpus db (-h for flags)
+  reverse           adb reverse the server port so the emulator reaches it
+
+Env overrides: WIKIFYP_DATABASE_URL, WIKIFYP_ADDR.
+EOF
+	exit 2
+}
+
+db_up() {
+	if [ "$(docker inspect -f '{{.State.Running}}' "$PG_CONTAINER" 2>/dev/null)" = true ]; then
+		return
+	fi
+	if docker inspect "$PG_CONTAINER" >/dev/null 2>&1; then
+		echo "starting $PG_CONTAINER..."
+		docker start "$PG_CONTAINER" >/dev/null
+	else
+		echo "creating $PG_CONTAINER (empty; use './dev import <dump>' to load a corpus)..."
+		docker run -d --name "$PG_CONTAINER" \
+			-p "127.0.0.1:${PG_PORT}:5432" \
+			-e POSTGRES_PASSWORD=wikifyp -e POSTGRES_DB=wikifyp \
+			-v "${PG_VOLUME}:/var/lib/postgresql/data" \
+			postgres:17-alpine >/dev/null
+	fi
+	until docker exec "$PG_CONTAINER" pg_isready -q -U postgres 2>/dev/null; do
+		sleep 0.5
+	done
+}
+
+cmd="${1:-}"
+if [ $# -gt 0 ]; then shift; fi
+case "$cmd" in
+server)
+	db_up
+	echo "serving on http://${ADDR} (dev UI: http://${ADDR}/dev)"
+	cd server
+	WIKIFYP_DATABASE_URL="$DSN" WIKIFYP_ADDR="$ADDR" exec go run ./cmd/wikifyp "$@"
+	;;
+db)
+	db_up
+	echo "$PG_CONTAINER up on 127.0.0.1:${PG_PORT}"
+	;;
+psql)
+	db_up
+	exec docker exec -it "$PG_CONTAINER" psql -U postgres wikifyp "$@"
+	;;
+import)
+	[ $# -ge 1 ] || usage
+	db_up
+	cd server
+	WIKIFYP_DATABASE_URL="$DSN" exec go run ./cmd/wikifyp import-dump "$@"
+	;;
+fetch-categories)
+	db_up
+	cd server
+	WIKIFYP_DATABASE_URL="$DSN" exec go run ./cmd/wikifyp fetch-categories "$@"
+	;;
+feedsim)
+	db_up
+	cd server
+	WIKIFYP_DATABASE_URL="$DSN" exec go run ./cmd/feedsim "$@"
+	;;
+reverse)
+	adb reverse tcp:8080 tcp:8080
+	echo "device can reach the server at http://127.0.0.1:8080"
+	echo "only needed for a PHYSICAL device (build with -PserverUrl=http://127.0.0.1:8080);"
+	echo "the emulator reaches './dev server' at the debug default http://10.0.2.2:8080"
+	;;
+*)
+	usage
+	;;
+esac
