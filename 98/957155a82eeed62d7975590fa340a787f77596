@@ -1,0 +1,36 @@
+android/app/src/main/java/com/wikifyp/data/EventQueue.kt
+  s_9c6c8807874627::t_92542dfc826a45 1-18,24-27,34-46,58-60,66-100,110-121,127-129
+  s_9c6c8807874627::t_4f1a0f0e8f2cca 19-22,28-33,47-57,61-65,101-109,122-126
+  s_9c6c8807874627::t_c509e787534b85 23
+android/app/src/androidTest/java/com/wikifyp/EventQueueInstrumentedTest.kt
+  s_9c6c8807874627::t_97d0a1e98c484a 1-63
+android/app/src/main/java/com/wikifyp/data/EventUploader.kt
+  s_9c6c8807874627::t_4f1a0f0e8f2cca 76-83
+  s_9c6c8807874627::t_b4ebeaef61f064 1-75,84-100
+android/app/src/main/java/com/wikifyp/MainActivity.kt
+  s_9c6c8807874627::t_6097b597895c96 31-38,47
+  s_9c6c8807874627::t_879cf058be3c34 9,11-12,17,21
+android/app/src/test/java/com/wikifyp/data/EventQueueTest.kt
+  s_9c6c8807874627::t_4f1a0f0e8f2cca 32-35,114-118
+  s_9c6c8807874627::t_79518ff417df35 1-31,36-113,119-123
+android/app/src/main/java/com/wikifyp/ui/WikifypApp.kt
+  s_9c6c8807874627::t_96351a7f773a5c 31
+  s_9c6c8807874627::t_4b5550bd1dc61e 15
+  s_9c6c8807874627::t_83abca1f960f1c 90
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "98957155a82eeed62d7975590fa340a787f77596",
+  "prompts": {},
+  "sessions": {
+    "s_9c6c8807874627": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4f817860-3004-4aa9-a9fa-31bf659f0bdf",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
