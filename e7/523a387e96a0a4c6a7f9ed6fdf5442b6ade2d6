@@ -1,0 +1,24 @@
+android/app/src/androidTest/java/com/wikifyp/ReaderTest.kt
+  s_9c6c8807874627::t_4c462933400997 5
+  s_9c6c8807874627::t_d2bd438b8fcf31 25
+  s_9c6c8807874627::t_8df112d87c4f3c 28-29
+android/app/src/androidTest/java/com/wikifyp/MainActivityTest.kt
+  s_9c6c8807874627::t_cfd49cddbd99f0 4,21-22
+  s_9c6c8807874627::t_1b33cf496ab960 17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e7523a387e96a0a4c6a7f9ed6fdf5442b6ade2d6",
+  "prompts": {},
+  "sessions": {
+    "s_9c6c8807874627": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4f817860-3004-4aa9-a9fa-31bf659f0bdf",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
