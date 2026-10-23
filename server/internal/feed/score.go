@@ -1,0 +1,795 @@
+// Package feed picks a reader's next articles.
+//
+// The product is a doomscrolling replacement for curious people, so the feed
+// has two jobs that pull against each other: follow the reader's interests,
+// and keep opening doors they would not have searched for. Ranking splits
+// into pure functions over article link and category data (unit-tested on
+// fixture articles) and the store queries around them that bound the
+// candidate pool and attach reader state. Versions of a page are grouped by
+// (source, page_id) through the latest_articles view, so only the newest
+// stored revision of a page can surface, and reader state attaches to the
+// page, never a revision.
+package feed
+
+import (
+	"cmp"
+	"hash/fnv"
+	"math"
+	"math/rand/v2"
+	"slices"
+)
+
+// Reader states. Set when the reader acts on an article (directly in tests
+// today; the event pipeline writes them once uploads land).
+const (
+	StateFinished = "finished"
+	StateSaved    = "saved"
+	StateSkipped  = "skipped"
+)
+
+// linkWeight is the score of a direct link between a candidate and a
+// finished or saved article: a deliberate editorial statement that the two
+// belong together, worth about as much as sharing several distinctive
+// categories.
+const linkWeight = 1.0
+
+// similarityPenalty scales how hard a candidate is pushed down for
+// resembling what the feed already picked (greedy MMR in SelectDiverse).
+// Similarity is a cosine in [0,1] and relevance scores sit around
+// linkWeight, so at 1.0 a near-clone of an already-picked card forfeits a
+// direct link's worth of score — which is what breaks the all-composers /
+// all-countries feeds without hiding the genuinely best neighbours.
+const similarityPenalty = 1.0
+
+// RelevanceFloor is the minimum raw relevance that can occupy a relevance
+// slot. A reader with three interactions has perhaps a dozen genuinely
+// related candidates; below the floor the pool is pages that merely link
+// their reads once in passing, and a fresh door (exploration) serves the
+// reader better than that filler. It also subsumes antipathy: skip-driven
+// negative scores sit far under it. Exported so diagnostic tooling
+// (cmd/feedsim) classifies eligibility by the same line selection draws.
+const RelevanceFloor = 0.3
+
+// scoreJitter is the width of the seeded multiplicative noise on scores:
+// ±25% keeps clear winners on top while shuffling near-ties, so two
+// refreshes of a feed are recognisably similar but not identical.
+const scoreJitter = 0.25
+
+// outgoingSaturation turns outgoing-link density into score: density times
+// this, capped at 1, scales linkWeight. At 10, a candidate devoting a tenth
+// of its links to the reader's reads counts as fully linked; a hub spending
+// a dozen of its two thousand links on them earns almost nothing.
+const outgoingSaturation = 10
+
+// Exploration's share of the feed adapts to how much corroborated taste
+// the reader has shown. A quarter of the feed being doors they did not
+// open themselves (exploreShareBase) is the dash of serendipity the
+// product wants from a reader whose pattern is established — but serving
+// a brand-new or patternless reader 75% guesses about their taste and 25%
+// doors is backwards, so with little evidence the share climbs toward
+// exploreShareMax. Evidence is CLUSTERED positive rows (StateClusters):
+// reads that corroborate each other. A dozen unrelated one-off reads are
+// not a pattern, and they prove it by connecting to nothing. Confidence
+// ramps linearly: the share starts at the max with zero corroborated
+// reads and reaches the base at exploreRampRows of them, where it stays —
+// by then the pattern has earned the feed's trust. The reader swipes the
+// feed one card at a time in served order, so the share also spaces the
+// doors evenly through the deck rather than bunching them.
+const (
+	exploreShareBase = 0.25
+	exploreShareMax  = 0.75
+	exploreRampRows  = 25
+)
+
+// nominationGrace is the outgoing degree up to which a state page
+// nominates its neighbours at full strength; beyond it the strength decays
+// as grace/degree. Ordinary articles (biographies, bands, car models) sit
+// inside the grace region; year pages, countries and lists sit far outside
+// it. See the nomination comment in RankScored.
+const nominationGrace = 50.0
+
+// freshSimCap is the baseline for how similar to this feed's already-picked
+// cards a candidate may be and still occupy a fresh rotation turn. Turn
+// share used to be proportional to state-row count, so volume compounded: a
+// five-interest reader's feed collapsed onto whichever interest won early
+// (one run computing 394 of 600, the next history), and a reader who moved
+// on kept getting ~72% yesterday's topic. Satiation breaks the spiral per
+// feed without naming topics: once a cluster of near-identical cards is
+// in, its turns yield. The stale fallback keeps the single-interest reader
+// whole — when everything is alike, everything satiates together, and the
+// feed serves it anyway. The cap each reader actually gets self-tunes
+// around this baseline from their own state: see AdaptiveFreshCap.
+const freshSimCap = 0.5
+
+// AdaptiveFreshCap personalizes the satiation cap from the one thing the
+// reader has already told us — how much their reads resemble each other.
+// A fixed cap was measured to trade readers against each other: 0.5
+// balanced the five-interest juggler (worst interest 2→124 of 600 serves)
+// but cost the single-interest picky reader ten appeal points, because a
+// narrow state satiates instantly and the feed floods it with variety it
+// never asked for. The mean pairwise category cosine of the newest
+// positive reads says which reader this is: cohesive state (one deep
+// love) loosens the cap toward 0.8 — more of the same stays welcome —
+// and a scattered state tightens it toward 0.35, where the spiral-
+// breaking matters. (A 0.2 floor — below same-interest fragment cosine —
+// was measured and rejected: it left the five-interest collapse intact
+// and cost the broad-single-interest reader its band floor; the fragment
+// spiral needs impression data, not a tighter cap.)
+func AdaptiveFreshCap(state []StateArticle) float64 {
+	var sets []map[string]bool
+	var cats [][]string
+	for _, s := range state {
+		if s.State == StateSkipped || len(s.Categories) == 0 {
+			continue
+		}
+		m := make(map[string]bool, len(s.Categories))
+		for _, c := range s.Categories {
+			m[c] = true
+		}
+		sets = append(sets, m)
+		cats = append(cats, s.Categories)
+		if len(sets) == 40 {
+			break
+		}
+	}
+	if len(sets) < 2 {
+		return freshSimCap
+	}
+	sum, n := 0.0, 0
+	for i := range sets {
+		for j := i + 1; j < len(sets); j++ {
+			sum += cosine(sets[i], cats[j])
+			n++
+		}
+	}
+	return min(0.8, max(0.35, 0.35+0.9*sum/float64(n)))
+}
+
+// clusterSimThreshold is the category cosine above which two positive
+// state rows count as the same interest when rotation turns are grouped
+// (see StateClusters). Measured on the dev corpus: pairs from different
+// interests share no categories at all (cars↔animals cosine exactly 0),
+// while roughly a third of same-interest pairs clear 0.15 — enough to
+// chain a broad interest (birds to sharks) into one component. An
+// internally diverse interest (computing: browsers, OSes, games carry
+// disjoint category sets) still fragments into a handful of components;
+// that over-split costs the interest a few extra turns, while an
+// over-merge would rebuild the engagement spiral inside the merged
+// cluster (link-overlap edges were measured to bridge animals into
+// computing through shared hub targets, and were rejected for exactly
+// that), so the threshold errs toward splitting.
+const clusterSimThreshold = 0.15
+
+// StateClusters groups the reader's positive state rows into interest
+// clusters: connected components under "category cosine above
+// clusterSimThreshold". Rows that connect to nothing — one-off reads,
+// uncategorized pages — come back separately as misc. Order is
+// deterministic: rows stay newest-first within a cluster, clusters sort
+// by their newest row, misc stays newest-first.
+func StateClusters(state []StateArticle) (clusters [][]string, misc []string) {
+	type row struct {
+		title string
+		set   map[string]bool
+		cats  []string
+	}
+	var rows []row
+	for _, s := range state {
+		if s.State == StateSkipped {
+			continue
+		}
+		set := make(map[string]bool, len(s.Categories))
+		for _, c := range s.Categories {
+			set[c] = true
+		}
+		rows = append(rows, row{s.Title, set, s.Categories})
+	}
+	parent := make([]int, len(rows))
+	for i := range parent {
+		parent[i] = i
+	}
+	var find func(int) int
+	find = func(i int) int {
+		if parent[i] != i {
+			parent[i] = find(parent[i])
+		}
+		return parent[i]
+	}
+	for i := range rows {
+		for j := i + 1; j < len(rows); j++ {
+			if cosine(rows[i].set, rows[j].cats) > clusterSimThreshold {
+				parent[find(i)] = find(j)
+			}
+		}
+	}
+	members := make(map[int][]string)
+	var order []int // roots by newest member
+	for i := range rows {
+		r := find(i)
+		if len(members[r]) == 0 {
+			order = append(order, r)
+		}
+		members[r] = append(members[r], rows[i].title)
+	}
+	for _, r := range order {
+		if len(members[r]) >= 2 {
+			clusters = append(clusters, members[r])
+		} else {
+			misc = append(misc, members[r][0])
+		}
+	}
+	return clusters, misc
+}
+
+// ClusteredRows is how much corroborated evidence a reader's state holds:
+// the number of positive rows that sit inside StateClusters clusters. The
+// adaptive exploration share keys on it, and diagnostic tooling reports
+// the same number so the two can never drift apart.
+func ClusteredRows(state []StateArticle) int {
+	clusters, _ := StateClusters(state)
+	n := 0
+	for _, cl := range clusters {
+		n += len(cl)
+	}
+	return n
+}
+
+// stateDecayFloor is the voice the oldest interaction inside the interest
+// window keeps relative to the newest. Interest counting weighs each state
+// article by the exponential decay of its recency rank — 1.0 just read,
+// this at the window's edge (recentStateLimit) — so the profile follows
+// where the reader is heading rather than where they once binged, and a
+// state sliding off the window's cliff loses a 0.3 voice, not a full one.
+// Decay applies to category interest only: links are structural statements
+// that two pages belong together, and slot rotation already gives every
+// read an equal turn — returning to a topic refreshes its updated_at, so a
+// kept-alive interest never fades.
+const stateDecayFloor = 0.3
+
+// Candidate is one article the ranking considers, with the graph data
+// scoring reads: its outgoing links and its categories.
+type Candidate struct {
+	ArticleID  int64 // latest stored revision of the page
+	PageID     int64
+	Source     string
+	Title      string
+	Links      []string
+	Categories []string
+}
+
+// StateArticle is an article the reader finished, saved or skipped, carrying
+// the same graph data as a Candidate.
+type StateArticle struct {
+	PageID     int64
+	Source     string
+	Title      string
+	State      string
+	Links      []string
+	Categories []string
+}
+
+// Weights is the discriminative weight of each category the reader's state
+// touches. See CategoryWeights.
+type Weights map[string]float64
+
+// CategoryWeights turns document frequencies (how many corpus articles carry
+// a category) into weights: w = 1/sqrt(df). Sharing "Baroque composers"
+// (dozens of articles) means something; sharing "1970s births" (thousands)
+// means little. The curve used to be a deliberately steep 1/df, built to
+// mute the blocks of thirty or forty correlated authority-control
+// categories every well-sourced biography carried — but those are
+// maintenance categories the wiki itself marks hidden, and since ingest
+// filters them against the wiki's metadata (fetch-categories) they no
+// longer exist in stored data; keeping the steep curve on top was a second
+// mechanism for the same junk, and it muted categories as a ranking signal
+// entirely (a rare shared category scored ~0.03 against a link's 1.0).
+// Reopened at 1/sqrt, categories became a real second channel: measured,
+// persona appeal rose across the board (cars 45→72%, adopter 35→64%) and
+// the equal-love multi-interest reader's starved interest finally serves
+// (astronomy 0→20) — while the canonical feeds kept their link-driven
+// tops and MMR still breaks same-topic runs. The curve only guards
+// honest popularity now; junk is the ingest filter's job.
+func CategoryWeights(df map[string]int) Weights {
+	w := make(Weights, len(df))
+	for c, n := range df {
+		if n < 1 {
+			n = 1
+		}
+		w[c] = 1 / math.Sqrt(float64(n))
+	}
+	return w
+}
+
+// Scored is one ranked candidate with the relevance score that placed it
+// and the state articles (owners, by title) whose links or categories
+// produced that score — selection rotates the feed's slots across the
+// reader's state, and a slot can only be filled by a candidate its owner
+// produced.
+type Scored struct {
+	Candidate
+	Score  float64
+	Owners []string
+}
+
+// RankScored scores candidates against the reader's state: a direct link to
+// or from a finished or saved article counts linkWeight, shared categories
+// count their weight (per state article sharing them), and the categories
+// of skipped articles count against. State is ordered newest interaction
+// first (as readerState loads it); category interest decays with that rank
+// (see stateDecayFloor). No acted-on page comes back (see suppressedPages);
+// a saved page keeps promoting its neighbourhood, not itself. The order is
+// deterministic: score, then source and page ID.
+func RankScored(candidates []Candidate, state []StateArticle, w Weights) []Scored {
+	suppressed := suppressedPages(state)
+	// Every structure remembers which state article (owner) it came from,
+	// so each candidate can say whose reading it serves.
+	neighbour := make(map[titleKey][]string) // titles linked from finished or saved
+	nomination := make(map[string]float64)   // nominating strength per state title
+	stateTitle := make(map[titleKey]string)
+	catOwners := make(map[string][]string)
+	liked := make(map[string]float64)
+	disliked := make(map[string]float64)
+	decay := math.Log(stateDecayFloor) / float64(max(recentStateLimit, 1))
+	for i, s := range state {
+		voice := math.Exp(decay * float64(i))
+		if s.State == StateSkipped {
+			for _, c := range s.Categories {
+				disliked[c] += voice
+			}
+			continue
+		}
+		stateTitle[titleKey{s.Source, s.Title}] = s.Title
+		// A nomination's strength is the nominating page's specificity:
+		// full inside the grace region (nominationGrace links), decaying
+		// as grace/degree beyond it — the state-side mirror of the
+		// candidate-side density rule below. A link from an ordinary
+		// article is an editorial statement; a link from a 227-link year
+		// page is a calendar entry. Measured: one finished year page
+		// nominated 4 of 15 relevance cards (people born that year, a car
+		// launched that year) at the flat weight; diluted, a page with
+		// more than nominationGrace/RelevanceFloor ≈ 167 links cannot
+		// float a candidate past the relevance floor on its own. (A
+		// steeper sqrt curve also halved ordinary 60-120-link pages and
+		// starved the small-state picky reader — appeal 27→16%.)
+		strength := min(1, nominationGrace/float64(max(len(s.Links), 1)))
+		nomination[s.Title] = strength
+		for _, l := range s.Links {
+			k := titleKey{s.Source, l}
+			neighbour[k] = append(neighbour[k], s.Title)
+		}
+		for _, c := range s.Categories {
+			liked[c] += voice
+			catOwners[c] = append(catOwners[c], s.Title)
+		}
+	}
+	// Interest in a category saturates with the square root of how often
+	// the reader touched it (each touch at its recency voice). Linear
+	// counting let one binge topic outvote
+	// every other interest by its raw volume — four hundred computing
+	// finishes next to twenty football ones made feeds 95% computing (a
+	// simulated two-interest reader measured it); with the square root the
+	// same history argues 4.5:1, which selection then mixes. Skips pull
+	// the same way downward.
+	interest := make(map[string]float64, len(liked)+len(disliked))
+	for c, n := range liked {
+		interest[c] = math.Sqrt(n) * w[c]
+	}
+	for c, n := range disliked {
+		interest[c] -= math.Sqrt(n) * w[c]
+	}
+
+	ranked := make([]Scored, 0, len(candidates))
+	for _, c := range candidates {
+		if suppressed[pageKey{c.Source, c.PageID}] {
+			continue
+		}
+		score := 0.0
+		owners := make(map[string]bool)
+		// An incoming nomination scores once, at the strength of the most
+		// specific page that made it — several nominators never stacked
+		// before (the weight was flat) and still don't. The candidate's own
+		// hubness deliberately does NOT dilute it: a sparse page's link to
+		// a hub can be a fine door (a saved car's market, China), and no
+		// cheap structural signal separates a calendar hub from a legit
+		// dense page — candidate out-degree demoted Metaphysics under
+		// Japan (a fixture test caught it) and words-per-link rates Queens
+		// below the 1975 year page. The stray year card this permits is
+		// bounded to its nominator's rotation turn.
+		nominated := 0.0
+		for _, t := range neighbour[titleKey{c.Source, c.Title}] {
+			owners[t] = true
+			nominated = max(nominated, nomination[t])
+		}
+		score += linkWeight * nominated
+		// Outgoing links score by density, not volume: the share of the
+		// candidate's links that point at the reader's reads. A year page
+		// or "List of …" links to thousands of titles, so for any
+		// long-term reader it matches dozens of them — unnormalized, hubs
+		// owned every feed once the history grew past ~500 rows (measured).
+		// Density is also what the statistics say: for one reader, the
+		// surprise of m matches out of d links (its hypergeometric lift)
+		// orders candidates exactly by m/d. The saturation cap makes a
+		// small article that devotes a tenth or more of its links to the
+		// reader's reads count as fully linked. Each match counts at the
+		// matched page's specificity: linking to a hub read (a year page,
+		// a country) is not the affinity statement linking to a 30-link
+		// biography is — unweighted, any sparse article mentioning a
+		// finished year page scored a saturated 1.0 (measured on the
+		// Cincinnati Reds via "1975").
+		matches := 0.0
+		for _, l := range c.Links {
+			if t, ok := stateTitle[titleKey{c.Source, l}]; ok {
+				matches += nomination[t]
+				owners[t] = true
+			}
+		}
+		if matches > 0 {
+			density := matches / float64(len(c.Links))
+			score += linkWeight * min(1, outgoingSaturation*density)
+		}
+		for _, cat := range c.Categories {
+			score += interest[cat]
+			if interest[cat] > 0 {
+				for _, t := range catOwners[cat] {
+					owners[t] = true
+				}
+			}
+		}
+		list := make([]string, 0, len(owners))
+		for t := range owners {
+			list = append(list, t)
+		}
+		slices.Sort(list)
+		ranked = append(ranked, Scored{c, score, list})
+	}
+	slices.SortFunc(ranked, compareScored)
+	return ranked
+}
+
+func compareScored(a, b Scored) int {
+	if a.Score != b.Score {
+		return cmp.Compare(b.Score, a.Score)
+	}
+	if a.Source != b.Source {
+		return cmp.Compare(a.Source, b.Source)
+	}
+	return cmp.Compare(a.PageID, b.PageID)
+}
+
+// Picked is one chosen feed entry: its final score after noise and
+// similarity penalties, and whether it filled an exploration slot.
+type Picked struct {
+	Candidate
+	Score       float64
+	Exploration bool
+}
+
+// SelectDiverse fills k feed slots from the scored pool, keeping the feed
+// varied three ways:
+//
+//   - Seeded jitter: every score is multiplied by 1 ± scoreJitter, so
+//     near-ties land in a different order for every reader and every day
+//     while clear favourites stay on top.
+//   - Similarity penalty (greedy MMR): each pick is the best remaining
+//     score minus similarityPenalty times its category-set cosine with the
+//     most similar article already picked. A run of composers (or of
+//     anything else that shares most of its categories) prices the next
+//     one out, letting the rest of the reader's neighbourhood through.
+//   - Slot rotation: relevance slots belong to the reader's state
+//     articles in a seeded rotation, and a slot is filled by the best
+//     candidate its owner produced. Every read gets a voice regardless of
+//     its graph degree — a country with three thousand neighbours and a
+//     three-link car article command the same share — and a one-off
+//     accidental read is bounded to its turn in the rotation. When an
+//     owner has nothing left above the relevance floor, its turn passes;
+//     when no owner has anything, the slot falls back to the global best,
+//     then to exploration.
+//   - Momentum slots: the first relevance slot and the one past mid-feed
+//     go to the newest reads (in recency order) instead of the rotation,
+//     so the last thing the reader finished steers the very next feed.
+//   - Exploration slots: an adaptive share of slots (see
+//     exploreShareBase) is filled from the
+//     explore pool (in its given order, already shuffled by the caller) —
+//     articles from outside the reader's neighbourhood entirely.
+//
+// state must be the same slice RankScored saw (its order, newest reads
+// first, drives the momentum slots and the interest decay). Candidates and
+// explore entries are deduplicated by page; results are deterministic for a
+// given seed.
+func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k int, seed int64) []Picked {
+	rng := rand.New(rand.NewPCG(uint64(seed), 0x77696b69)) // "wiki"
+	freshCap := AdaptiveFreshCap(state)
+	// The incremental MMR state per remaining candidate: its category set
+	// (built once) and its running similarity to the closest pick so far,
+	// updated against only the newest pick each round.
+	type entry struct {
+		Scored
+		raw    float64 // relevance before jitter: what the floor gates on
+		cats   map[string]bool
+		maxSim float64
+		picked bool
+	}
+	remaining := make([]entry, len(scored))
+	for i, s := range scored {
+		raw := s.Score
+		s.Score *= 1 + scoreJitter*(2*rng.Float64()-1)
+		cats := make(map[string]bool, len(s.Categories))
+		for _, c := range s.Categories {
+			cats[c] = true
+		}
+		remaining[i] = entry{Scored: s, raw: raw, cats: cats}
+	}
+
+	// The rotation: turns rotate across INTEREST CLUSTERS of the reader's
+	// positive state (category-cosine connected components, StateClusters),
+	// not across individual rows. Row-level rotation made turn share
+	// proportional to row count, so engagement volume compounded: a
+	// five-interest reader's dominant topic took 300 of 600 serves while
+	// another served 2, and a reader who moved on watched the new interest's
+	// share decay (59→21→17→7% across four scripted hole switches) as every
+	// retired topic's rows kept their turns. A cluster gets one turn per
+	// cycle whatever its row count — 300 computing reads and 5 music reads
+	// argue as equals — and a cluster's turn takes the best candidate any
+	// of its rows produced. Singleton rows (one-off reads, uncategorized
+	// pages) hold no turn: rotation is for corroborated interests. A shared
+	// misc turn for the strays was measured to crater the single-interest
+	// reader — one cluster plus strays alternates cluster/misc, so junk
+	// neighbourhoods took near half the feed (cars appeal 80→44, repeats
+	// 9→20). A stray still shapes scores, and the moment it is read it IS
+	// the newest read, so momentum serves its neighbourhood on the very
+	// next feed — a second bite forms a two-row cluster and earns a turn.
+	// recent keeps the raw order (newest read first) for the momentum slots.
+	var recent []string
+	ownerCandidates := make(map[string][]int)
+	for _, st := range state {
+		if st.State != StateSkipped {
+			recent = append(recent, st.Title)
+		}
+	}
+	for i, c := range remaining {
+		for _, o := range c.Owners {
+			ownerCandidates[o] = append(ownerCandidates[o], i)
+		}
+	}
+	clusters, _ := StateClusters(state)
+	// Each cluster is one rotation turn. The turn anchors on a rotating
+	// member row rather than merging every member's candidates into one
+	// best-of: a merged turn re-served the same cluster-wide best cards
+	// every fetch, and the low-engagement single-interest reader — whose
+	// state barely changes between fetches — watched their feed freeze
+	// (picky appeal 45→29, repeats 22→37 measured). Anchoring restores the
+	// old row rotation's depth sampling inside the cluster's single turn.
+	type turnGroup struct {
+		members []string
+		next    int
+	}
+	groups := make([]*turnGroup, 0, len(clusters))
+	for _, cl := range clusters {
+		groups = append(groups, &turnGroup{members: cl})
+	}
+	rng.Shuffle(len(groups), func(i, j int) { groups[i], groups[j] = groups[j], groups[i] })
+	turn := 0
+	clustered := 0
+	for _, cl := range clusters {
+		clustered += len(cl) // = ClusteredRows, on the clusters already built
+	}
+	exploreShare := exploreShareBase +
+		(exploreShareMax-exploreShareBase)*max(0, 1-float64(clustered)/exploreRampRows)
+
+	picked := make([]Picked, 0, k)
+	seen := make(map[pageKey]bool)
+	pickExplore := func() bool {
+		for len(explore) > 0 {
+			c := explore[0]
+			explore = explore[1:]
+			key := pageKey{c.Source, c.PageID}
+			if seen[key] {
+				continue
+			}
+			seen[key] = true
+			picked = append(picked, Picked{Candidate: c, Exploration: true})
+			// Exploration picks count toward sameness too: an explored
+			// composer must not license a run of near-identical composers.
+			for i := range remaining {
+				if !remaining[i].picked {
+					remaining[i].maxSim = max(remaining[i].maxSim, cosine(remaining[i].cats, c.Categories))
+				}
+			}
+			return true
+		}
+		return false
+	}
+
+	// bestOf picks the strongest eligible candidate among indices (or all
+	// of remaining when indices is nil): raw score at or above the floor to
+	// hold a relevance slot — the similarity penalty merely reorders — with
+	// the penalized score deciding.
+	// bestOf picks an owner's strongest eligible candidate. fresh turns
+	// additionally refuse candidates too similar to this feed's picks
+	// (maxSim past freshSimCap): a topic the feed already shows yields its
+	// turn to someone else's. The caller retries every turn without the
+	// cap when no owner has anything fresh, so a reader with one deep love
+	// (every candidate alike) gets exactly the old behavior — the cap
+	// redistributes slots only when another interest is waiting.
+	bestOf := func(indices []int, fresh bool, minRaw float64) int {
+		best, bestScore := -1, math.Inf(-1)
+		consider := func(i int) {
+			c := remaining[i]
+			// The floor gates on the unjittered score: eligibility is the
+			// stable line RelevanceFloor documents (and feedsim's pool
+			// diagnostics measure); jitter only reorders the eligible.
+			if c.picked || seen[pageKey{c.Source, c.PageID}] || c.raw < minRaw {
+				return
+			}
+			if fresh && c.maxSim > freshCap {
+				return
+			}
+			if score := c.Score - similarityPenalty*c.maxSim; score > bestScore {
+				best, bestScore = i, score
+			}
+		}
+		if indices == nil {
+			for i := range remaining {
+				consider(i)
+			}
+		} else {
+			for _, i := range indices {
+				consider(i)
+			}
+		}
+		return best
+	}
+	take := func(i int) {
+		c := &remaining[i]
+		c.picked = true
+		seen[pageKey{c.Source, c.PageID}] = true
+		picked = append(picked, Picked{Candidate: c.Candidate, Score: c.Score - similarityPenalty*c.maxSim})
+		for j := range remaining {
+			if !remaining[j].picked {
+				remaining[j].maxSim = max(remaining[j].maxSim, cosine(remaining[j].cats, c.Candidate.Categories))
+			}
+		}
+	}
+
+	for len(picked) < k {
+		// A slot is exploration when the running share crosses the target
+		// (Bresenham): at the 0.25 base this is exactly every fourth slot.
+		// The two momentum slots are never converted: they are how the
+		// feed reacts to what was just read, and at a high share the door
+		// cadence would land on k/2 and silence the mid-feed one — a
+		// just-adopted interest lost half its service exactly when the
+		// reader was signalling it.
+		momentum := len(picked) == 0 || len(picked) == k/2
+		if !momentum && int(float64(len(picked)+1)*exploreShare) > int(float64(len(picked))*exploreShare) && pickExplore() {
+			continue
+		}
+		best := -1
+		// Momentum slots: the first relevance slot and the one past
+		// mid-feed belong to the newest reads in order, so what the reader
+		// just finished visibly steers the next feed. Bounding momentum to
+		// two slots keeps session continuity from becoming a rich-get-richer
+		// loop — a recency-weighted rotation was measured to starve the
+		// older, richer neighbourhoods (single-interest appeal 35%→27%,
+		// churn 2→9); every other slot still rotates fairly.
+		if momentum {
+			for _, o := range recent {
+				// Same nil guard as the rotation: a read with no candidates
+				// passes its momentum chance instead of searching everyone.
+				if len(ownerCandidates[o]) == 0 {
+					continue
+				}
+				if best = bestOf(ownerCandidates[o], true, RelevanceFloor); best >= 0 {
+					break
+				}
+			}
+		}
+		// Slot order, every step measured in the reader benchmark: fresh
+		// rotation turns; then any fresh candidate regardless of whose
+		// turn it is — the escape hatch that lets an interest with few
+		// state rows jump the row-count queue (a five-interest reader's
+		// worst-served interest went 2 of 600 without it; raising this
+		// step's bar to admit only strong candidates re-collapsed the
+		// balance, because a thin interest's nominations arrive
+		// degree-diluted below any bar that still excludes filler); then
+		// the same two without the freshness cap, so a reader whose every
+		// candidate is alike gets their strong similar cards back rather
+		// than nothing. The focused reader pays a few appeal points for
+		// the balance (74→69 measured) — the doomscrolling product reads
+		// across interests far more than it burrows, so that is the right
+		// side of the trade.
+		for _, fresh := range []bool{true, false} {
+			for tried := 0; best < 0 && tried < len(groups); tried++ {
+				g := groups[turn%len(groups)]
+				turn++
+				// One turn, rotating anchor: later anchors only fill in
+				// when the pointed-at member has nothing eligible.
+				for range g.members {
+					o := g.members[g.next%len(g.members)]
+					g.next++
+					// A missing owner must pass the anchor, not fall through
+					// to a global search: bestOf reads nil as "everyone",
+					// and an owner map lookup returns exactly that nil.
+					if len(ownerCandidates[o]) == 0 {
+						continue
+					}
+					if best = bestOf(ownerCandidates[o], fresh, RelevanceFloor); best >= 0 {
+						break
+					}
+				}
+			}
+			if best < 0 {
+				best = bestOf(nil, fresh, RelevanceFloor)
+			}
+			if best >= 0 {
+				break
+			}
+		}
+		if best < 0 {
+			if !pickExplore() {
+				break
+			}
+			continue
+		}
+		take(best)
+	}
+	return picked
+}
+
+// cosine is the category-set cosine between a remaining candidate and one
+// picked article: how much of the same kind of thing another pick would be.
+// It deliberately uses raw category sets, not the 1/df weights — the
+// authority-control block two biographies share is exactly what makes them
+// "another famous person", which is the sameness being penalised.
+func cosine(cats map[string]bool, picked []string) float64 {
+	if len(cats) == 0 || len(picked) == 0 {
+		return 0
+	}
+	shared := 0
+	for _, c := range picked {
+		if cats[c] {
+			shared++
+		}
+	}
+	return float64(shared) / math.Sqrt(float64(len(cats))*float64(len(picked)))
+}
+
+// DaySeed derives the selection seed from the reader and the day: one reader's
+// feed is stable across refreshes within a day (no slot-machine feel),
+// different between readers, and fresh again tomorrow. Everything that
+// varies the feed (jitter, exploration, the featured shuffle) derives from
+// this one value.
+func DaySeed(readerID string, day string) int64 {
+	h := fnv.New64a()
+	h.Write([]byte(readerID))
+	h.Write([]byte{0})
+	h.Write([]byte(day))
+	return int64(h.Sum64())
+}
+
+// suppressedPages is the one definition of which pages a reader's state
+// keeps out of the feed — both the ranked pool and the exploration pool
+// filter through it, so a page can never resurface via one path after the
+// other dropped it. Every acted-on page suppresses: finished pages are
+// done; skipped pages were refused, and an article the reader just waved
+// away reappearing on the next refresh reads as the feed not listening;
+// saved pages are shelved — the page overlaps its own categories, so left
+// servable it pinned itself to the top of every feed (measured live), and
+// a bookmark is the reader's to reopen, not a recommendation. States still
+// shape the feed beyond their own page: finished and saved count toward
+// interest, skips count against.
+func suppressedPages(state []StateArticle) map[pageKey]bool {
+	suppressed := make(map[pageKey]bool)
+	for _, s := range state {
+		suppressed[pageKey{s.Source, s.PageID}] = true
+	}
+	return suppressed
+}
+
+type pageKey struct {
+	source string
+	pageID int64
+}
+
+type titleKey struct {
+	source string
+	title  string
+}
