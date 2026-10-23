@@ -1,0 +1,25 @@
+server/cmd/wikifyp/main.go
+  s_1a73b5df333a13::t_ecc51a64fb1393 20,34-37,40,64,67-68,75-87,90
+server/internal/api/api.go
+  s_1a73b5df333a13::t_a3936f83a33746 6-8,11,13-21,24-29,44-45,48-153
+server/internal/api/api_test.go
+  s_1a73b5df333a13::t_a173d64ccc214c 29,42
+server/internal/api/endpoints_test.go
+  s_1a73b5df333a13::t_6dd4282f847235 1-220
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "89ca43c519587b956928a823b73ac095fafaec1c",
+  "prompts": {},
+  "sessions": {
+    "s_1a73b5df333a13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "132dee9e-51bb-4fe6-b9d6-1bd0218732f7",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
