@@ -97,7 +97,26 @@ var (
 	ExploreShareMax  = 0.75
 )
 
-const exploreRampRows = 25
+// ClusterRecencyBoost controls how many extra rotation turns the most
+// recent cluster gets relative to the oldest. At 1.0 (default) all
+// clusters get equal turns — the v5 baseline. At 3.0, the newest
+// cluster gets 3 turns for every 1 the oldest gets, with intermediate
+// clusters interpolated geometrically. This helps readers who shift
+// interests (serial rabbitholer: the current phase's cluster dominates
+// rotation) without hurting steady readers (a juggler's interests are
+// all recently read, so they stay roughly equal).
+var ClusterRecencyBoost = 2.0
+
+// ExploreRampRows is how many clustered state rows it takes for the
+// exploration share to reach its base. Higher values keep exploration
+// elevated longer, giving cold-start and sparse readers more doors.
+// Swept 25–50 in the feedsim: at 25, scattered readers whose random
+// seeds form noise clusters lose exploration too soon (8% appeal);
+// at 40+, picky single-interest readers get too much irrelevant
+// exploration (46% appeal, down from 65%). 30 preserves picky while
+// giving scattered/cold-start readers enough doors to discover their
+// latent interests.
+var ExploreRampRows = 30
 
 // nominationGrace is the outgoing degree up to which a state page
 // nominates its neighbours at full strength; beyond it the strength decays
@@ -804,9 +823,55 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 		members []string
 		next    int
 	}
-	groups := make([]*turnGroup, 0, len(clusters))
-	for _, cl := range clusters {
-		groups = append(groups, &turnGroup{members: cl})
+	// When ClusterRecencyBoost > 1, recent clusters get proportionally
+	// more rotation turns. Each cluster's recency is the position of its
+	// newest member in state (newest-first). The boost is geometric:
+	// the newest cluster gets ClusterRecencyBoost turns for every 1 turn
+	// the oldest gets, with intermediate clusters interpolated.
+	stateRank := make(map[string]int)
+	for i, s := range state {
+		if s.State != StateSkipped {
+			stateRank[s.Title] = i
+		}
+	}
+	clusterRecency := func(cl []string) int {
+		best := len(state)
+		for _, t := range cl {
+			if r, ok := stateRank[t]; ok && r < best {
+				best = r
+			}
+		}
+		return best
+	}
+	// Sort clusters by recency (newest member first) for deterministic
+	// weighted rotation.
+	type rankedCluster struct {
+		cluster []string
+		rank    int
+	}
+	ranked := make([]rankedCluster, len(clusters))
+	for i, cl := range clusters {
+		ranked[i] = rankedCluster{cl, clusterRecency(cl)}
+	}
+	slices.SortFunc(ranked, func(a, b rankedCluster) int {
+		return cmp.Compare(a.rank, b.rank)
+	})
+	groups := make([]*turnGroup, 0, len(clusters)*2)
+	if ClusterRecencyBoost <= 1 || len(ranked) <= 1 {
+		for _, rc := range ranked {
+			groups = append(groups, &turnGroup{members: rc.cluster})
+		}
+	} else {
+		// Geometric interpolation: newest gets boost turns, oldest gets 1.
+		for i, rc := range ranked {
+			t := float64(i) / float64(max(1, len(ranked)-1))
+			weight := math.Pow(ClusterRecencyBoost, 1-t)
+			repeats := max(1, int(math.Round(weight)))
+			g := &turnGroup{members: rc.cluster}
+			for range repeats {
+				groups = append(groups, g)
+			}
+		}
 	}
 	rng.Shuffle(len(groups), func(i, j int) { groups[i], groups[j] = groups[j], groups[i] })
 	turn := 0
@@ -815,7 +880,7 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 		clustered += len(cl) // = ClusteredRows, on the clusters already built
 	}
 	exploreShare := ExploreShareBase +
-		(ExploreShareMax-ExploreShareBase)*max(0, 1-float64(clustered)/exploreRampRows)
+		(ExploreShareMax-ExploreShareBase)*max(0, 1-float64(clustered)/float64(ExploreRampRows))
 
 	picked := make([]Picked, 0, k)
 	seen := make(map[pageKey]bool)

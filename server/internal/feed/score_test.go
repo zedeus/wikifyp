@@ -375,7 +375,7 @@ func TestSelectDiverseExplorationSlots(t *testing.T) {
 			explorations = append(explorations, i)
 		}
 	}
-	// The exploration share is ExploreShareBase (0.15 = ~2 of 12 picks).
+	// The exploration share is ExploreShareBase (0.20 = ~2-3 of 12 picks).
 	// The exact count depends on the share, seed, momentum slots, and
 	// how many relevance candidates fill their turns first. Check that
 	// we're in a reasonable range, not the exact number.
@@ -950,5 +950,62 @@ func TestSelectDiverseHostileShapes(t *testing.T) {
 				t.Errorf("%s seed %d: slot 0 went to a door while relevance cards existed", tc.name, seed)
 			}
 		}
+	}
+}
+
+// TestSelectDiverseClusterRecencyBoost: with boost > 1, a recently active
+// cluster gets more rotation turns than an older one. A reader with two
+// clusters — one recent (animals, positions 0–4 in state) and one stale
+// (cars, positions 5–9) — should see more animals candidates when the
+// boost is on than when it is off.
+func TestSelectDiverseClusterRecencyBoost(t *testing.T) {
+	var state []StateArticle
+	var scored []Scored
+	// Recent cluster: animals (state positions 0–9, newest).
+	// Many candidates per cluster so rotation determines which are served.
+	for i := range 10 {
+		owner := fmt.Sprintf("Animal %d", i)
+		state = append(state, StateArticle{PageID: int64(1 + i), Source: "simplewiki",
+			Title: owner, State: StateFinished, Completion: 1.0, Words: 500,
+			Categories: []string{"Animals", fmt.Sprintf("Animals sub %d", i)}})
+	}
+	for i := range 20 {
+		scored = append(scored, Scored{testCandidate(int64(i), "Animals", fmt.Sprintf("A%d", i)), 1.0, []string{fmt.Sprintf("Animal %d", i%10)}})
+	}
+	// Stale cluster: cars (state positions 10–19, older)
+	for i := range 10 {
+		owner := fmt.Sprintf("Car %d", i)
+		state = append(state, StateArticle{PageID: int64(100 + i), Source: "simplewiki",
+			Title: owner, State: StateFinished, Completion: 1.0, Words: 500,
+			Categories: []string{"Cars", fmt.Sprintf("Cars sub %d", i)}})
+	}
+	for i := range 20 {
+		scored = append(scored, Scored{testCandidate(int64(100+i), "Cars", fmt.Sprintf("C%d", i)), 1.0, []string{fmt.Sprintf("Car %d", i%10)}})
+	}
+	count := func(boost float64) (animals, cars int) {
+		old := ClusterRecencyBoost
+		ClusterRecencyBoost = boost
+		defer func() { ClusterRecencyBoost = old }()
+		for seed := int64(0); seed < 20; seed++ {
+			picks := SelectDiverse(scored, nil, state, 10, seed)
+			for _, p := range picks {
+				if p.PageID < 100 {
+					animals++
+				} else {
+					cars++
+				}
+			}
+		}
+		return
+	}
+	aFlat, cFlat := count(1.0)
+	aBoosted, cBoosted := count(3.0)
+	// With boost=3, animals (recent) should get measurably more slots
+	// than with boost=1, across 20 seeds.
+	if aBoosted <= aFlat {
+		t.Errorf("boost=3 animals %d should exceed boost=1 animals %d", aBoosted, aFlat)
+	}
+	if cBoosted >= cFlat {
+		t.Errorf("boost=3 cars %d should be less than boost=1 cars %d", cBoosted, cFlat)
 	}
 }

@@ -478,6 +478,8 @@ func main() {
 	exploreBase := flag.Float64("explore-base", 0.25, "exploration share for established readers")
 	exploreMax := flag.Float64("explore-max", 0.75, "exploration share for new readers")
 	capBase := flag.Float64("fresh-cap", 0.5, "baseline satiation cap")
+	clusterBoost := flag.Float64("cluster-boost", 2.0, "recency boost for newest cluster rotation turns (1=equal, 3=3x)")
+	exploreRamp := flag.Int("explore-ramp", 30, "clustered rows where explore share reaches base")
 	fast := flag.Bool("fast", false, "fast mode: 20 iterations, 4 key personas, no impression recording")
 	engOff := flag.Bool("engage-off", false, "disable completion-driven engagement (v3 baseline: finished=+1, skipped=-1)")
 	flag.Parse()
@@ -493,6 +495,8 @@ func main() {
 	feed.ExploreShareBase = *exploreBase
 	feed.ExploreShareMax = *exploreMax
 	feed.FreshSimCap = *capBase
+	feed.ClusterRecencyBoost = *clusterBoost
+	feed.ExploreRampRows = *exploreRamp
 	skipImpressions = *fast
 
 	dsn := config.FromEnv().DatabaseURL
@@ -558,7 +562,8 @@ func main() {
 			}
 			if *fast {
 				switch p.name {
-				case "monomaniac-football", "juggler-five", "gundam-dogs-fungi", "picky", "cold-start":
+				case "monomaniac-football", "juggler-five", "gundam-dogs-fungi", "picky",
+					"cold-start", "serial-rabbitholer", "scattered":
 				default:
 					continue
 				}
