@@ -1,0 +1,80 @@
+android/app/src/main/java/com/wikifyp/ui/WikifypApp.kt
+  s_9c6c8807874627::t_fdf6d1e26063da 77-78
+server/internal/feed/score.go
+  s_9c6c8807874627::t_ddbc7a3782e9a2 506
+  s_9c6c8807874627::t_9a7965d190dcce 737
+  s_9c6c8807874627::t_3ce0c2569741a2 281
+  s_9c6c8807874627::t_cd75c6da1e7f8e 460
+  s_9c6c8807874627::t_2debf443a61bfe 413-414
+  s_9c6c8807874627::t_d14d5d6afd3218 282
+  s_9c6c8807874627::t_fa76bc214a54a1 188-192
+  s_9c6c8807874627::t_586929d6589aaa 411
+  s_9c6c8807874627::t_9f038e4bfe8a5a 419,428,433-434,443,458,461
+  s_9c6c8807874627::t_fee7eb6154bf8b 398-400,404-410,412,415,418,420-427,429-431,435-442,444-448,456-457,459
+  s_9c6c8807874627::t_ed6ca2538ebb72 416
+  s_9c6c8807874627::t_35fe27d8b8d177 384
+  s_9c6c8807874627::t_52e6478a9585d5 397,417,432
+  s_9c6c8807874627::t_725918a09b0637 401-403
+  s_9c6c8807874627::t_3a73fc992f459c 119-124,126-127,134-135,139,142-150,153-154,156
+  s_9c6c8807874627::t_0025c5549e49cf 449-455
+  s_9c6c8807874627::t_bd1725bbceb879 355
+  s_1a73b5df333a13::t_f17baa01bcaac7 155
+  s_9c6c8807874627::t_7c3281ebd94293 500-505,507,509,513
+  s_9c6c8807874627::t_960b49374baa98 396
+  s_9c6c8807874627::t_495e5de30b7968 369
+server/cmd/feedsim/main.go
+  s_9c6c8807874627::t_1368888dae7cf5 474
+  s_9c6c8807874627::t_6226d9f294cf8b 699-700,703
+  s_9c6c8807874627::t_68f0ba90739853 633-635
+  s_9c6c8807874627::t_a0e328bd93ccc0 480
+  s_9c6c8807874627::t_76bc7d5c4439b6 865
+  s_9c6c8807874627::t_35575c1130b0cc 890,893
+  s_9c6c8807874627::t_97d53c1022a793 775-778
+  s_9c6c8807874627::t_e939363f042b8e 862
+  s_9c6c8807874627::t_173be498a22aa3 873
+  s_9c6c8807874627::t_dcfa641145f6de 543-549,551-553
+  s_9c6c8807874627::t_81caabdc9c2845 470-473,476-479
+  s_9c6c8807874627::t_98f0e366a227b0 858
+  s_9c6c8807874627::t_578bbce6019e4a 945,949,952-954,957-959
+  s_9c6c8807874627::t_55d009625c8027 904
+  s_9c6c8807874627::t_04de9a6416ab8d 664
+android/app/src/main/java/com/wikifyp/ui/reader/ReaderScreen.kt
+  s_9c6c8807874627::t_e867ae50e86706 158
+  s_9c6c8807874627::t_70c4529bbef2ac 104-112
+  s_9c6c8807874627::t_774ad67aef4084 3
+  s_9c6c8807874627::t_5a0943e3de59fa 148-157
+server/internal/feed/score_test.go
+  s_9c6c8807874627::t_b350fbf626dd14 33-36,42-43
+  s_9c6c8807874627::t_428f43117df279 220,256,261,347,388,534,565,567,569,606,613,636,639,671,675,705,709,729,731,783-785,788-789,791-792,818,824,854,870,872,901,903
+  s_9c6c8807874627::t_df1a9a1f72e7ae 571,790,907-908
+server/internal/feed/engage_sweep_test.go
+  s_9c6c8807874627::t_32af3f26bd8bec 1-140
+server/cmd/feedsim/sweep.sh
+  s_9c6c8807874627::t_9a8523ff88ee8f 1-55
+server/internal/feed/store.go
+  s_9c6c8807874627::t_b167d08c8fb0e7 554-556,571
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "afd0f8bb259ebf2b2cac23b6ca51a219c49def79",
+  "prompts": {},
+  "sessions": {
+    "s_1a73b5df333a13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "132dee9e-51bb-4fe6-b9d6-1bd0218732f7",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    },
+    "s_9c6c8807874627": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4f817860-3004-4aa9-a9fa-31bf659f0bdf",
+        "model": "metr-model"
+      },
+      "human_author": null
+    }
+  }
+}
