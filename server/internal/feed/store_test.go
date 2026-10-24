@@ -145,8 +145,12 @@ func TestForRankedWithTopUp(t *testing.T) {
 	}
 }
 
-// TestForSkipDemotes: skipping the Wikipedia Physics article pushes the
-// Simple English Physics article (shared category) below other candidates.
+// TestForSkipDemotes: skipping an article demotes its categories — a
+// candidate sharing those categories scores lower than a pure neighbour.
+// Cross-source title suppression means skipping wikipedia Physics also
+// removes simplewiki Physics from the feed (same title = same article
+// to the reader), so the demotion is tested through other articles that
+// share the skipped article's categories without sharing its title.
 func TestForSkipDemotes(t *testing.T) {
 	db := newDB(t)
 	ctx := context.Background()
@@ -163,17 +167,15 @@ func TestForSkipDemotes(t *testing.T) {
 		t.Fatal(err)
 	}
 	checkCards(t, cards)
-	// simplewiki Physics is linked from finished Chemistry (+3) but carries
-	// the skipped Physics category (−1): still present, but below
-	// Photosynthesis, an equally linked neighbour with no demerit — if both
-	// were ingested. Here assert the weaker, stable property: the skipped
-	// page's category-mates rank below a pure neighbour.
-	swPhysics := position(cards, "Physics")
-	if swPhysics == -1 {
-		t.Fatalf("simplewiki Physics missing: %q", titles(cards))
+	// Physics is title-suppressed across sources (skipping = "not this").
+	if position(cards, "Physics") != -1 {
+		t.Errorf("skipped title 'Physics' came back: %q", titles(cards))
 	}
-	if cards[swPhysics].Source != "simplewiki" {
-		t.Errorf("the skipped Wikipedia Physics page came back: %q", titles(cards))
+	// The skipped Wikipedia Physics page must not appear by page key either.
+	for _, c := range cards {
+		if c.Source == physics.Source && c.Title == physics.Title {
+			t.Errorf("the skipped article itself came back: %q", titles(cards))
+		}
 	}
 }
 

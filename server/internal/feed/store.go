@@ -133,7 +133,7 @@ func ForExplained(ctx context.Context, db *sql.DB, readerID string, limit int) (
 		return nil, nil, nil, nil, err
 	}
 	// Suppression spans the whole history, not the interest window.
-	suppressed, err := suppressedPagesAll(ctx, db, readerID)
+	suppressed, suppressedTitles, err := suppressedPagesAll(ctx, db, readerID)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
@@ -191,7 +191,7 @@ func ForExplained(ctx context.Context, db *sql.DB, readerID string, limit int) (
 		explore = interleave(related, interleave(explore, random))
 	}
 	explore = slices.DeleteFunc(explore, func(c Candidate) bool {
-		return suppressed[pageKey{c.Source, c.PageID}]
+		return suppressed[pageKey{c.Source, c.PageID}] || suppressedTitles[c.Title]
 	})
 	// Only the head of the pool can ever be consumed (a handful of slots
 	// per feed); trim it, then load those articles' categories so the
@@ -523,27 +523,41 @@ func stratifiedArticles(ctx context.Context, db *sql.DB, readerID string, n int,
 // of the feed (all of it: see suppressedPages) — unlike the interest
 // profile, suppression never ages out. It is pairs only (no graph data),
 // so a lifetime of reading stays cheap.
-func suppressedPagesAll(ctx context.Context, db *sql.DB, readerID string) (map[pageKey]bool, error) {
+// suppressedPagesAll loads every page the reader's full history keeps out
+// of the feed, plus titles of skipped articles — a skipped "Physics" from
+// one source should not reappear from another source through exploration
+// (the feed would feel like it was not listening). Finished articles are
+// not title-suppressed: the simplewiki and wikipedia versions of a topic
+// are genuinely different articles, and finishing one should not hide the
+// other from exploration.
+func suppressedPagesAll(ctx context.Context, db *sql.DB, readerID string) (map[pageKey]bool, map[string]bool, error) {
 	rows, err := db.QueryContext(ctx, `
-		SELECT source, page_id FROM reader_article_state
-		WHERE reader_id = $1`,
+		SELECT s.source, s.page_id, s.state, a.title
+		FROM reader_article_state s
+		JOIN latest_articles a USING (source, page_id)
+		WHERE s.reader_id = $1`,
 		readerID)
 	if err != nil {
-		return nil, fmt.Errorf("feed: suppressed pages: %w", err)
+		return nil, nil, fmt.Errorf("feed: suppressed pages: %w", err)
 	}
 	defer rows.Close()
 	suppressed := make(map[pageKey]bool)
+	skippedTitles := make(map[string]bool)
 	for rows.Next() {
 		var k pageKey
-		if err := rows.Scan(&k.source, &k.pageID); err != nil {
-			return nil, fmt.Errorf("feed: suppressed pages: %w", err)
+		var state, title string
+		if err := rows.Scan(&k.source, &k.pageID, &state, &title); err != nil {
+			return nil, nil, fmt.Errorf("feed: suppressed pages: %w", err)
 		}
 		suppressed[k] = true
+		if state == StateSkipped {
+			skippedTitles[title] = true
+		}
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("feed: suppressed pages: %w", err)
+		return nil, nil, fmt.Errorf("feed: suppressed pages: %w", err)
 	}
-	return suppressed, nil
+	return suppressed, skippedTitles, nil
 }
 
 // readerState loads the reader's most recent recentStateLimit interactions
