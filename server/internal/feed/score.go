@@ -107,6 +107,17 @@ var (
 // all recently read, so they stay roughly equal).
 var ClusterRecencyBoost = 2.0
 
+// ExploreSkipThreshold is the recent skip rate (skips / total interactions,
+// over the newest 30 state rows) above which the explore share gets boosted.
+// A reader skipping more than 30% of articles isn't finding what they want
+// in the relevance pool — the feed should try different things.
+var ExploreSkipThreshold = 0.3
+
+// ExploreSkipBoost scales how much extra exploration a high-skip reader
+// gets. At 0.5, a 50% skip rate (20% above threshold) adds 10% to the
+// explore share — a meaningful nudge without flooding the feed with doors.
+var ExploreSkipBoost = 0.5
+
 // ExploreRampRows is how many clustered state rows it takes for the
 // exploration share to reach its base. Higher values keep exploration
 // elevated longer, giving cold-start and sparse readers more doors.
@@ -563,6 +574,30 @@ func RankScored(candidates []Candidate, state []StateArticle, w Weights, impress
 	disliked := make(map[string]float64)
 	decayFloor := effectiveDecayFloor(len(state))
 	decay := math.Log(decayFloor) / float64(max(recentStateLimit, 1))
+	// Mean-normalized engagement: compute the reader's average positive
+	// engagement, then express each row's engagement relative to that
+	// average. This breaks the feedback loop where topics with
+	// systematically higher completion (longer articles, easier content)
+	// compound into voice dominance over 600+ articles. A reader who
+	// averages 80% completion: a 95% read is 1.19× average (slight
+	// boost), a 60% read is 0.75× (slight dampen). The sqrt saturation
+	// on top means even a 2:1 normalized advantage saturates quickly.
+	// Only applied when engagement is enabled (EngageOff=false).
+	meanEng := 1.0
+	if !EngageOff {
+		var engSum float64
+		var engN int
+		for _, s := range state {
+			e := engagementWeight(s.Completion, s.Words, s.State)
+			if e > 0 {
+				engSum += e
+				engN++
+			}
+		}
+		if engN > 0 {
+			meanEng = engSum / float64(engN)
+		}
+	}
 	for i, s := range state {
 		voice := math.Exp(decay * float64(i))
 
@@ -577,6 +612,12 @@ func RankScored(candidates []Candidate, state []StateArticle, w Weights, impress
 				disliked[c] += voice * (-eng)
 			}
 			continue
+		}
+		// Normalize positive engagement relative to the reader's mean:
+		// above-average reads still boost, below-average dampen, but the
+		// absolute level that caused compounding is removed.
+		if !EngageOff && meanEng > 0 {
+			eng = max(0.2, eng/meanEng)
 		}
 		voice *= eng
 		stateTitle[titleKey{s.Source, s.Title}] = s.Title
@@ -881,6 +922,26 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 	}
 	exploreShare := ExploreShareBase +
 		(ExploreShareMax-ExploreShareBase)*max(0, 1-float64(clustered)/float64(ExploreRampRows))
+	// Skip-rate-reactive exploration: when the reader's recent
+	// interactions are mostly skips, the relevance pool isn't serving
+	// what they want — boost exploration to cycle through different
+	// topics faster. This makes the feed adapt to the reader's
+	// disengagement rather than waiting for time-based cluster growth.
+	if len(state) > 5 {
+		recentSkips, recentPositive := 0, 0
+		for _, s := range state[:min(len(state), 30)] {
+			if s.State == StateSkipped {
+				recentSkips++
+			} else {
+				recentPositive++
+			}
+		}
+		skipRate := float64(recentSkips) / float64(recentSkips+recentPositive)
+		if skipRate > ExploreSkipThreshold {
+			boost := (skipRate - ExploreSkipThreshold) * ExploreSkipBoost
+			exploreShare = min(ExploreShareMax, exploreShare+boost)
+		}
+	}
 
 	picked := make([]Picked, 0, k)
 	seen := make(map[pageKey]bool)
