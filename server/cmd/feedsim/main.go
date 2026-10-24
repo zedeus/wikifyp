@@ -480,6 +480,7 @@ func main() {
 	capBase := flag.Float64("fresh-cap", 0.5, "baseline satiation cap")
 	clusterBoost := flag.Float64("cluster-boost", 2.0, "recency boost for newest cluster rotation turns (1=equal, 3=3x)")
 	exploreRamp := flag.Int("explore-ramp", 30, "clustered rows where explore share reaches base")
+	satiate := flag.Bool("satiate", false, "intra-session satiation: finish probability drops after 2+ same-interest articles per fetch")
 	fast := flag.Bool("fast", false, "fast mode: 20 iterations, 4 key personas, no impression recording")
 	engOff := flag.Bool("engage-off", false, "disable completion-driven engagement (v3 baseline: finished=+1, skipped=-1)")
 	flag.Parse()
@@ -498,6 +499,7 @@ func main() {
 	feed.ClusterRecencyBoost = *clusterBoost
 	feed.ExploreRampRows = *exploreRamp
 	skipImpressions = *fast
+	useSatiation = *satiate
 
 	dsn := config.FromEnv().DatabaseURL
 	if dsn == "" {
@@ -683,6 +685,7 @@ const quitThreshold = 10
 // frozen at an interesting moment for -explain and -capinfo.
 var stopAfter int
 var skipImpressions bool
+var useSatiation bool
 
 // topBias weights which feed card the app shows next: position i is drawn
 // with weight topBias^i, so the top of the ranking is likeliest but any
@@ -827,6 +830,11 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 		var actions []action
 		var transcript []string
 		fetchHadActive := false
+		// Intra-session satiation: track how many articles of each
+		// interest the reader consumed in this fetch. After 2, the
+		// finish probability drops — a reader who just read 4 cars
+		// articles is less keen on the 5th, even if it appeals.
+		sessionCounts := make(map[string]int)
 		for range min(draws, len(cards)) {
 			n := draw(rng, remaining)
 			c := cards[remaining[n]]
@@ -864,6 +872,7 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 				stats.uniqueMatching[c.ArticleID] = true
 				for _, m := range matched {
 					stats.perInterest[m]++
+					sessionCounts[m]++
 					if _, ok := stats.firstServed[m]; !ok {
 						stats.firstServed[m] = it
 					}
@@ -875,10 +884,25 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 			// Most unappealing cards are swiped past (ignored), not
 			// explicitly skipped — a skip is a deliberate "not this" and
 			// real readers don't hand one to every card they scroll by.
+			//
+			// Intra-session satiation: after 2 articles of the same
+			// interest in one fetch, finish probability drops. A reader
+			// who just read 4 cars articles in a row is less likely to
+			// read the 5th, even if it appeals.
+			satiation := 1.0
+			if useSatiation && appeals {
+				maxSeen := 0
+				for _, m := range matched {
+					maxSeen = max(maxSeen, sessionCounts[m])
+				}
+				if maxSeen > 2 {
+					satiation = max(0.3, 1-0.2*float64(maxSeen-2))
+				}
+			}
 			st := ""
 			comp := 0.0
 			switch {
-			case appeals && rng.Float64() < finishP*p.pickiness:
+			case appeals && rng.Float64() < finishP*p.pickiness*satiation:
 				st = feed.StateFinished
 				comp = 0.95 + rng.Float64()*0.05 // 95–100%: RSVP finish = reached the end
 			case appeals && rng.Float64() < 0.05:
