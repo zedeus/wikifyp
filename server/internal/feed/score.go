@@ -475,12 +475,12 @@ var (
 	// DeepBoost: extra weight above 1.0 for deep reads (superlinear).
 	DeepBoost = 0.0
 	// EngageOff disables completion-driven engagement: finished/saved → +1,
-	// skipped → -1. The engagement model helps the juggler (+7) but creates
-	// a feedback loop at full length (600 articles) that crushes gundam
-	// (-17) and serial (+quits). Disabled by default until a damping
-	// mechanism breaks the loop. Completion is still stored and available
-	// for future use; the model's signal just isn't routed into the voice.
-	EngageOff = true
+	// skipped → -1. When off (the default), the engagement model uses
+	// continuous completion for positive signal (95% > 50%) with mean-
+	// normalization to prevent topic-length bias from compounding, and
+	// keeps the skip penalty at -1.0 (a skip is a skip). Toggle with
+	// -engage-off in feedsim to compare against the binary baseline.
+	EngageOff = false
 	// TokenSaturation: absolute tokens where token normalization tops out.
 	// Reading this many tokens gives full credit; fewer gives sqrt-scaled.
 	TokenSaturation = 500.0
@@ -512,30 +512,36 @@ func engagementWeight(completion float64, words int, state string) float64 {
 		return 1.0
 	}
 	tokensRead := completion * float64(words)
-	pctEngaged := completion >= EngageThreshold
-	tokEngaged := int(tokensRead) >= EngageTokens
-
-	if !pctEngaged && !tokEngaged {
-		// Zone 1: bounce. Linear from -1 (0%) to 0 (threshold).
-		return -(1 - completion/EngageThreshold)
+	if state == StateSkipped {
+		// Nuanced skip: both completion AND absolute tokens matter.
+		// A 0% skip (instant bounce) = total rejection (-1.0).
+		// A 10% skip on a short article (60 tokens) = barely tried (-0.85).
+		// A 30% skip on a long article (3000 tokens read) = gave it a
+		// real try, mild negative (-0.21). Reading 3000 words before
+		// deciding is 10 minutes of active attention — that's not
+		// rejection of the topic, just this article.
+		pctFactor := 1 - completion // 0% → 1.0, 30% → 0.7
+		// More tokens read → less negative (they genuinely tried)
+		tokenDampen := min(0.7, tokensRead/1000)
+		return -pctFactor * (1 - tokenDampen)
 	}
-
-	// Zones 2-3: positive. Base weight scales with completion.
-	w := max(0.2, completion)
-
-	// Zone 3: deep engagement boost — superlinear above both high
-	// thresholds. A reader who consumed 95% of a substantial article
-	// (500+ tokens) gets extra weight. The boost is deliberately mild
-	// (DeepBoost default 0.5) so it rewards depth without biasing the
-	// feed toward topics that happen to have longer articles — measured:
-	// global token normalization dropped the juggler from 69→62% as
-	// history (long) dominated over music/cars (shorter).
-	if DeepBoost > 0 && completion >= DeepThreshold && int(tokensRead) >= DeepTokens {
-		extra := DeepBoost * (completion - DeepThreshold) / (1 - DeepThreshold)
-		w += extra
-	}
-
-	return w
+	// Positive engagement: completion × token scale. 95% of a long
+	// article (9500 tokens) is much stronger evidence than 95% of a
+	// stub (57 tokens). The completion sets the base in [0.5, 1.0];
+	// the token factor scales it by how much actual reading happened,
+	// saturating at TokenSaturation tokens.
+	//
+	// Examples at TokenSaturation=500:
+	//   95% of 1000w (950 tokens): 0.975 × 1.0  = 0.975 (strong love)
+	//   60% of 1000w (600 tokens): 0.80  × 1.0  = 0.80  (solid interest)
+	//   95% of 100w  (95 tokens):  0.975 × 0.72 = 0.70  (stub, less signal)
+	//   30% of 100w  (30 tokens):  0.65  × 0.55 = 0.36  (minimal reading)
+	pctWeight := 0.5 + 0.5*completion
+	tokenScale := min(1.0, math.Sqrt(tokensRead/TokenSaturation))
+	// Blend: 60% completion signal, 40% token signal. Completion
+	// dominates because it's the reader's proportion of attention;
+	// tokens prevent stubs from counting as much as real reads.
+	return pctWeight * (0.6 + 0.4*tokenScale)
 }
 
 // Scored is one ranked candidate with the relevance score that placed it

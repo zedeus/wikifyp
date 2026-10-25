@@ -904,10 +904,14 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 			switch {
 			case appeals && rng.Float64() < finishP*p.pickiness*satiation:
 				st = feed.StateFinished
-				comp = 0.95 + rng.Float64()*0.05 // 95–100%: RSVP finish = reached the end
+				// Realistic completion: even interested readers don't
+				// always read to the end. Some sections are boring, some
+				// articles are too long. The distribution peaks around
+				// 80% with a long tail to 100%.
+				comp = 0.60 + rng.Float64()*0.40 // 60–100%, mean ~80%
 			case appeals && rng.Float64() < 0.05:
 				st = feed.StateSkipped
-				comp = 0.10 + rng.Float64()*0.15 // 10–25%: glanced, not for me today
+				comp = 0.05 + rng.Float64()*0.25 // 5–30%: started, bailed
 			// A reader with no active interests adopts from any matching
 			// card, flag or not: with zero tastes everything is a door
 			// (and a zero-state feed deliberately carries no exploration
@@ -915,7 +919,7 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 			// exploration cards only.
 			case !appeals && (c.Exploration || len(interests) == 0) && len(matching(latent, cats[c.ArticleID])) > 0 && rng.Float64() < 0.7:
 				st = feed.StateFinished
-				comp = 0.90 + rng.Float64()*0.10 // 90–100%: discovery read-through
+				comp = 0.50 + rng.Float64()*0.45 // 50–95%: discovery, less committed
 				if stats.adoptedAt == 0 {
 					stats.adoptedAt = it
 				}
@@ -932,10 +936,10 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 				latent = dormant
 			case !appeals && rng.Float64() < 0.04:
 				st = feed.StateFinished
-				comp = 0.90 + rng.Float64()*0.10 // 90–100%: accidental read-through
+				comp = 0.40 + rng.Float64()*0.40 // 40–80%: accidental find, partial read
 			case !appeals && rng.Float64() < skipP:
 				st = feed.StateSkipped
-				comp = 0.02 + rng.Float64()*0.13 // 2–15%: bounced early
+				comp = 0.02 + rng.Float64()*0.18 // 2–20%: bounced early
 			}
 			if !appeals {
 				stats.boringStreak++
