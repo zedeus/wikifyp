@@ -1,0 +1,24 @@
+server/internal/feed/score.go
+  s_9c6c8807874627::t_e0d1137f2304ec 516-526,528-544
+  s_9c6c8807874627::t_febaa5fa63eba8 478-483
+  s_9c6c8807874627::t_f190b8648e1297 515
+server/cmd/feedsim/main.go
+  s_9c6c8807874627::t_0512018987de14 907-911,914,922
+  s_9c6c8807874627::t_6d2d028896bb8d 939,942
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9cb795e299c52ac513a14c16d37d3cae43a480fd",
+  "prompts": {},
+  "sessions": {
+    "s_9c6c8807874627": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4f817860-3004-4aa9-a9fa-31bf659f0bdf",
+        "model": "metr-model"
+      },
+      "human_author": null
+    }
+  }
+}
