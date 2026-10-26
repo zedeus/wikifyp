@@ -1,0 +1,28 @@
+server/internal/feed/score.go
+  s_9c6c8807874627::t_0a3c823c02caec 1041
+  s_9c6c8807874627::t_4891bad934d2dc 830-832,835-836,849-850
+  s_9c6c8807874627::t_d060e6042a720c 1060
+  s_9c6c8807874627::t_6dd4ba31838605 827-828,833-834
+  s_9c6c8807874627::t_c7e37dc2ad696d 829
+  s_9c6c8807874627::t_27d8788072e220 58
+  s_9c6c8807874627::t_2e5ba6178f58b3 837-848
+  s_9c6c8807874627::t_1166d2eef5fc09 53-57,59
+server/cmd/feedsim/main.go
+  s_9c6c8807874627::t_994ba601c4d17b 487,490
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "180044dd76bae5630c2759d3a745e3accd2928f8",
+  "prompts": {},
+  "sessions": {
+    "s_9c6c8807874627": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4f817860-3004-4aa9-a9fa-31bf659f0bdf",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
