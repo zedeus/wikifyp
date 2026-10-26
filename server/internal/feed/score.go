@@ -124,7 +124,11 @@ var ClusterRecencyBoost = 2.0
 // two articles sharing a third of their categories are too similar;
 // at 0.0 every pick must be completely different (too strict — many
 // articles share "Living people" or "United States" categories).
-var ExploreSimCap = 0.3
+// Disabled by default (1.0 = no filter): fast-mode (200 articles) showed
+// gains for cold-start, but full-scale (600 articles) showed it hurts
+// 9 of 14 personas — the constrained exploration pool costs more than
+// the early diversity gains once the reader has enough history.
+var ExploreSimCap = 1.0
 
 var ExploreSkipThreshold = 0.3
 
