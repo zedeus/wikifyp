@@ -520,10 +520,6 @@ func stratifiedArticles(ctx context.Context, db *sql.DB, readerID string, n int,
 }
 
 // suppressedPagesAll loads every page the reader's full history keeps out
-// of the feed (all of it: see suppressedPages) — unlike the interest
-// profile, suppression never ages out. It is pairs only (no graph data),
-// so a lifetime of reading stays cheap.
-// suppressedPagesAll loads every page the reader's full history keeps out
 // of the feed, plus titles of skipped articles — a skipped "Physics" from
 // one source should not reappear from another source through exploration
 // (the feed would feel like it was not listening). Finished articles are
