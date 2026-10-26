@@ -480,11 +480,13 @@ func main() {
 	capBase := flag.Float64("fresh-cap", 0.5, "baseline satiation cap")
 	clusterBoost := flag.Float64("cluster-boost", 2.0, "recency boost for newest cluster rotation turns (1=equal, 3=3x)")
 	exploreRamp := flag.Int("explore-ramp", 30, "clustered rows where explore share reaches base")
+	tokenSat := flag.Float64("token-sat", 500, "token saturation: tokens read where engagement weight maxes out")
 	satiate := flag.Bool("satiate", false, "intra-session satiation: finish probability drops after 2+ same-interest articles per fetch")
 	fast := flag.Bool("fast", false, "fast mode: 20 iterations (phased personas scaled down), 7 key personas, no impression recording")
 	engOff := flag.Bool("engage-off", false, "disable completion-driven engagement (v3 baseline: finished=+1, skipped=-1)")
 	flag.Parse()
 	feed.EngageOff = *engOff
+	feed.TokenSaturation = *tokenSat
 	feed.EngageThreshold = *engThresh
 	feed.EngageTokens = *engTokens
 	feed.ImpressionDamping = *impDamp
@@ -660,14 +662,14 @@ type action struct {
 
 // runStats accumulates what one persona was served and did.
 type runStats struct {
-	consumed, appealing, junk, repeats, explore int
-	perInterest                                 map[string]int
-	churnEvents, boringStreak, maxBoring        int
-	adoptedAt                                   int            // fetch the latent interest activated at, 0 = never
-	firstServed                                 map[string]int // fetch that first served each interest
-	uniqueMatching                              map[int64]bool // distinct on-interest articles consumed: rabbit-hole depth
-	starved                                     int            // fetches that served no active-interest card at all
-	phases                                      []phaseStats
+	consumed, appealing, saved, junk, repeats, explore int
+	perInterest                                        map[string]int
+	churnEvents, boringStreak, maxBoring               int
+	adoptedAt                                          int            // fetch the latent interest activated at, 0 = never
+	firstServed                                        map[string]int // fetch that first served each interest
+	uniqueMatching                                     map[int64]bool // distinct on-interest articles consumed: rabbit-hole depth
+	starved                                            int            // fetches that served no active-interest card at all
+	phases                                             []phaseStats
 }
 
 // phaseStats scores one stretch of a scripted reader's life.
@@ -707,6 +709,26 @@ func draw(rng *rand.Rand, indices []int) int {
 		}
 	}
 	return len(indices) - 1
+}
+
+// finishCompletion returns a realistic reading completion for a finished
+// article, scaled by word count. Short articles (< 500 words) are read
+// nearly to the end (85–100%); medium articles get the standard 60–100%
+// range; long articles (> 3000 words) see lower completions (45–85%)
+// because real readers tire or skip sections. The engagement model's
+// token weighting means a long article at 50% still scores high in
+// absolute terms.
+func finishCompletion(rng *rand.Rand, words int) float64 {
+	switch {
+	case words < 500:
+		return 0.85 + rng.Float64()*0.15 // 85–100%
+	case words < 1500:
+		return 0.60 + rng.Float64()*0.40 // 60–100%
+	case words < 3000:
+		return 0.50 + rng.Float64()*0.45 // 50–95%
+	default:
+		return 0.45 + rng.Float64()*0.40 // 45–85%
+	}
 }
 
 func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, draws int, behaviorSeed uint64, verbose bool) (runStats, error) {
@@ -920,11 +942,13 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 			switch {
 			case appeals && rng.Float64() < finishP*p.pickiness*satiation:
 				st = feed.StateFinished
-				// Realistic completion: even interested readers don't
-				// always read to the end. Some sections are boring, some
-				// articles are too long. The distribution peaks around
-				// 80% with a long tail to 100%.
-				comp = 0.60 + rng.Float64()*0.40 // 60–100%, mean ~80%
+				comp = finishCompletion(rng, c.Words)
+				// Some appealing articles are saved for later — about
+				// 10% of the time. Saved = strong positive signal.
+				if rng.Float64() < 0.10 {
+					st = feed.StateSaved
+					stats.saved++
+				}
 			case appeals && rng.Float64() < 0.05:
 				st = feed.StateSkipped
 				comp = 0.05 + rng.Float64()*0.25 // 5–30%: started, bailed
@@ -935,7 +959,7 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 			// exploration cards only.
 			case !appeals && (c.Exploration || len(interests) == 0) && len(matching(latent, cats[c.ArticleID])) > 0 && rng.Float64() < 0.7:
 				st = feed.StateFinished
-				comp = 0.50 + rng.Float64()*0.45 // 50–95%: discovery, less committed
+				comp = finishCompletion(rng, c.Words)
 				if stats.adoptedAt == 0 {
 					stats.adoptedAt = it
 				}
@@ -1088,8 +1112,9 @@ func band(runs []runStats) string {
 func pct(n, of int) float64 { return 100 * float64(n) / float64(max(of, 1)) }
 
 func report(p persona, iterations int, s runStats) {
-	fmt.Printf("%-30s consumed %4d | appeal %5.1f%% | explore %5.1f%% | junk %4.1f%% | repeats %4.1f%% | quits %d | max-boring %d\n",
+	fmt.Printf("%-30s consumed %4d | appeal %5.1f%% | saved %d | explore %5.1f%% | junk %4.1f%% | repeats %4.1f%% | quits %d | max-boring %d\n",
 		p.name, s.consumed, pct(s.appealing, s.consumed),
+		s.saved,
 		pct(s.explore, s.consumed),
 		pct(s.junk, s.consumed),
 		pct(s.repeats, s.consumed),
