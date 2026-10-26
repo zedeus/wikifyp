@@ -503,7 +503,18 @@ var (
 // 3000-word article. The scale saturates at TokenSaturation tokens.
 func engagementWeight(completion float64, words int, state string) float64 {
 	if state == StateSaved {
-		return 1.0
+		// Saving means "come back to this later" — intent to engage, not
+		// confirmed deep engagement. A moderate positive: stronger than a
+		// bounce, weaker than a deep read. If completion data is available
+		// (the reader read some before saving), use that; otherwise assume
+		// moderate interest (0.7 — roughly "read some, liked enough to
+		// bookmark").
+		if completion <= 0 {
+			completion = 0.7
+		}
+		// Fall through to the normal positive formula rather than
+		// returning a flat 1.0 — the reader hasn't proven they love the
+		// topic, just that it caught their eye.
 	}
 	if EngageOff {
 		if state == StateSkipped {
