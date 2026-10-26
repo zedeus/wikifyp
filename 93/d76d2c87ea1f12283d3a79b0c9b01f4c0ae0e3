@@ -1,0 +1,26 @@
+server/cmd/feedsim/sweep-engage.sh
+  s_9c6c8807874627::t_c3faa3b633c3f2 15-17,22
+server/cmd/feedsim/sweep-params.sh
+  s_9c6c8807874627::t_0043c2298961de 12-14,19
+server/cmd/feedsim/sweep3.sh
+  s_9c6c8807874627::t_d4b74deb1b61e9 24-26,31
+server/cmd/feedsim/sweep-engage2.sh
+  s_9c6c8807874627::t_e3d4fa5e45bbbc 1-11,15-18,20-43
+  s_9c6c8807874627::t_b9cfd8c26f1e6b 12-14,19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "93d76d2c87ea1f12283d3a79b0c9b01f4c0ae0e3",
+  "prompts": {},
+  "sessions": {
+    "s_9c6c8807874627": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4f817860-3004-4aa9-a9fa-31bf659f0bdf",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
