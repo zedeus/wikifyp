@@ -118,6 +118,14 @@ var ClusterRecencyBoost = 2.0
 // over the newest 30 state rows) above which the explore share gets boosted.
 // A reader skipping more than 30% of articles isn't finding what they want
 // in the relevance pool — the feed should try different things.
+// ExploreSimCap is the maximum category cosine between two exploration
+// picks in the same feed. Picks more similar than this are skipped,
+// forcing exploration to cover different topics each feed. At 0.3,
+// two articles sharing a third of their categories are too similar;
+// at 0.0 every pick must be completely different (too strict — many
+// articles share "Living people" or "United States" categories).
+var ExploreSimCap = 0.3
+
 var ExploreSkipThreshold = 0.3
 
 // ExploreSkipBoost scales how much extra exploration a high-skip reader
@@ -994,23 +1002,63 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 
 	picked := make([]Picked, 0, k)
 	seen := make(map[pageKey]bool)
+	// Intra-exploration diversity: track categories of exploration picks
+	// so subsequent exploration cards cover genuinely different territory.
+	// Without this, a cold-start reader's exploration could draw 5 animal
+	// articles (the corpus's largest cluster) and never reach computing.
+	// The filter prefers diverse picks but falls back to the next eligible
+	// candidate when no diverse one is available (the pool must not run dry).
+	var exploredCats []map[string]bool
+	takeExplore := func(c Candidate) {
+		seen[pageKey{c.Source, c.PageID}] = true
+		picked = append(picked, Picked{Candidate: c, Exploration: true})
+		if len(c.Categories) > 0 {
+			cSet := make(map[string]bool, len(c.Categories))
+			for _, cat := range c.Categories {
+				cSet[cat] = true
+			}
+			exploredCats = append(exploredCats, cSet)
+		}
+		for i := range remaining {
+			if !remaining[i].picked {
+				remaining[i].maxSim = max(remaining[i].maxSim, cosine(remaining[i].cats, c.Categories))
+			}
+		}
+	}
 	pickExplore := func() bool {
-		for len(explore) > 0 {
-			c := explore[0]
-			explore = explore[1:]
-			key := pageKey{c.Source, c.PageID}
-			if seen[key] {
+		bestFallback := -1
+		for i := 0; i < len(explore); i++ {
+			c := explore[i]
+			if seen[pageKey{c.Source, c.PageID}] {
 				continue
 			}
-			seen[key] = true
-			picked = append(picked, Picked{Candidate: c, Exploration: true})
-			// Exploration picks count toward sameness too: an explored
-			// composer must not license a run of near-identical composers.
-			for i := range remaining {
-				if !remaining[i].picked {
-					remaining[i].maxSim = max(remaining[i].maxSim, cosine(remaining[i].cats, c.Categories))
+			tooSimilar := false
+			if len(exploredCats) > 0 && len(c.Categories) > 0 {
+				cSet := make(map[string]bool, len(c.Categories))
+				for _, cat := range c.Categories {
+					cSet[cat] = true
+				}
+				for _, prev := range exploredCats {
+					if cosine(cSet, catSlice(prev)) > ExploreSimCap {
+						tooSimilar = true
+						break
+					}
 				}
 			}
+			if tooSimilar {
+				if bestFallback < 0 {
+					bestFallback = i
+				}
+				continue
+			}
+			explore = append(explore[:i], explore[i+1:]...)
+			takeExplore(c)
+			return true
+		}
+		if bestFallback >= 0 {
+			c := explore[bestFallback]
+			explore = append(explore[:bestFallback], explore[bestFallback+1:]...)
+			takeExplore(c)
 			return true
 		}
 		return false
@@ -1156,6 +1204,15 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 // It deliberately uses raw category sets, not the 1/df weights — the
 // authority-control block two biographies share is exactly what makes them
 // "another famous person", which is the sameness being penalised.
+// catSlice converts a category set to a slice for cosine.
+func catSlice(cats map[string]bool) []string {
+	s := make([]string, 0, len(cats))
+	for c := range cats {
+		s = append(s, c)
+	}
+	return s
+}
+
 func cosine(cats map[string]bool, picked []string) float64 {
 	if len(cats) == 0 || len(picked) == 0 {
 		return 0

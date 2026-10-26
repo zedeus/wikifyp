@@ -485,9 +485,11 @@ func main() {
 	fast := flag.Bool("fast", false, "fast mode: 20 iterations (phased personas scaled down), 7 key personas, no impression recording")
 	engOff := flag.Bool("engage-off", false, "disable completion-driven engagement (v3 baseline: finished=+1, skipped=-1)")
 	dynSim := flag.Bool("dyn-sim", true, "dynamic similarity penalty: adapts per reader based on cluster count")
+	exploreSimCap := flag.Float64("explore-sim-cap", 0.3, "max cosine between exploration picks (0=all diverse, 1=no filter)")
 	flag.Parse()
 	feed.EngageOff = *engOff
 	feed.DynamicSimPenalty = *dynSim
+	feed.ExploreSimCap = *exploreSimCap
 	feed.TokenSaturation = *tokenSat
 	feed.EngageThreshold = *engThresh
 	feed.EngageTokens = *engTokens
