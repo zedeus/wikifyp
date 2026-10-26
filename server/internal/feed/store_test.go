@@ -97,9 +97,10 @@ func checkCards(t *testing.T, cards []Card) {
 	}
 }
 
-// TestForNewReader: a reader with no state gets featured articles — in the
-// loaded data that is exactly the dump sample's Red Hot Chili Peppers
-// (Category:Very good articles) — and nothing unreviewed.
+// TestForNewReader: a reader with no state gets featured articles
+// interleaved with random corpus samples — in the loaded data the
+// featured article is the dump sample's Red Hot Chili Peppers
+// (Category:Very good articles).
 func TestForNewReader(t *testing.T) {
 	db := newDB(t)
 	cards, err := For(context.Background(), db, "reader-new", 10)
@@ -107,8 +108,18 @@ func TestForNewReader(t *testing.T) {
 		t.Fatal(err)
 	}
 	checkCards(t, cards)
-	if got := titles(cards); len(got) != 1 || got[0] != "Red Hot Chili Peppers" {
-		t.Errorf("new reader feed = %q, want just the featured article", got)
+	got := titles(cards)
+	if len(got) == 0 {
+		t.Fatal("new reader feed is empty")
+	}
+	hasFeatured := false
+	for _, title := range got {
+		if title == "Red Hot Chili Peppers" {
+			hasFeatured = true
+		}
+	}
+	if !hasFeatured {
+		t.Errorf("new reader feed = %q, want Red Hot Chili Peppers among them", got)
 	}
 }
 

@@ -84,7 +84,7 @@ type feedResponse struct {
 func TestFeedEndpoint(t *testing.T) {
 	h, db := newHandler(t)
 
-	// A new reader gets the featured article.
+	// A new reader gets the featured article among exploration picks.
 	rec := get(t, h, "/v1/feed?reader=r-new")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("GET /v1/feed = %d: %s", rec.Code, rec.Body)
@@ -93,10 +93,23 @@ func TestFeedEndpoint(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatal(err)
 	}
-	if len(resp.Articles) != 1 || resp.Articles[0].Title != "Red Hot Chili Peppers" {
-		t.Fatalf("new reader feed = %+v, want the featured article", resp.Articles)
+	if len(resp.Articles) == 0 {
+		t.Fatal("new reader feed is empty")
 	}
-	card := resp.Articles[0]
+	var cardIdx = -1
+	for i, a := range resp.Articles {
+		if a.Title == "Red Hot Chili Peppers" {
+			cardIdx = i
+		}
+	}
+	if cardIdx < 0 {
+		titles := make([]string, len(resp.Articles))
+		for i, a := range resp.Articles {
+			titles[i] = a.Title
+		}
+		t.Fatalf("new reader feed = %v, want Red Hot Chili Peppers among them", titles)
+	}
+	card := resp.Articles[cardIdx]
 	if card.ID == 0 || card.Source != "simplewiki" || card.Excerpt == "" ||
 		card.Sentences == 0 || card.Words == 0 || card.Attribution == "" {
 		t.Errorf("incomplete card: %+v", card)

@@ -112,7 +112,7 @@ func SetState(ctx context.Context, db *sql.DB, readerID, source string, pageID i
 // what they finished, saved and skipped, then pick diversely — seeded
 // jitter, a similarity penalty against monotone runs, and exploration slots
 // drawn from featured articles and the corpus at large. A reader with no
-// history gets the featured articles alone.
+// history gets featured articles interleaved with random corpus samples.
 func For(ctx context.Context, db *sql.DB, readerID string, limit int) ([]Card, error) {
 	cards, _, _, _, err := ForExplained(ctx, db, readerID, limit)
 	return cards, err
@@ -157,19 +157,23 @@ func ForExplained(ctx context.Context, db *sql.DB, readerID string, limit int) (
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
-	if len(state) > 0 {
-		// Corpus breadth comes stratified across the wiki's topic branches;
-		// uniform random sampling is the fallback for a corpus whose topic
-		// tree has not been fetched.
-		random, err := stratifiedArticles(ctx, db, readerID, limit, exploreSeed)
-		if err != nil {
+	// Corpus breadth: stratified random articles from across the wiki's
+	// topic branches, or uniform random as a fallback. These give a
+	// cold-start reader (no state, no seeds) corpus diversity that
+	// featured articles alone can't provide — featured content skews
+	// toward biography and history, so a reader whose latent interests
+	// are computing or animals may never find them without random doors.
+	random, err := stratifiedArticles(ctx, db, readerID, limit, exploreSeed)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	if len(random) == 0 {
+		if random, err = randomArticles(ctx, db, readerID, limit, exploreSeed); err != nil {
 			return nil, nil, nil, nil, err
 		}
-		if len(random) == 0 {
-			if random, err = randomArticles(ctx, db, readerID, limit, exploreSeed); err != nil {
-				return nil, nil, nil, nil, err
-			}
-		}
+	}
+	explore = interleave(explore, random)
+	if len(state) > 0 {
 		// The middle distance: category random walks from the reader's
 		// reads land on "related but unseen" (measured: ~30-85% on-interest
 		// depending on how focused the reader is, ~half absent from the
@@ -188,7 +192,7 @@ func ForExplained(ctx context.Context, db *sql.DB, readerID string, limit int) (
 		if related, err = keepReadable(ctx, db, related); err != nil {
 			return nil, nil, nil, nil, err
 		}
-		explore = interleave(related, interleave(explore, random))
+		explore = interleave(related, explore)
 	}
 	explore = slices.DeleteFunc(explore, func(c Candidate) bool {
 		return suppressed[pageKey{c.Source, c.PageID}] || suppressedTitles[c.Title]
