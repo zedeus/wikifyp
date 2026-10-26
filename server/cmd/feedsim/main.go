@@ -484,8 +484,10 @@ func main() {
 	satiate := flag.Bool("satiate", false, "intra-session satiation: finish probability drops after 2+ same-interest articles per fetch")
 	fast := flag.Bool("fast", false, "fast mode: 20 iterations (phased personas scaled down), 7 key personas, no impression recording")
 	engOff := flag.Bool("engage-off", false, "disable completion-driven engagement (v3 baseline: finished=+1, skipped=-1)")
+	dynSim := flag.Bool("dyn-sim", true, "dynamic similarity penalty: adapts per reader based on cluster count")
 	flag.Parse()
 	feed.EngageOff = *engOff
+	feed.DynamicSimPenalty = *dynSim
 	feed.TokenSaturation = *tokenSat
 	feed.EngageThreshold = *engThresh
 	feed.EngageTokens = *engTokens

@@ -50,6 +50,13 @@ const linkWeight = 1.0
 // high without killing diversity for focused readers.
 var SimilarityPenalty = 0.6
 
+// DynamicSimPenalty, when true, adapts the similarity penalty per reader
+// based on their cluster count. Single-interest readers get a lighter
+// penalty (similar articles are what they want); multi-interest readers
+// get a heavier penalty to force diversity. The global SimilarityPenalty
+// becomes the midpoint; the actual penalty ranges from 0.4 to 0.8.
+var DynamicSimPenalty = false
+
 // RelevanceFloor is the minimum raw relevance that can occupy a relevance
 // slot. A reader with three interactions has perhaps a dozen genuinely
 // related candidates; below the floor the pool is pages that merely link
@@ -817,6 +824,30 @@ type Picked struct {
 func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k int, seed int64) []Picked {
 	rng := rand.New(rand.NewPCG(uint64(seed), 0x77696b69)) // "wiki"
 	freshCap := AdaptiveFreshCap(state)
+	// StateClusters is computed once and shared between the dynamic sim
+	// penalty and the rotation turn setup below.
+	clusters, _ := StateClusters(state)
+	// Dynamic similarity penalty: a reader with one deep interest needs
+	// a lighter penalty (similar articles ARE what they want), while a
+	// multi-interest reader needs heavier penalty to force diversity
+	// across their interests. Keyed on cluster count: 1 cluster → 0.4
+	// (let similar through), 4+ clusters → 0.8 (force diversity).
+	simPenalty := SimilarityPenalty
+	if DynamicSimPenalty {
+		nc := len(clusters)
+		switch {
+		case nc == 0:
+			simPenalty = SimilarityPenalty // cold-start: use baseline, needs diversity in exploration
+		case nc == 1:
+			simPenalty = 0.4 // single deep interest: let similar articles through
+		case nc == 2:
+			simPenalty = 0.5
+		case nc == 3:
+			simPenalty = 0.65
+		default:
+			simPenalty = 0.8 // 4+ interests: force diversity
+		}
+	}
 	// The incremental MMR state per remaining candidate: its category set
 	// (built once) and its running similarity to the closest pick so far,
 	// updated against only the newest pick each round.
@@ -869,7 +900,6 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 			ownerCandidates[o] = append(ownerCandidates[o], i)
 		}
 	}
-	clusters, _ := StateClusters(state)
 	// Each cluster is one rotation turn. The turn anchors on a rotating
 	// member row rather than merging every member's candidates into one
 	// best-of: a merged turn re-served the same cluster-wide best cards
@@ -1008,7 +1038,7 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 			if fresh && c.maxSim > freshCap {
 				return
 			}
-			if score := c.Score - SimilarityPenalty*c.maxSim; score > bestScore {
+			if score := c.Score - simPenalty*c.maxSim; score > bestScore {
 				best, bestScore = i, score
 			}
 		}
@@ -1027,7 +1057,7 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 		c := &remaining[i]
 		c.picked = true
 		seen[pageKey{c.Source, c.PageID}] = true
-		picked = append(picked, Picked{Candidate: c.Candidate, Score: c.Score - SimilarityPenalty*c.maxSim})
+		picked = append(picked, Picked{Candidate: c.Candidate, Score: c.Score - simPenalty*c.maxSim})
 		for j := range remaining {
 			if !remaining[j].picked {
 				remaining[j].maxSim = max(remaining[j].maxSim, cosine(remaining[j].cats, c.Candidate.Categories))
