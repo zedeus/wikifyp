@@ -9,11 +9,14 @@ DSN="${WIKIFYP_DATABASE_URL:-postgres://postgres:wikifyp@127.0.0.1:5433/wikifyp?
 export WIKIFYP_DATABASE_URL="$DSN"
 
 RESULTS="/tmp/feedsim-params-$(date +%Y%m%d-%H%M%S).txt"
+BIN=$(mktemp -d)/feedsim
+go build -o "$BIN" ./cmd/feedsim
+trap "rm -f '$BIN'" EXIT
 
 run() {
     local label="$1"; shift
     echo "=== $label ===" | tee -a "$RESULTS"
-    go run ./cmd/feedsim -bench -fast -seeds 1,2,3 "$@" 2>&1 | grep -E '(band:)' | tee -a "$RESULTS"
+    "$BIN" -bench -fast -seeds 1,2,3 "$@" 2>&1 | grep -E '(band:)' | tee -a "$RESULTS"
     echo "" >> "$RESULTS"
 }
 
