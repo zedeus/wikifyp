@@ -502,7 +502,9 @@ func main() {
 	feed.FreshSimCap = *capBase
 	feed.ClusterRecencyBoost = *clusterBoost
 	feed.ExploreRampRows = *exploreRamp
-	skipImpressions = *fast
+	// Impressions are always recorded now — the graduated warmup ramp
+	// makes the discount gentle enough for short runs, and skipping
+	// impressions made the discount mechanism untestable in fast mode.
 	useSatiation = *satiate
 
 	dsn := config.FromEnv().DatabaseURL

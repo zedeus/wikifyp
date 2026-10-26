@@ -417,14 +417,15 @@ func impressionDiscount(liked map[string]float64, impressions map[string]int) ma
 	if totalImp == 0 || totalLiked == 0 {
 		return nil
 	}
-	// Warmup: don't apply the discount until the reader has seen
-	// enough feeds for their interest pattern to stabilize. Before
-	// this, impression shares are noise and the discount creates
-	// a winner-take-all feedback loop in multi-interest readers
-	// (measured: the juggler's music interest collapsed from 143
-	// to 6 interactions without warmup — the first interest to
-	// get a slight edge cannibalized all others).
-	if totalImp < ImpressionWarmup {
+	// Graduated warmup: the discount ramps from zero to full strength
+	// over ImpressionWarmup total impressions, so early noise gets a
+	// gentle discount and the reader's stabilized pattern gets the full
+	// one. A hard cutoff at 5000 meant the discount never activated in
+	// practice (60 feeds × 20 cards = 1200 impressions). The ramp
+	// avoids the winner-take-all loop that a full-strength discount on
+	// noisy early data caused (juggler collapse, measured at damping=2).
+	ramp := min(1.0, totalImp/ImpressionWarmup)
+	if ramp < 0.01 {
 		return nil
 	}
 	factors := make(map[string]float64, len(liked))
@@ -438,7 +439,7 @@ func impressionDiscount(liked map[string]float64, impressions map[string]int) ma
 		if excess <= 0 {
 			continue
 		}
-		f := 1 - excess*ImpressionDamping
+		f := 1 - excess*ImpressionDamping*ramp
 		factors[c] = max(impressionDiscountFloor, f)
 	}
 	return factors
@@ -461,11 +462,12 @@ var ImpressionDamping = 1.0
 // too little to starve a real interest out of the feed.
 const impressionDiscountFloor = 0.5
 
-// impressionWarmup is the minimum total impression count before the
-// discount activates. Below this, the reader hasn't seen enough feeds
-// for impression shares to be meaningful, and the discount would amplify
-// whichever interest happened to get clicked first.
-var ImpressionWarmup = 5000.0
+// ImpressionWarmup is the total impression count where the graduated
+// discount reaches full strength. The discount ramps linearly from zero:
+// at 100 impressions (5 feeds) it's at 50% strength, at 200 (10 feeds)
+// full. This replaces the old hard cutoff at 5000 that never activated
+// in practice (60 feeds × 20 cards = 1200 max).
+var ImpressionWarmup = 200.0
 
 // Engagement thresholds. Exported so the feedsim can sweep them.
 var (
