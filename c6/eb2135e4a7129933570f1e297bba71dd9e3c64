@@ -1,0 +1,25 @@
+server/internal/api/endpoints_test.go
+  s_9c6c8807874627::t_803cc7a1fb7f3e 87,96-97,101,103-104,106,110-111
+  s_9c6c8807874627::t_9d4c447c0d6afd 99-100,102,105,107-109,112
+server/internal/feed/store_test.go
+  s_9c6c8807874627::t_dba0054d4a50e2 100-103,111-122
+server/internal/feed/store.go
+  s_9c6c8807874627::t_ac66f629aee092 115
+  s_9c6c8807874627::t_977900a1e409d4 160-171,174-176,195
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c6eb2135e4a7129933570f1e297bba71dd9e3c64",
+  "prompts": {},
+  "sessions": {
+    "s_9c6c8807874627": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4f817860-3004-4aa9-a9fa-31bf659f0bdf",
+        "model": "metr-model"
+      },
+      "human_author": null
+    }
+  }
+}
