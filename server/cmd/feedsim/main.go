@@ -481,7 +481,7 @@ func main() {
 	clusterBoost := flag.Float64("cluster-boost", 2.0, "recency boost for newest cluster rotation turns (1=equal, 3=3x)")
 	exploreRamp := flag.Int("explore-ramp", 30, "clustered rows where explore share reaches base")
 	satiate := flag.Bool("satiate", false, "intra-session satiation: finish probability drops after 2+ same-interest articles per fetch")
-	fast := flag.Bool("fast", false, "fast mode: 20 iterations, 4 key personas, no impression recording")
+	fast := flag.Bool("fast", false, "fast mode: 20 iterations (phased personas scaled down), 7 key personas, no impression recording")
 	engOff := flag.Bool("engage-off", false, "disable completion-driven engagement (v3 baseline: finished=+1, skipped=-1)")
 	flag.Parse()
 	feed.EngageOff = *engOff
@@ -750,12 +750,28 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 	if skipP == 0 {
 		skipP = 0.15
 	}
-	// A scripted reader's phases override the run length.
+	// A scripted reader's phases override the run length — but if the
+	// caller passed a smaller cap (fast mode), scale each phase down
+	// proportionally so the total fits. Copy the slice first: the
+	// backing array belongs to the global personas table and must
+	// survive across seeds.
 	if len(p.phases) > 0 {
-		iterations = 0
+		phases := make([]phase, len(p.phases))
+		copy(phases, p.phases)
+		p.phases = phases
+		total := 0
 		for _, ph := range p.phases {
-			iterations += ph.fetches
+			total += ph.fetches
 		}
+		if iterations > 0 && iterations < total {
+			scale := float64(iterations) / float64(total)
+			total = 0
+			for i := range p.phases {
+				p.phases[i].fetches = max(1, int(math.Round(float64(p.phases[i].fetches)*scale)))
+				total += p.phases[i].fetches
+			}
+		}
+		iterations = total
 		stats.phases = make([]phaseStats, len(p.phases))
 	}
 	currentPhase, phaseStart := -1, 1
