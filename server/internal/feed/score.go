@@ -159,6 +159,23 @@ var ExploreRampRows = 30
 // clustered rows means more exploration, which is desirable.
 var ClusterWindow = 50
 
+// PoolWindow limits how many recent state rows generate the candidate
+// pool (link and category queries) and seed random walks. Scoring
+// (RankScored) still sees the full state window — recency decay handles
+// old interests' scoring voice. But the pool should reflect where the
+// reader is heading: a serial reader who moved through cars → astronomy
+// → football → history doesn't need the pool stuffed with cars
+// candidates that scoring will rank at 80% voice. Without this, the
+// serial-rabbitholer's phase 4 feed was 61% residue from old phases
+// because the pool was built from all 500 state rows and old interests
+// dominated the bounded pool slots. Swept 50–200: at 100 serial
+// readers gain +12 (phase 4 active 2%→57%) but deep single-interest
+// readers lose 7 appeal (mono 85→78, link-depth narrowing). At 200
+// the serial reader still gains +5 (phase 4 2%→35%) and the mono
+// reader keeps within 2 of its baseline — the right tradeoff.
+// 0 = no window (use the full state for pool construction).
+var PoolWindow = 200
+
 // nominationGrace is the outgoing degree up to which a state page
 // nominates its neighbours at full strength; beyond it the strength decays
 // as grace/degree. Ordinary articles (biographies, bands, car models) sit

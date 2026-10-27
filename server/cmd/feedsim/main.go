@@ -487,6 +487,7 @@ func main() {
 	dynSim := flag.Bool("dyn-sim", false, "dynamic similarity penalty: adapts per reader based on cluster count")
 	exploreSimCap := flag.Float64("explore-sim-cap", 1.0, "max cosine between exploration picks (0=all diverse, 1=no filter)")
 	clusterWindow := flag.Int("cluster-window", 50, "recent state rows that build rotation clusters (0=no window)")
+	poolWindow := flag.Int("pool-window", 200, "recent state rows that generate the candidate pool and walk seeds (0=no window)")
 	flag.Parse()
 	feed.EngageOff = *engOff
 	feed.DynamicSimPenalty = *dynSim
@@ -506,6 +507,7 @@ func main() {
 	feed.ClusterRecencyBoost = *clusterBoost
 	feed.ExploreRampRows = *exploreRamp
 	feed.ClusterWindow = *clusterWindow
+	feed.PoolWindow = *poolWindow
 	// Impressions are always recorded now — the graduated warmup ramp
 	// makes the discount gentle enough for short runs, and skipping
 	// impressions made the discount mechanism untestable in fast mode.

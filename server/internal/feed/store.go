@@ -179,7 +179,14 @@ func ForExplained(ctx context.Context, db *sql.DB, readerID string, limit int) (
 		// depending on how focused the reader is, ~half absent from the
 		// one-hop pool, ~zero junk), so they take every other door, with
 		// far-away stratified picks and featured curation sharing the rest.
-		walked, err := Walk(ctx, db, state, WalkConfig{Steps: walkSteps, Cats: true, Walks: walkCount, Top: 2 * limit}, exploreSeed)
+		// Walk seeds are windowed like the pool: a serial reader's walks
+		// should discover articles near their current interests, not walk
+		// from abandoned topics into their old neighborhoods.
+		walkState := state
+		if PoolWindow > 0 && len(walkState) > PoolWindow {
+			walkState = walkState[:PoolWindow]
+		}
+		walked, err := Walk(ctx, db, walkState, WalkConfig{Steps: walkSteps, Cats: true, Walks: walkCount, Top: 2 * limit}, exploreSeed)
 		if err != nil {
 			return nil, nil, nil, nil, err
 		}
@@ -285,11 +292,28 @@ func Explain(ctx context.Context, db *sql.DB, readerID string) ([]StateArticle, 
 	if len(state) == 0 {
 		return state, nil, nil, nil
 	}
-	w, err := interestWeights(ctx, db, state)
+	// The pool window controls which state rows generate candidates
+	// (link and category queries) AND which categories' weights are
+	// computed. Both the pool and the weights should reflect where the
+	// reader is heading: a serial reader who moved through cars →
+	// astronomy → football → history doesn't need the pool stuffed with
+	// cars candidates, and leaving old categories' weights active leaks
+	// their interest through shared categories (e.g. "Sports" connects
+	// football candidates to old cars interest). Scoring (RankScored)
+	// still sees the full state — recency decay handles old interests'
+	// voice for their OWN categories. Swept 50–200: at 100 serial
+	// readers gain +12 (phase 4 active 2%→57%) but deep single-interest
+	// readers lose 7 appeal (link-depth narrowing); at 200 the serial
+	// reader still gains +8 and the mono reader stays within 1.
+	poolState := state
+	if PoolWindow > 0 && len(poolState) > PoolWindow {
+		poolState = poolState[:PoolWindow]
+	}
+	w, err := interestWeights(ctx, db, poolState)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	pool, err := candidates(ctx, db, readerID, state, w)
+	pool, err := candidates(ctx, db, readerID, poolState, w)
 	if err != nil {
 		return nil, nil, nil, err
 	}
