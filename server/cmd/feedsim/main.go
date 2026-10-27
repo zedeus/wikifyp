@@ -486,6 +486,7 @@ func main() {
 	engOff := flag.Bool("engage-off", false, "disable completion-driven engagement (v3 baseline: finished=+1, skipped=-1)")
 	dynSim := flag.Bool("dyn-sim", false, "dynamic similarity penalty: adapts per reader based on cluster count")
 	exploreSimCap := flag.Float64("explore-sim-cap", 1.0, "max cosine between exploration picks (0=all diverse, 1=no filter)")
+	clusterWindow := flag.Int("cluster-window", 50, "recent state rows that build rotation clusters (0=no window)")
 	flag.Parse()
 	feed.EngageOff = *engOff
 	feed.DynamicSimPenalty = *dynSim
@@ -504,6 +505,7 @@ func main() {
 	feed.FreshSimCap = *capBase
 	feed.ClusterRecencyBoost = *clusterBoost
 	feed.ExploreRampRows = *exploreRamp
+	feed.ClusterWindow = *clusterWindow
 	// Impressions are always recorded now — the graduated warmup ramp
 	// makes the discount gentle enough for short runs, and skipping
 	// impressions made the discount mechanism untestable in fast mode.

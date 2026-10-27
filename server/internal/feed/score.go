@@ -148,6 +148,17 @@ var ExploreSkipBoost = 0.5
 // latent interests.
 var ExploreRampRows = 30
 
+// ClusterWindow limits how many recent state rows build rotation
+// clusters. Old interests that haven't been reinforced naturally fall
+// off. Without this, a serial-rabbitholer who switched interests 30
+// feeds ago still has rotation turns for the abandoned topic (measured:
+// phase 4 got 2% on-topic, 67% residue from old phases). A window of
+// 50 holds ~7 feeds of history — enough for 2-3 active interests, short
+// enough that a truly abandoned interest loses its turn. The window
+// applies to rotation AND explore share: during a transition, lower
+// clustered rows means more exploration, which is desirable.
+var ClusterWindow = 50
+
 // nominationGrace is the outgoing degree up to which a state page
 // nominates its neighbours at full strength; beyond it the strength decays
 // as grace/degree. Ordinary articles (biographies, bands, car models) sit
@@ -838,9 +849,16 @@ type Picked struct {
 func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k int, seed int64) []Picked {
 	rng := rand.New(rand.NewPCG(uint64(seed), 0x77696b69)) // "wiki"
 	freshCap := AdaptiveFreshCap(state)
-	// StateClusters is computed once and shared between the dynamic sim
-	// penalty and the rotation turn setup below.
-	clusters, _ := StateClusters(state)
+	// Window the state for rotation clusters: only recent interactions
+	// get turns. An interest abandoned many feeds ago falls off rather
+	// than holding turns forever. The full state still drives scoring
+	// (RankScored sees it all); only the rotation and explore share
+	// reflect the window.
+	clusterState := state
+	if ClusterWindow > 0 && len(clusterState) > ClusterWindow {
+		clusterState = clusterState[:ClusterWindow]
+	}
+	clusters, _ := StateClusters(clusterState)
 	// Dynamic similarity penalty: a reader with one deep interest needs
 	// a lighter penalty (similar articles ARE what they want), while a
 	// multi-interest reader needs heavier penalty to force diversity
