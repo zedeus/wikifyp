@@ -472,7 +472,6 @@ func main() {
 	impDamp := flag.Float64("imp-damping", 1.0, "impression excess-damping multiplier")
 	impWarmup := flag.Float64("imp-warmup", 200, "total impression count before discount activates")
 	simPenalty := flag.Float64("sim-penalty", 0.6, "MMR similarity penalty strength")
-	decayFloor := flag.Float64("decay-floor", 0.3, "fixed decay floor (overrides adaptive when set)")
 	decayMin := flag.Float64("decay-min", 0.3, "adaptive decay floor minimum (new readers)")
 	decayMax := flag.Float64("decay-max", 0.6, "adaptive decay floor maximum (established readers)")
 	exploreBase := flag.Float64("explore-base", 0.20, "exploration share for established readers")
@@ -498,7 +497,6 @@ func main() {
 	feed.ImpressionDamping = *impDamp
 	feed.ImpressionWarmup = *impWarmup
 	feed.SimilarityPenalty = *simPenalty
-	feed.StateDecayFloor = *decayFloor
 	feed.DecayFloorMin = *decayMin
 	feed.DecayFloorMax = *decayMax
 	feed.ExploreShareBase = *exploreBase

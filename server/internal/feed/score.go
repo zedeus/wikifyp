@@ -333,7 +333,7 @@ func ClusteredRows(state []StateArticle) int {
 	return n
 }
 
-// StateDecayFloor is the voice the oldest interaction inside the interest
+// The decay floor is the voice the oldest interaction inside the interest
 // window keeps relative to the newest. Interest counting weighs each state
 // article by the exponential decay of its recency rank — 1.0 just read,
 // this at the window's edge (recentStateLimit) — so the profile follows
@@ -357,10 +357,6 @@ var (
 	DecayFloorMax      = 0.6 // for established readers (25+ rows)
 	DecayFloorRampRows = 25  // rows where the ramp reaches the max
 )
-
-// StateDecayFloor is kept for backwards compat with feedsim flag but
-// not used when the adaptive floor is active (DecayFloorMin != DecayFloorMax).
-var StateDecayFloor = 0.3
 
 // effectiveDecayFloor computes the decay floor for a reader with the
 // given number of state rows.
@@ -620,7 +616,7 @@ type Scored struct {
 // count their weight (per state article sharing them), and the categories
 // of skipped articles count against. State is ordered newest interaction
 // first (as readerState loads it); category interest decays with that rank
-// (see StateDecayFloor). No acted-on page comes back (see suppressedPages);
+// (see effectiveDecayFloor). No acted-on page comes back (see suppressedPages);
 // a saved page keeps promoting its neighbourhood, not itself. The order is
 // deterministic: score, then source and page ID.
 //
