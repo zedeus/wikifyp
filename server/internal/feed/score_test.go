@@ -215,6 +215,9 @@ func TestRankDeterministic(t *testing.T) {
 // stateDecayFloor voice, so the fresh topic outscores it by about
 // sqrt(1/0.3) ~ 1.8. A flat window (ratio 1) fails this.
 func TestRankInterestDecays(t *testing.T) {
+	saved := InterestFade
+	InterestFade = false
+	defer func() { InterestFade = saved }()
 	var state []StateArticle
 	add := func(i int, cat string) {
 		state = append(state, StateArticle{PageID: int64(5000 + i), Source: "simplewiki",
@@ -710,6 +713,9 @@ func TestSelectDiverseStrayBounded(t *testing.T) {
 // a smaller steady interest by raw volume — one hundred reads against four
 // argue 5:1, not 25:1.
 func TestRankInterestSaturates(t *testing.T) {
+	saved := InterestFade
+	InterestFade = false
+	defer func() { InterestFade = saved }()
 	var state []StateArticle
 	for i := range 100 {
 		state = append(state, StateArticle{PageID: int64(1000 + i), Source: "simplewiki",

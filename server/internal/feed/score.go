@@ -176,6 +176,34 @@ var ClusterWindow = 50
 // 0 = no window (use the full state for pool construction).
 var PoolWindow = 200
 
+// InterestFade, when true, attenuates each cluster's scoring voice by
+// how much its engagement has dropped off recently. A cluster that was
+// active long ago but absent from the newest InterestFadeWindow state
+// rows is an abandoned interest — its categories and link nominations
+// lose voice proportionally. A cluster that keeps appearing in recent
+// state (even sparsely) keeps full voice. This distinguishes "moved on"
+// (serial's abandoned cars phase) from "still interested, just slow"
+// (picky's steady animals) without a global time decay that punishes
+// both equally. The mechanism: for each cluster, compute what fraction
+// of its members fall in the recent window vs the full state. A cluster
+// with 20 total members and 0 in the recent 50 rows is fading; one
+// with 5 total and 2 in the recent 50 is active. The fade factor is
+// clamped to [InterestFadeFloor, 1.0] so abandoned interests keep a
+// residual voice (their categories are still real signal, just weaker).
+var InterestFade = true
+
+// InterestFadeWindow is how many recent state rows define "recent" for
+// the engagement trending. Should be large enough to cover several
+// feeds (7 articles per feed × 5 feeds = 35 rows) but small enough
+// that an interest abandoned 10 feeds ago has clearly faded.
+var InterestFadeWindow = 50
+
+// InterestFadeFloor is the minimum voice multiplier for a fully faded
+// cluster. At 0.3, an abandoned interest keeps 30% of its voice —
+// enough to serve its best candidates if they happen to appear, but
+// not enough to dominate the feed with residue.
+var InterestFadeFloor = 0.3
+
 // nominationGrace is the outgoing degree up to which a state page
 // nominates its neighbours at full strength; beyond it the strength decays
 // as grace/degree. Ordinary articles (biographies, bands, car models) sit
@@ -660,6 +688,43 @@ func RankScored(candidates []Candidate, state []StateArticle, w Weights, impress
 			meanEng = engSum / float64(engN)
 		}
 	}
+	// InterestFade: compute per-title fade factors from cluster engagement
+	// trending. A cluster with recent activity keeps full voice; one that
+	// stopped appearing in the recent window fades toward InterestFadeFloor.
+	titleFade := make(map[string]float64)
+	if InterestFade {
+		cls, _ := StateClusters(state)
+		// Build a set of titles in the recent window.
+		recentTitles := make(map[string]bool)
+		for i, s := range state {
+			if i >= InterestFadeWindow {
+				break
+			}
+			if s.State != StateSkipped {
+				recentTitles[s.Title] = true
+			}
+		}
+		for _, cl := range cls {
+			// Activity ratio: what fraction of this cluster's members
+			// have appeared in the recent window. A cluster with 20
+			// members and 0 in recent is fully faded; 5 members and
+			// 2 in recent (0.4) is moderately active.
+			recent := 0
+			for _, t := range cl {
+				if recentTitles[t] {
+					recent++
+				}
+			}
+			ratio := float64(recent) / float64(len(cl))
+			// The fade curve: sqrt gives a gentle ramp — a cluster
+			// with 25% of members recent keeps 50% voice (not 25%).
+			// A fully active cluster (ratio=1) keeps 100%.
+			fade := InterestFadeFloor + (1-InterestFadeFloor)*math.Sqrt(ratio)
+			for _, t := range cl {
+				titleFade[t] = fade
+			}
+		}
+	}
 	for i, s := range state {
 		voice := math.Exp(decay * float64(i))
 
@@ -682,6 +747,12 @@ func RankScored(candidates []Candidate, state []StateArticle, w Weights, impress
 			eng = max(0.2, eng/meanEng)
 		}
 		voice *= eng
+		// InterestFade: attenuate voice by the cluster's recent-activity
+		// ratio so abandoned interests lose weight while still-active
+		// sparse interests keep theirs.
+		if fade, ok := titleFade[s.Title]; ok {
+			voice *= fade
+		}
 		stateTitle[titleKey{s.Source, s.Title}] = s.Title
 		// A nomination's strength is the nominating page's specificity:
 		// full inside the grace region (nominationGrace links), decaying
@@ -696,6 +767,11 @@ func RankScored(candidates []Candidate, state []StateArticle, w Weights, impress
 		// steeper sqrt curve also halved ordinary 60-120-link pages and
 		// starved the small-state picky reader — appeal 27→16%.)
 		strength := min(1, nominationGrace/float64(max(len(s.Links), 1)))
+		// Fade nominations from abandoned clusters too — this is the
+		// targeted version of what TimedDecay did globally.
+		if fade, ok := titleFade[s.Title]; ok {
+			strength *= fade
+		}
 		nomination[s.Title] = strength
 		for _, l := range s.Links {
 			k := titleKey{s.Source, l}
