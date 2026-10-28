@@ -1,0 +1,29 @@
+server/cmd/feedsim/main.go
+  s_a514bf6fba6a89::t_3640b75ecd4062 491-492
+  s_a514bf6fba6a89::t_09b76e6a12ac9a 784
+  s_a514bf6fba6a89::t_1b502ec3c5c6a0 687-689
+  s_a514bf6fba6a89::t_e35c5121dd52ac 1177-1178
+  s_a514bf6fba6a89::t_8977e25f53a9e8 909-918
+  s_a514bf6fba6a89::t_8e54c33e0bd03b 1103-1111
+  s_a514bf6fba6a89::t_2b65146d4751eb 1145-1148
+  s_a514bf6fba6a89::t_ce6c4e93550e13 783
+  s_a514bf6fba6a89::t_55b4f7558cf91d 490
+  s_a514bf6fba6a89::t_c4c382c21a4644 512-514
+  s_a514bf6fba6a89::t_0706833e7308db 1112-1113
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2412fb86e3c03297293e8def37c2c1cb8312343e",
+  "prompts": {},
+  "sessions": {
+    "s_a514bf6fba6a89": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0095c366-8b29-4f50-b64c-6520fa784b12",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
