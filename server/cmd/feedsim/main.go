@@ -487,6 +487,9 @@ func main() {
 	exploreSimCap := flag.Float64("explore-sim-cap", 1.0, "max cosine between exploration picks (0=all diverse, 1=no filter)")
 	clusterWindow := flag.Int("cluster-window", 50, "recent state rows that build rotation clusters (0=no window)")
 	poolWindow := flag.Int("pool-window", 200, "recent state rows that generate the candidate pool and walk seeds (0=no window)")
+	interestFade := flag.Bool("interest-fade", true, "per-cluster engagement fade: abandoned clusters lose voice, active sparse ones keep it")
+	fadeWindow := flag.Int("fade-window", 50, "recent state rows that define 'recent' for interest-fade ratio")
+	fadeFloor := flag.Float64("fade-floor", 0.3, "minimum voice multiplier for a fully faded cluster")
 	flag.Parse()
 	feed.EngageOff = *engOff
 	feed.DynamicSimPenalty = *dynSim
@@ -506,6 +509,9 @@ func main() {
 	feed.ExploreRampRows = *exploreRamp
 	feed.ClusterWindow = *clusterWindow
 	feed.PoolWindow = *poolWindow
+	feed.InterestFade = *interestFade
+	feed.InterestFadeWindow = *fadeWindow
+	feed.InterestFadeFloor = *fadeFloor
 	// Impressions are always recorded now — the graduated warmup ramp
 	// makes the discount gentle enough for short runs, and skipping
 	// impressions made the discount mechanism untestable in fast mode.
@@ -678,6 +684,9 @@ type runStats struct {
 	uniqueMatching                                     map[int64]bool // distinct on-interest articles consumed: rabbit-hole depth
 	starved                                            int            // fetches that served no active-interest card at all
 	phases                                             []phaseStats
+	allCats                                            map[string]bool // every category seen across consumed articles
+	exploreCats                                        map[string]bool // categories seen only in exploration articles
+	exploreDomains                                     map[string]bool // distinct category domains in exploration articles
 }
 
 // phaseStats scores one stretch of a scripted reader's life.
@@ -771,7 +780,8 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 	interests := append([]interest(nil), p.interests...)
 	latent := append([]interest(nil), p.latent...)
 	stats := runStats{perInterest: make(map[string]int), firstServed: make(map[string]int),
-		uniqueMatching: make(map[int64]bool)}
+		uniqueMatching: make(map[int64]bool),
+		allCats:        make(map[string]bool), exploreCats: make(map[string]bool), exploreDomains: make(map[string]bool)}
 	prev := make(map[string]bool)
 	finishP, skipP := p.finish, p.skip
 	if finishP == 0 {
@@ -895,6 +905,16 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 			}
 			if junkTitle.MatchString(c.Title) {
 				stats.junk++
+			}
+			// Track diversity: every category consumed, and exploration-only categories.
+			for _, cat := range cats[c.ArticleID] {
+				stats.allCats[cat] = true
+				if c.Exploration {
+					stats.exploreCats[cat] = true
+					if d := catDomain(cat); d != "" {
+						stats.exploreDomains[d] = true
+					}
+				}
 			}
 			matched := matching(interests, cats[c.ArticleID])
 			appeals := len(matched) > 0
@@ -1080,6 +1100,17 @@ func cardCategories(ctx context.Context, db *sql.DB, cards []feed.Card) (map[int
 	return out, rows.Err()
 }
 
+// catDomain returns the last word of a category string as a coarse
+// domain grouping (e.g. "American football players" → "players",
+// "Mammals of Africa" → "Africa"). Empty for single-word categories.
+func catDomain(cat string) string {
+	i := strings.LastIndexByte(cat, ' ')
+	if i < 0 {
+		return cat
+	}
+	return cat[i+1:]
+}
+
 func matching(interests []interest, cats []string) []string {
 	var hit []string
 	for _, i := range interests {
@@ -1111,8 +1142,10 @@ func band(runs []runStats) string {
 	qLo, qHi := bounds(func(r runStats) float64 { return float64(r.churnEvents) })
 	dLo, dHi := bounds(func(r runStats) float64 { return float64(len(r.uniqueMatching)) })
 	sLo, sHi := bounds(func(r runStats) float64 { return float64(r.starved) })
-	return fmt.Sprintf("band: appeal %.1f-%.1f | repeats %.1f-%.1f | quits %.0f-%.0f | depth %.0f-%.0f | starved %.0f-%.0f",
-		aLo, aHi, rLo, rHi, qLo, qHi, dLo, dHi, sLo, sHi)
+	cLo, cHi := bounds(func(r runStats) float64 { return float64(len(r.allCats)) })
+	eLo, eHi := bounds(func(r runStats) float64 { return float64(len(r.exploreDomains)) })
+	return fmt.Sprintf("band: appeal %.1f-%.1f | repeats %.1f-%.1f | quits %.0f-%.0f | depth %.0f-%.0f | starved %.0f-%.0f | cats %.0f-%.0f | explore-domains %.0f-%.0f",
+		aLo, aHi, rLo, rHi, qLo, qHi, dLo, dHi, sLo, sHi, cLo, cHi, eLo, eHi)
 }
 
 // pct is the shared percentage formula the per-run report and the band
@@ -1141,7 +1174,8 @@ func report(p persona, iterations int, s runStats) {
 	if s.adoptedAt > 0 {
 		parts = append(parts, fmt.Sprintf("adopted latent at feed %d", s.adoptedAt))
 	}
-	parts = append(parts, fmt.Sprintf("depth %d | starved %d", len(s.uniqueMatching), s.starved))
+	parts = append(parts, fmt.Sprintf("depth %d | starved %d | cats %d | explore-cats %d | explore-domains %d",
+		len(s.uniqueMatching), s.starved, len(s.allCats), len(s.exploreCats), len(s.exploreDomains)))
 	fmt.Printf("%-30s interests: %s\n", "", strings.Join(parts, " | "))
 	for i, ph := range s.phases {
 		var names []string
