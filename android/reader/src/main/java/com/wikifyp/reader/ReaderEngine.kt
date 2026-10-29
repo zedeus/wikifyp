@@ -38,6 +38,15 @@ class ReaderEngine(
     /** Called after every state change (position, state, WPM). UI layers
      *  use this to sync observable state instead of polling. */
     private val onStateChanged: (() -> Unit)? = null,
+    /**
+     * Playback speed policy: given how many words this play has shown and
+     * whether it is a resume (the article played before), returns a
+     * positive multiplier on reading speed. The default plays at full
+     * speed; the UI layer injects a ramp (ease in over the first words).
+     * Scales word delays only — emitted events keep the reader's [wpm],
+     * so friction data is not distorted by the ramp.
+     */
+    private val speedScaleFor: (wordsSincePlay: Int, resuming: Boolean) -> Double = { _, _ -> 1.0 },
 ) {
     var state: ReaderState = ReaderState.IDLE
         private set
@@ -73,6 +82,26 @@ class ReaderEngine(
     private var dragStartPosition: Int = 0
     private var dragStartMs: Long = 0
 
+    /** Where the current play started and whether it is a resume, for [speedScaleFor]. */
+    private var playStartPosition: Int = 0
+    private var resuming: Boolean = false
+
+    /**
+     * Whether this article has played at all since [load]. Browsing or
+     * scrubbing alone leaves it false; the UI uses it to tell a reader
+     * abandoning an article from one who only previewed it.
+     */
+    var hasPlayed: Boolean = false
+        private set
+
+    /**
+     * Whether this article reached its end since [load]. A finished
+     * article was read, not abandoned: the UI uses this to suppress the
+     * skip event on exit after a FINISH was already emitted.
+     */
+    var hasFinished: Boolean = false
+        private set
+
     /**
      * Load content for playback. Resets to the beginning.
      */
@@ -87,6 +116,10 @@ class ReaderEngine(
         this.position = 0
         this.state = ReaderState.IDLE
         this.sessionId = idGenerator()
+        this.playStartPosition = 0
+        this.resuming = false
+        this.hasPlayed = false
+        this.hasFinished = false
         notifyChanged()
     }
 
@@ -150,14 +183,17 @@ class ReaderEngine(
     }
 
     /**
-     * Signal that the user started dragging (while paused or playing).
+     * Signal that the user started dragging. Enters scrubbing from any
+     * state — dragging on an unstarted article scrubs from the beginning,
+     * which is how the browse overlay lets a reader preview and pick a
+     * starting word before the first hold.
      */
     fun onDragStart() {
         pendingHoldCheck?.cancel()
         pendingHoldCheck = null
         cancelPending()
 
-        if (state == ReaderState.PLAYING || state == ReaderState.PAUSED) {
+        if (state != ReaderState.SCRUBBING) {
             dragStartPosition = position
             dragStartMs = clock.nowMs()
             state = ReaderState.SCRUBBING
@@ -169,9 +205,17 @@ class ReaderEngine(
      * Signal that the user dragged by [tokenOffset] tokens (negative = back).
      * Clamps to valid range.
      */
-    fun onDragMove(tokenOffset: Int) {
+    fun onDragMove(tokenOffset: Int) = seekTo(position + tokenOffset)
+
+    /**
+     * Seek to an absolute flat token index while scrubbing. The browse
+     * overlay uses this when the reader taps a word to jump to it; the
+     * reposition is reported through the same scroll_back event a drag
+     * emits, on the next [onTouchUp] or hold-to-resume.
+     */
+    fun seekTo(flatIndex: Int) {
         if (state != ReaderState.SCRUBBING) return
-        position = (position + tokenOffset).coerceIn(0, (totalTokens - 1).coerceAtLeast(0))
+        position = flatIndex.coerceIn(0, (totalTokens - 1).coerceAtLeast(0))
         notifyChanged()
     }
 
@@ -218,6 +262,9 @@ class ReaderEngine(
     private fun startPlaying() {
         if (totalTokens == 0) return
         state = ReaderState.PLAYING
+        playStartPosition = position
+        resuming = hasPlayed
+        hasPlayed = true
         emitEvent(EventType.PLAY)
         notifyChanged()
         scheduleNextAdvance()
@@ -228,7 +275,9 @@ class ReaderEngine(
         val sentence = sentences[sentIdx]
         val tokenText = sentence.tokens[tokIdx]
         val isLast = tokIdx == sentence.tokens.size - 1
-        val delay = delayMs(tokenText, isLast, wpm)
+        val scale = speedScaleFor(position - playStartPosition, resuming)
+        require(scale > 0) { "speed scale must be positive" }
+        val delay = (delayMs(tokenText, isLast, wpm) / scale).toLong()
 
         pendingAdvance =
             clock.schedule(delay) {
@@ -242,6 +291,7 @@ class ReaderEngine(
         val next = position + 1
         if (next >= totalTokens) {
             // Finished the article
+            hasFinished = true
             emitEvent(EventType.FINISH)
             state = ReaderState.IDLE
             notifyChanged()
@@ -325,8 +375,10 @@ class ReaderEngine(
  * A sentence's tokens for playback. The engine does not need the full
  * sentence text, only the token strings and their count per sentence.
  *
- * @param isHeading true for section headings; the UI may display these
- *   in a distinct colour so the reader knows what kind of text they're in.
+ * @param isHeading true for section headings. RSVP playback treats them
+ *   as ordinary text — they cost one beat at speed, and a pause on a
+ *   heading is friction data a special treatment would corrupt; the
+ *   browse overlay renders them as headings.
  */
 data class SentenceTokens(
     val tokens: List<String>,

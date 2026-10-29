@@ -57,6 +57,28 @@ class ReaderEngineEdgeCaseTest {
     }
 
     @Test
+    fun hasFinishedTracksFinishAndResetsOnLoad() {
+        engine.load(articleId = 1, sentences = listOf(SentenceTokens(listOf("Hello"))))
+        assertEquals(false, engine.hasFinished)
+        engine.onTouchDown()
+        clock.advanceBy(ReaderEngine.HOLD_THRESHOLD_MS)
+        clock.advanceBy(delayMs("Hello", isLastInSentence = true, wpm = 250))
+
+        // Finished: the flag is set and survives a post-finish browse
+        // (scrub), so the UI can tell a finished read from an abandoned
+        // one and suppress the skip event on exit.
+        assertEquals(true, engine.hasFinished)
+        engine.onDragStart()
+        engine.onTouchUp()
+        assertEquals(ReaderState.PAUSED, engine.state)
+        assertEquals(true, engine.hasFinished)
+
+        // A new load starts over.
+        engine.load(articleId = 2, sentences = listOf(SentenceTokens(listOf("World"))))
+        assertEquals(false, engine.hasFinished)
+    }
+
+    @Test
     fun oneWordSentences() {
         engine.load(
             articleId = 1,
@@ -144,10 +166,19 @@ class ReaderEngineEdgeCaseTest {
     }
 
     @Test
-    fun dragInIdleIsIgnored() {
-        engine.load(articleId = 1, sentences = listOf(SentenceTokens(listOf("A"))))
+    fun dragInIdleScrubsFromStart() {
+        // Dragging an unstarted article scrubs from the beginning: the
+        // browse overlay opens on a drag and must be able to seek before
+        // the first hold.
+        engine.load(articleId = 1, sentences = listOf(SentenceTokens(listOf("A", "B"))))
         engine.onDragStart()
-        assertEquals(ReaderState.IDLE, engine.state)
+        assertEquals(ReaderState.SCRUBBING, engine.state)
+        engine.onDragMove(1)
+        assertEquals("B", engine.currentToken())
+        engine.onTouchUp()
+        assertEquals(ReaderState.PAUSED, engine.state)
+        // Scrubbing alone is a preview, not a play.
+        assertEquals(false, engine.hasPlayed)
     }
 
     @Test
