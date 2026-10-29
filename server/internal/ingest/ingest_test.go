@@ -647,3 +647,160 @@ func TestPruneCategoriesKeepsFeatured(t *testing.T) {
 		t.Errorf("post-prune categories = %v, want %v", got, want)
 	}
 }
+
+func TestReingestSupersedesChangedRows(t *testing.T) {
+	db := newDB(t)
+	a := testArticle()
+	first, err := Article(context.Background(), db, &a)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// The same revision through a changed pipeline: the fixture pins its
+	// revision, so a cleaner fix can only land as a new row.
+	changed := testArticle()
+	changed.Text = "Sentence one, repaired. Sentence two.\n\n== History ==\n\nBody sentence."
+	second, err := Reingest(context.Background(), db, &changed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !second.Created {
+		t.Fatal("reingest with changed rows did not create a row")
+	}
+	if second.ArticleID == first.ArticleID {
+		t.Fatal("reingest reused the stored article row")
+	}
+
+	// The stored rows and their addresses are untouched.
+	var text string
+	if err := db.QueryRow("SELECT text FROM sentences WHERE article_id = $1 AND sentence_idx = 0", first.ArticleID).Scan(&text); err != nil {
+		t.Fatal(err)
+	}
+	if text != "Sentence one." {
+		t.Errorf("stored sentence of the superseded row changed to %q", text)
+	}
+	if n := count(t, db, "SELECT count(*) FROM sentences WHERE article_id = $1", first.ArticleID); n != 4 {
+		t.Errorf("superseded row's sentences = %d, want 4", n)
+	}
+
+	// The feed sees only the new row.
+	var latest int64
+	if err := db.QueryRow("SELECT id FROM latest_articles WHERE source = $1 AND page_id = $2", a.Source, a.PageID).Scan(&latest); err != nil {
+		t.Fatal(err)
+	}
+	if latest != second.ArticleID {
+		t.Errorf("latest_articles shows article %d, want %d", latest, second.ArticleID)
+	}
+
+	// Plain ingest of the revision stays a no-op and answers with the
+	// superseding row.
+	third, err := Article(context.Background(), db, &a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if third.Created || third.ArticleID != second.ArticleID {
+		t.Errorf("plain ingest after supersede = %+v, want no-op naming article %d", third, second.ArticleID)
+	}
+}
+
+func TestReingestIdenticalRowsIsANoOp(t *testing.T) {
+	db := newDB(t)
+	a := testArticle()
+	first, err := Article(context.Background(), db, &a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	again := testArticle()
+	again.Description = "A test subject"
+	second, err := Reingest(context.Background(), db, &again)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if second.Created || second.ArticleID != first.ArticleID {
+		t.Errorf("reingest of identical rows = %+v, want no-op naming article %d", second, first.ArticleID)
+	}
+	if n := count(t, db, "SELECT count(*) FROM articles"); n != 1 {
+		t.Errorf("articles = %d, want 1", n)
+	}
+	// Presentation metadata still refreshes, as on plain re-ingest.
+	if _, _, _, desc := readMeta(t, db, first.ArticleID); desc != "A test subject" {
+		t.Errorf("description = %q, want refreshed", desc)
+	}
+}
+
+func TestReingestUnstoredRevisionIngestsNormally(t *testing.T) {
+	db := newDB(t)
+	a := testArticle()
+	res, err := Reingest(context.Background(), db, &a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !res.Created {
+		t.Fatal("reingest of an unstored revision did not create it")
+	}
+	var seq int
+	if err := db.QueryRow("SELECT ingest_seq FROM articles WHERE id = $1", res.ArticleID).Scan(&seq); err != nil {
+		t.Fatal(err)
+	}
+	if seq != 0 {
+		t.Errorf("ingest_seq = %d, want 0", seq)
+	}
+}
+
+func TestLatestArticlesPrefersNewerRevisionOverReingest(t *testing.T) {
+	db := newDB(t)
+	a := testArticle()
+	if _, err := Article(context.Background(), db, &a); err != nil {
+		t.Fatal(err)
+	}
+	repaired := testArticle()
+	repaired.Text = "Sentence one, repaired."
+	super, err := Reingest(context.Background(), db, &repaired)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !super.Created {
+		t.Fatal("reingest did not supersede")
+	}
+	newer := testArticle()
+	newer.RevisionID = 1001
+	newer.Text = "A newer revision entirely."
+	latest, err := Article(context.Background(), db, &newer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got int64
+	if err := db.QueryRow("SELECT id FROM latest_articles WHERE source = $1 AND page_id = $2", a.Source, a.PageID).Scan(&got); err != nil {
+		t.Fatal(err)
+	}
+	if got != latest.ArticleID {
+		t.Errorf("latest_articles shows article %d, want the newer revision %d", got, latest.ArticleID)
+	}
+}
+
+func TestReingestCarriesStoredMetadataForward(t *testing.T) {
+	db := newDB(t)
+	rich := testArticle()
+	rich.Image = &source.Image{URL: "https://img.example/x.png", Width: 100, Height: 80}
+	rich.Description = "A molecule"
+	first, err := Article(context.Background(), db, &rich)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// A reingest from a source carrying no metadata (a dump record, an old
+	// fixture) must not strip the richer metadata off the preferred row.
+	bare := testArticle()
+	bare.Text = "Sentence one, repaired. Sentence two.\n\n== History ==\n\nBody sentence."
+	second, err := Reingest(context.Background(), db, &bare)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !second.Created || second.ArticleID == first.ArticleID {
+		t.Fatalf("reingest did not supersede: %+v", second)
+	}
+	imgURL, imgW, imgH, desc := readMeta(t, db, second.ArticleID)
+	if imgURL != "https://img.example/x.png" || imgW != 100 || imgH != 80 || desc != "A molecule" {
+		t.Errorf("superseding row lost stored metadata: image %q %dx%d, description %q", imgURL, imgW, imgH, desc)
+	}
+}

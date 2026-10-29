@@ -12,6 +12,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/zedeus/wikifyp/server/internal/source"
@@ -36,77 +37,262 @@ type SentenceRow struct {
 // Article stores one fetched article. The caller fetches; this validates,
 // cleans, splits and writes.
 func Article(ctx context.Context, db *sql.DB, a *source.Article) (Result, error) {
-	if err := a.Validate(); err != nil {
+	rows, tx, err := prepare(ctx, db, a)
+	if err != nil {
+		return Result{}, err
+	}
+	defer tx.Rollback()
+	return article(ctx, tx, a, rows)
+}
+
+// article is Article minus prepare: insert at ingest_seq 0, or treat the
+// conflict as "this revision is already stored".
+func article(ctx context.Context, tx *sql.Tx, a *source.Article, rows []SentenceRow) (Result, error) {
+	id, err := insertArticle(ctx, tx, a, 0)
+	if errors.Is(err, sql.ErrNoRows) {
+		// This revision is already stored (a fresh insert is ingest_seq 0,
+		// which every stored revision has); re-ingesting changes nothing for
+		// sentences, links or categories — addressed text is immutable, and
+		// storing the current pipeline's output for an already-stored
+		// revision is Reingest's job, asked for explicitly.
+		return answerExisting(ctx, tx, a)
+	}
+	if err != nil {
+		return Result{}, err
+	}
+	return finish(ctx, tx, id, a, rows)
+}
+
+// answerExisting is every "this revision is already stored" ending: refresh
+// the presentation metadata on the row that answers for the revision, commit,
+// and name that row with Created false.
+func answerExisting(ctx context.Context, tx *sql.Tx, a *source.Article) (Result, error) {
+	id, _, err := latestRevision(ctx, tx, a)
+	if errors.Is(err, sql.ErrNoRows) {
+		// Unreachable short of concurrent row deletion: a conflict just
+		// proved the revision stored.
+		return Result{}, fmt.Errorf("ingest: article %q vanished during ingest: %w", a.Title, err)
+	}
+	if err != nil {
+		return Result{}, err
+	}
+	if err := refreshMetadata(ctx, tx, id, a); err != nil {
+		return Result{}, err
+	}
+	return Result{ArticleID: id, Created: false}, tx.Commit()
+}
+
+// Reingest stores the current pipeline's output for a revision that is
+// already stored, as a new article row with the next ingest_seq. The rows
+// already stored — and every address pointing at them — are untouched;
+// latest_articles simply prefers the new row. When the pipeline's output
+// matches the latest stored row this is a no-op, so running it over
+// everything is safe. A revision not yet stored is ingested normally.
+func Reingest(ctx context.Context, db *sql.DB, a *source.Article) (Result, error) {
+	rows, tx, err := prepare(ctx, db, a)
+	if err != nil {
+		return Result{}, err
+	}
+	defer tx.Rollback()
+
+	latest, seq, err := latestRevision(ctx, tx, a)
+	if errors.Is(err, sql.ErrNoRows) {
+		return article(ctx, tx, a, rows)
+	}
+	if err != nil {
+		return Result{}, err
+	}
+	same, err := sameRows(ctx, tx, latest, rows)
+	if err != nil {
+		return Result{}, err
+	}
+	if same {
+		return answerExisting(ctx, tx, a)
+	}
+
+	if seq == math.MaxInt16 {
+		// A wrapped seq would sort as the oldest row and resurrect stale
+		// text; reaching this means something is reingesting in a loop.
+		return Result{}, fmt.Errorf("ingest: article %q: revision %d already superseded %d times", a.Title, a.RevisionID, seq)
+	}
+	id, err := insertArticle(ctx, tx, a, seq+1)
+	if err == nil {
+		// The superseded row may carry richer presentation metadata than
+		// this fetch (an image stored by the API that a dump or fixture
+		// lacks); the preferred row must not lose it, the same promise
+		// refreshMetadata makes on the already-stored paths.
+		if _, err := tx.ExecContext(ctx, `
+			UPDATE articles SET
+				image_url = COALESCE(articles.image_url, old.image_url),
+				image_width = COALESCE(articles.image_width, old.image_width),
+				image_height = COALESCE(articles.image_height, old.image_height),
+				description = COALESCE(articles.description, old.description)
+			FROM articles old
+			WHERE articles.id = $1 AND old.id = $2`,
+			id, latest); err != nil {
+			return Result{}, fmt.Errorf("ingest: carry metadata forward: %w", err)
+		}
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		// A concurrent reingest committed this seq first. This is a
+		// single-writer CLI by contract (like the MediaWiki client), so the
+		// winner ran the same pipeline and its row carries the same output;
+		// answer with it instead of surfacing a bare conflict.
+		return answerExisting(ctx, tx, a)
+	}
+	if err != nil {
+		return Result{}, err
+	}
+	return finish(ctx, tx, id, a, rows)
+}
+
+// insertArticle inserts one article row at the given ingest_seq and returns
+// its id, or sql.ErrNoRows when that (source, revision_id, ingest_seq) is
+// already stored.
+func insertArticle(ctx context.Context, tx *sql.Tx, a *source.Article, seq int16) (int64, error) {
+	imgURL, imgW, imgH := imageCols(a)
+	var id int64
+	err := tx.QueryRowContext(ctx, `
+		INSERT INTO articles (source, title, url, page_id, revision_id, license, attribution, fetched_at,
+			image_url, image_width, image_height, description, ingest_seq)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		ON CONFLICT (source, revision_id, ingest_seq) DO NOTHING
+		RETURNING id`,
+		a.Source, a.Title, a.URL, a.PageID, a.RevisionID, a.License, a.Attribution, a.Fetched,
+		imgURL, imgW, imgH, descCol(a), seq,
+	).Scan(&id)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return 0, fmt.Errorf("ingest: insert article: %w", err)
+	}
+	return id, err
+}
+
+// latestRevision returns the stored row with the highest ingest_seq for the
+// article's revision — the one rule for which row answers for a revision.
+// sql.ErrNoRows means the revision is not stored.
+func latestRevision(ctx context.Context, tx *sql.Tx, a *source.Article) (id int64, seq int16, err error) {
+	err = tx.QueryRowContext(ctx, `
+		SELECT id, ingest_seq FROM articles WHERE source = $1 AND revision_id = $2
+		ORDER BY ingest_seq DESC LIMIT 1`,
+		a.Source, a.RevisionID).Scan(&id, &seq)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return 0, 0, fmt.Errorf("ingest: find existing revision: %w", err)
+	}
+	return id, seq, err
+}
+
+// finish writes the article's dependent rows and commits.
+func finish(ctx context.Context, tx *sql.Tx, id int64, a *source.Article, rows []SentenceRow) (Result, error) {
+	if err := storeRows(ctx, tx, id, a, rows); err != nil {
+		return Result{}, err
+	}
+	if err := tx.Commit(); err != nil {
 		return Result{}, fmt.Errorf("ingest: %w", err)
+	}
+	return Result{ArticleID: id, Created: true, Sentences: len(rows)}, nil
+}
+
+// Rows is the pipeline's front half — validate, clean, split — the one
+// definition of what stored rows an article's text produces. Everything
+// that writes article sentences (ingest here, the asset exporter) goes
+// through it, so the outputs cannot drift.
+func Rows(a *source.Article) ([]SentenceRow, error) {
+	if err := a.Validate(); err != nil {
+		return nil, fmt.Errorf("ingest: %w", err)
 	}
 	rows := SentenceRows(source.Clean(a.Text))
 	if len(rows) == 0 {
 		// For example a page that is only an infobox; a dump import logs
 		// and skips these.
-		return Result{}, fmt.Errorf("ingest: article %q: no sentences after cleaning", a.Title)
+		return nil, fmt.Errorf("ingest: article %q: no sentences after cleaning", a.Title)
 	}
+	return rows, nil
+}
 
+// prepare runs Rows and opens the transaction — the shared front half of
+// Article and Reingest.
+func prepare(ctx context.Context, db *sql.DB, a *source.Article) ([]SentenceRow, *sql.Tx, error) {
+	rows, err := Rows(a)
+	if err != nil {
+		return nil, nil, err
+	}
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		return Result{}, fmt.Errorf("ingest: %w", err)
+		return nil, nil, fmt.Errorf("ingest: %w", err)
 	}
-	defer tx.Rollback()
+	return rows, tx, nil
+}
 
-	// Image and description are nullable presentation metadata, absent for
-	// pages with no free lead image or no short description.
-	var imgURL *string
-	var imgW, imgH *int
-	if a.Image != nil {
-		imgURL, imgW, imgH = &a.Image.URL, &a.Image.Width, &a.Image.Height
-	}
-	var desc *string
-	if a.Description != "" {
-		desc = &a.Description
-	}
-
-	var id int64
-	err = tx.QueryRowContext(ctx, `
-		INSERT INTO articles (source, title, url, page_id, revision_id, license, attribution, fetched_at,
-			image_url, image_width, image_height, description)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-		ON CONFLICT (source, revision_id) DO NOTHING
-		RETURNING id`,
-		a.Source, a.Title, a.URL, a.PageID, a.RevisionID, a.License, a.Attribution, a.Fetched,
-		imgURL, imgW, imgH, desc,
-	).Scan(&id)
-	if errors.Is(err, sql.ErrNoRows) {
-		// This revision is already stored; re-ingesting changes nothing for
-		// sentences, links or categories — addressed text is immutable.
-		// Image and description are presentation metadata, not addressed
-		// text, so a re-ingest that carries them may refresh the stored row
-		// (the wiki swaps lead images without a new text revision). Only
-		// non-empty incoming metadata is written: dump imports and older
-		// fixtures carry none, and re-ingesting from those must not wipe
-		// metadata a richer fetch stored earlier.
-		err = tx.QueryRowContext(ctx,
-			"SELECT id FROM articles WHERE source = $1 AND revision_id = $2",
-			a.Source, a.RevisionID).Scan(&id)
-		if err != nil {
-			return Result{}, fmt.Errorf("ingest: find existing revision: %w", err)
-		}
-		if imgURL != nil || desc != nil {
-			if _, err := tx.ExecContext(ctx, `
-				UPDATE articles SET
-					image_url = COALESCE($2, image_url),
-					image_width = COALESCE($3, image_width),
-					image_height = COALESCE($4, image_height),
-					description = COALESCE($5, description)
-				WHERE id = $1`,
-				id, imgURL, imgW, imgH, desc); err != nil {
-				return Result{}, fmt.Errorf("ingest: refresh metadata: %w", err)
-			}
-		}
-		return Result{ArticleID: id, Created: false}, tx.Commit()
-	}
+// sameRows reports whether the stored sentences of article id are exactly
+// the given rows.
+func sameRows(ctx context.Context, tx *sql.Tx, id int64, rows []SentenceRow) (bool, error) {
+	stored, err := tx.QueryContext(ctx, `
+		SELECT sentence_idx, heading_level, text FROM sentences
+		WHERE article_id = $1 ORDER BY sentence_idx`, id)
 	if err != nil {
-		return Result{}, fmt.Errorf("ingest: insert article: %w", err)
+		return false, fmt.Errorf("ingest: load stored sentences: %w", err)
 	}
+	defer stored.Close()
+	n := 0
+	for stored.Next() {
+		var r SentenceRow
+		if err := stored.Scan(&r.Idx, &r.Heading, &r.Text); err != nil {
+			return false, fmt.Errorf("ingest: load stored sentences: %w", err)
+		}
+		if n >= len(rows) || rows[n] != r {
+			return false, nil
+		}
+		n++
+	}
+	if err := stored.Err(); err != nil {
+		return false, fmt.Errorf("ingest: load stored sentences: %w", err)
+	}
+	return n == len(rows), nil
+}
 
+// refreshMetadata updates presentation metadata on an already-stored row.
+// Image and description are not addressed text, so a re-ingest that carries
+// them may refresh the stored row (the wiki swaps lead images without a new
+// text revision). Only non-empty incoming metadata is written: dump imports
+// and older fixtures carry none, and re-ingesting from those must not wipe
+// metadata a richer fetch stored earlier.
+func refreshMetadata(ctx context.Context, tx *sql.Tx, id int64, a *source.Article) error {
+	imgURL, imgW, imgH := imageCols(a)
+	desc := descCol(a)
+	if imgURL == nil && desc == nil {
+		return nil
+	}
+	if _, err := tx.ExecContext(ctx, `
+		UPDATE articles SET
+			image_url = COALESCE($2, image_url),
+			image_width = COALESCE($3, image_width),
+			image_height = COALESCE($4, image_height),
+			description = COALESCE($5, description)
+		WHERE id = $1`,
+		id, imgURL, imgW, imgH, desc); err != nil {
+		return fmt.Errorf("ingest: refresh metadata: %w", err)
+	}
+	return nil
+}
+
+// imageCols and descCol are the nullable presentation metadata columns,
+// absent for pages with no free lead image or no short description.
+func imageCols(a *source.Article) (url *string, w, h *int) {
+	if a.Image == nil {
+		return nil, nil, nil
+	}
+	return &a.Image.URL, &a.Image.Width, &a.Image.Height
+}
+
+func descCol(a *source.Article) *string {
+	if a.Description == "" {
+		return nil
+	}
+	return &a.Description
+}
+
+// storeRows writes an article's sentences, links, categories and domain.
+func storeRows(ctx context.Context, tx *sql.Tx, id int64, a *source.Article, rows []SentenceRow) error {
 	// One statement per table, with the rows passed as arrays: a dump import
 	// ingests hundreds of thousands of articles, so per-row round trips are
 	// the difference between minutes and days.
@@ -120,7 +306,7 @@ func Article(ctx context.Context, db *sql.DB, a *source.Article) (Result, error)
 		INSERT INTO sentences (article_id, sentence_idx, heading_level, text)
 		SELECT $1, * FROM unnest($2::integer[], $3::smallint[], $4::text[])`,
 		id, indices, headings, texts); err != nil {
-		return Result{}, fmt.Errorf("ingest: insert sentences: %w", err)
+		return fmt.Errorf("ingest: insert sentences: %w", err)
 	}
 
 	// The API can hand back the same target twice across continuation
@@ -129,7 +315,7 @@ func Article(ctx context.Context, db *sql.DB, a *source.Article) (Result, error)
 	if err := insertValues(ctx, tx, "links",
 		"INSERT INTO article_links (article_id, target) SELECT $1, unnest($2::text[]) ON CONFLICT DO NOTHING",
 		id, a.Links); err != nil {
-		return Result{}, err
+		return err
 	}
 	// Categories count for recommendations only when the wiki's own metadata
 	// (category_pages, refreshed by fetch-categories) says the category is a
@@ -150,7 +336,7 @@ func Article(ctx context.Context, db *sql.DB, a *source.Article) (Result, error)
 			   OR NOT EXISTS (SELECT 1 FROM category_pages WHERE source = $3)
 			ON CONFLICT DO NOTHING`,
 			id, a.Categories, a.Source, wiki.FeaturedCategories[a.Source]); err != nil {
-			return Result{}, fmt.Errorf("ingest: insert categories: %w", err)
+			return fmt.Errorf("ingest: insert categories: %w", err)
 		}
 	}
 
@@ -169,13 +355,9 @@ func Article(ctx context.Context, db *sql.DB, a *source.Article) (Result, error)
 			ORDER BY count(*) DESC, cp.domain
 			LIMIT 1) d`,
 		id, a.Source); err != nil {
-		return Result{}, fmt.Errorf("ingest: insert article domain: %w", err)
+		return fmt.Errorf("ingest: insert article domain: %w", err)
 	}
-
-	if err := tx.Commit(); err != nil {
-		return Result{}, fmt.Errorf("ingest: %w", err)
-	}
-	return Result{ArticleID: id, Created: true, Sentences: len(rows)}, nil
+	return nil
 }
 
 // insertValues runs one two-column insert with the values as an array.
