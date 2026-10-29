@@ -1015,3 +1015,127 @@ func TestSelectDiverseClusterRecencyBoost(t *testing.T) {
 		t.Errorf("boost=3 cars %d should be less than boost=1 cars %d", cBoosted, cFlat)
 	}
 }
+
+func TestRankQualityBonus(t *testing.T) {
+	// Two synthetic candidates with identical categories (no links) but
+	// different word counts. With QualityBonus=0 they score identically;
+	// with QualityBonus>0 the longer article ranks higher.
+	cats := []string{"Science", "Physics"}
+	state := []StateArticle{{
+		PageID: 1, Source: "test", Title: "Seed",
+		State: StateFinished, Completion: 1.0, Words: 500,
+		Categories: cats,
+	}}
+	w := Weights{"Science": 1.0, "Physics": 1.0}
+	short := Candidate{
+		ArticleID: 100, PageID: 100, Source: "test",
+		Title: "Short Article", Categories: cats, Words: 200,
+	}
+	long := Candidate{
+		ArticleID: 200, PageID: 200, Source: "test",
+		Title: "Long Article", Categories: cats, Words: 5000,
+	}
+
+	old := QualityBonus
+	defer func() { QualityBonus = old }()
+
+	// With bonus=0, scores should be equal (same categories, no links).
+	QualityBonus = 0
+	ranked0 := RankScored([]Candidate{short, long}, state, w, nil)
+	if len(ranked0) < 2 {
+		t.Fatalf("expected 2 scored candidates, got %d", len(ranked0))
+	}
+	if ranked0[0].Score != ranked0[1].Score {
+		t.Errorf("bonus=0: expected equal scores, got %f vs %f", ranked0[0].Score, ranked0[1].Score)
+	}
+
+	// With bonus=0.1, the longer article should score higher.
+	QualityBonus = 0.1
+	ranked1 := RankScored([]Candidate{short, long}, state, w, nil)
+	if len(ranked1) < 2 {
+		t.Fatalf("expected 2 scored candidates, got %d", len(ranked1))
+	}
+	var longScore, shortScore float64
+	for _, s := range ranked1 {
+		if s.Title == "Long Article" {
+			longScore = s.Score
+		} else {
+			shortScore = s.Score
+		}
+	}
+	if longScore <= shortScore {
+		t.Errorf("bonus=0.1: long article (%f) should score higher than short (%f)", longScore, shortScore)
+	}
+	// The bonus should be mild. With bonus=0.1 the multiplier ranges
+	// from 0.9 to 1.1, so the max ratio between extremes is ~1.22.
+	ratio := longScore / shortScore
+	if ratio > 1.25 {
+		t.Errorf("bonus=0.1: ratio %f exceeds 1.25 — bonus is too strong", ratio)
+	}
+}
+
+func TestSelectDiverseSubInterest(t *testing.T) {
+	// Build a single-cluster state (all Italian cars) and candidates
+	// split into two sub-topics: Italian supercars (sharing "Italian"
+	// categories) and American sedans (sharing "American" categories).
+	// With SubInterestDiversity=0, the selection is pure score order.
+	// With SubInterestDiversity>0, consecutive picks from the cluster
+	// should alternate sub-topics more than without.
+	italianCats := []string{"Cars", "Italian automobiles", "Sports cars"}
+	americanCats := []string{"Cars", "American automobiles", "Sedans"}
+
+	state := []StateArticle{
+		{PageID: 1, Source: "t", Title: "Lamborghini Diablo", State: StateFinished, Completion: 1, Words: 500, Categories: italianCats},
+		{PageID: 2, Source: "t", Title: "Ferrari F40", State: StateFinished, Completion: 1, Words: 500, Categories: italianCats},
+		{PageID: 3, Source: "t", Title: "Ford Mustang", State: StateFinished, Completion: 1, Words: 500, Categories: americanCats},
+	}
+	w := Weights{"Cars": 1.0, "Italian automobiles": 1.0, "Sports cars": 1.0, "American automobiles": 1.0, "Sedans": 1.0}
+
+	// 4 Italian candidates and 4 American candidates, all with similar
+	// scores (same category overlap with state).
+	var candidates []Candidate
+	for i, title := range []string{"Maserati", "Alfa Romeo", "Pagani", "Lancia"} {
+		candidates = append(candidates, Candidate{
+			ArticleID: int64(100 + i), PageID: int64(100 + i),
+			Source: "t", Title: title, Categories: italianCats,
+		})
+	}
+	for i, title := range []string{"Chevrolet", "Dodge", "Buick", "Pontiac"} {
+		candidates = append(candidates, Candidate{
+			ArticleID: int64(200 + i), PageID: int64(200 + i),
+			Source: "t", Title: title, Categories: americanCats,
+		})
+	}
+
+	oldSD := SubInterestDiversity
+	defer func() { SubInterestDiversity = oldSD }()
+
+	countAlternations := func(div float64) int {
+		SubInterestDiversity = div
+		scored := RankScored(candidates, state, w, nil)
+		picked := SelectDiverse(scored, nil, state, 8, 42)
+		alternations := 0
+		var prevItalian *bool
+		for _, p := range picked {
+			isItalian := false
+			for _, c := range p.Categories {
+				if c == "Italian automobiles" {
+					isItalian = true
+				}
+			}
+			if prevItalian != nil && *prevItalian != isItalian {
+				alternations++
+			}
+			prevItalian = &isItalian
+		}
+		return alternations
+	}
+
+	flat := countAlternations(0)
+	diverse := countAlternations(0.5)
+	// With diversity enabled, there should be at least as many
+	// alternations (usually more) as without.
+	if diverse < flat {
+		t.Errorf("sub-diversity=0.5 alternations %d should be >= flat %d", diverse, flat)
+	}
+}

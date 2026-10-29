@@ -273,7 +273,7 @@ func TestForNewRevisionStaysSuppressed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cards, err := For(ctx, db, "r5", 10)
+	cards, err := For(ctx, db, "r5", 20)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -291,7 +291,7 @@ func TestForNewRevisionStaysSuppressed(t *testing.T) {
 	if err := SetState(ctx, db, "r5", meta.Source, meta.PageID, StateFinished); err != nil {
 		t.Fatal(err)
 	}
-	cards, err = For(ctx, db, "r5", 10)
+	cards, err = For(ctx, db, "r5", 20)
 	if err != nil {
 		t.Fatal(err)
 	}

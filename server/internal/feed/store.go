@@ -752,6 +752,7 @@ func candidates(ctx context.Context, db *sql.DB, readerID string, state []StateA
 }
 
 // keepReadable drops candidates below the word floor, keeping order.
+// It also populates each surviving Candidate's Words field.
 func keepReadable(ctx context.Context, db *sql.DB, pool []Candidate) ([]Candidate, error) {
 	ids := make([]int64, len(pool))
 	for i, c := range pool {
@@ -764,6 +765,7 @@ func keepReadable(ctx context.Context, db *sql.DB, pool []Candidate) ([]Candidat
 	kept := pool[:0]
 	for _, c := range pool {
 		if words[c.ArticleID] >= minWords {
+			c.Words = words[c.ArticleID]
 			kept = append(kept, c)
 		}
 	}

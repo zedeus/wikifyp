@@ -204,6 +204,29 @@ var InterestFadeWindow = 50
 // not enough to dominate the feed with residue.
 var InterestFadeFloor = 0.3
 
+// QualityBonus scales a mild score multiplier based on article word count.
+// Longer articles represent more substantial content — a 5000-word featured
+// article about Porsche 911 history is a richer read than a 200-word stub
+// about a minor car brand. The multiplier is 1 + QualityBonus * clamp(
+// log2(words/median), -1, 1), so at 0.05 the range is [0.95, 1.05] — a
+// tiebreaker, not a dominant signal. Candidates with Words == 0 (unknown)
+// are unaffected. Swept 0.05–0.20: 0.05 is the sweet spot — shifter
+// floor +11.5 (substantial football articles outcompete car stubs during
+// transitions), scattered floor +4.0 (better articles build signal
+// faster). At 0.10+ the bonus over-penalizes legitimate short articles
+// (animal stubs for picky, transition-phase candidates for serial).
+var QualityBonus = 0.05
+
+// SubInterestDiversity penalizes candidates from the same sub-topic as the
+// last pick from their cluster's rotation turn. Within a single "cars"
+// cluster, this nudges the feed toward variety: Italian supercars one card,
+// American sedans the next, rather than three Lamborghinis in a row. The
+// penalty is SubInterestDiversity * cosine(candidate cats, last-pick cats)
+// subtracted from the candidate's effective score during rotation turns
+// only (momentum and global-fallback slots are unaffected). Disabled by
+// default (0.0).
+var SubInterestDiversity = 0.0
+
 // nominationGrace is the outgoing degree up to which a state page
 // nominates its neighbours at full strength; beyond it the strength decays
 // as grace/degree. Ordinary articles (biographies, bands, car models) sit
@@ -405,6 +428,7 @@ type Candidate struct {
 	Title      string
 	Links      []string
 	Categories []string
+	Words      int // total word count; 0 = unknown (quality bonus skipped)
 }
 
 // StateArticle is an article the reader finished, saved or skipped, carrying
@@ -817,6 +841,27 @@ func RankScored(candidates []Candidate, state []StateArticle, w Weights, impress
 		interest[c] -= math.Sqrt(n) * w[c]
 	}
 
+	// Precompute median word count for the quality bonus. Only
+	// candidates with Words > 0 participate; the rest are unaffected.
+	var medianWords float64
+	if QualityBonus > 0 {
+		var ww []int
+		for _, c := range candidates {
+			if c.Words > 0 {
+				ww = append(ww, c.Words)
+			}
+		}
+		if len(ww) > 0 {
+			slices.Sort(ww)
+			mid := len(ww) / 2
+			if len(ww)%2 == 0 {
+				medianWords = float64(ww[mid-1]+ww[mid]) / 2
+			} else {
+				medianWords = float64(ww[mid])
+			}
+		}
+	}
+
 	ranked := make([]Scored, 0, len(candidates))
 	for _, c := range candidates {
 		if suppressed[pageKey{c.Source, c.PageID}] {
@@ -879,6 +924,14 @@ func RankScored(candidates []Candidate, state []StateArticle, w Weights, impress
 			list = append(list, t)
 		}
 		slices.Sort(list)
+		// Quality bonus: longer articles get a mild score boost as a
+		// tiebreaker. The multiplier is 1 ± QualityBonus, scaled by
+		// log2(words/median) clamped to [-1, 1].
+		if QualityBonus > 0 && c.Words > 0 && medianWords > 0 {
+			ratio := math.Log2(float64(c.Words) / medianWords)
+			ratio = max(-1, min(1, ratio))
+			score *= 1 + QualityBonus*ratio
+		}
 		ranked = append(ranked, Scored{c, score, list})
 	}
 	slices.SortFunc(ranked, compareScored)
@@ -1186,7 +1239,11 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 	// cap when no owner has anything fresh, so a reader with one deep love
 	// (every candidate alike) gets exactly the old behavior — the cap
 	// redistributes slots only when another interest is waiting.
-	bestOf := func(indices []int, fresh bool, minRaw float64) int {
+	// Sub-interest diversity: track the categories of the last pick from
+	// each cluster group so rotation turns prefer different sub-topics.
+	lastClusterCats := make(map[*turnGroup]map[string]bool)
+
+	bestOf := func(indices []int, fresh bool, minRaw float64, diverseFrom map[string]bool) int {
 		best, bestScore := -1, math.Inf(-1)
 		consider := func(i int) {
 			c := remaining[i]
@@ -1199,7 +1256,13 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 			if fresh && c.maxSim > freshCap {
 				return
 			}
-			if score := c.Score - simPenalty*c.maxSim; score > bestScore {
+			score := c.Score - simPenalty*c.maxSim
+			// Sub-interest diversity: penalize candidates that share
+			// sub-topics with the last pick from this cluster.
+			if SubInterestDiversity > 0 && diverseFrom != nil {
+				score -= SubInterestDiversity * cosine(c.cats, catSlice(diverseFrom))
+			}
+			if score > bestScore {
 				best, bestScore = i, score
 			}
 		}
@@ -1239,6 +1302,7 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 			continue
 		}
 		best := -1
+		var pickedGroup *turnGroup // set when rotation produced the pick
 		// Momentum slots: the first relevance slot and the one past
 		// mid-feed belong to the newest reads in order, so what the reader
 		// just finished visibly steers the next feed. Bounding momentum to
@@ -1253,7 +1317,7 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 				if len(ownerCandidates[o]) == 0 {
 					continue
 				}
-				if best = bestOf(ownerCandidates[o], true, RelevanceFloor); best >= 0 {
+				if best = bestOf(ownerCandidates[o], true, RelevanceFloor, nil); best >= 0 {
 					break
 				}
 			}
@@ -1287,13 +1351,14 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 					if len(ownerCandidates[o]) == 0 {
 						continue
 					}
-					if best = bestOf(ownerCandidates[o], fresh, RelevanceFloor); best >= 0 {
+					if best = bestOf(ownerCandidates[o], fresh, RelevanceFloor, lastClusterCats[g]); best >= 0 {
+						pickedGroup = g
 						break
 					}
 				}
 			}
 			if best < 0 {
-				best = bestOf(nil, fresh, RelevanceFloor)
+				best = bestOf(nil, fresh, RelevanceFloor, nil)
 			}
 			if best >= 0 {
 				break
@@ -1304,6 +1369,11 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 				break
 			}
 			continue
+		}
+		// Record the picked candidate's categories for sub-interest
+		// diversity before take() marks it picked.
+		if pickedGroup != nil && SubInterestDiversity > 0 {
+			lastClusterCats[pickedGroup] = remaining[best].cats
 		}
 		take(best)
 	}

@@ -490,6 +490,8 @@ func main() {
 	interestFade := flag.Bool("interest-fade", true, "per-cluster engagement fade: abandoned clusters lose voice, active sparse ones keep it")
 	fadeWindow := flag.Int("fade-window", 50, "recent state rows that define 'recent' for interest-fade ratio")
 	fadeFloor := flag.Float64("fade-floor", 0.3, "minimum voice multiplier for a fully faded cluster")
+	qualityBonus := flag.Float64("quality-bonus", 0.05, "quality prior: log2(words/median) * this, capped ±1 (0=disabled)")
+	subDiversity := flag.Float64("sub-diversity", 0.0, "within-cluster sub-topic diversity penalty (0=disabled)")
 	flag.Parse()
 	feed.EngageOff = *engOff
 	feed.DynamicSimPenalty = *dynSim
@@ -512,6 +514,8 @@ func main() {
 	feed.InterestFade = *interestFade
 	feed.InterestFadeWindow = *fadeWindow
 	feed.InterestFadeFloor = *fadeFloor
+	feed.QualityBonus = *qualityBonus
+	feed.SubInterestDiversity = *subDiversity
 	// Impressions are always recorded now — the graduated warmup ramp
 	// makes the discount gentle enough for short runs, and skipping
 	// impressions made the discount mechanism untestable in fast mode.
@@ -687,6 +691,13 @@ type runStats struct {
 	allCats                                            map[string]bool // every category seen across consumed articles
 	exploreCats                                        map[string]bool // categories seen only in exploration articles
 	exploreDomains                                     map[string]bool // distinct category domains in exploration articles
+
+	// Diversity and exploration quality metrics.
+	hitCats         map[string]bool // distinct categories across appealing articles only
+	hitDomains      map[string]bool // distinct category domains across appealing articles
+	exploreShown    int             // exploration articles shown to the reader
+	exploreFinished int             // exploration articles the reader finished or saved
+	interestWidth   map[string]bool // distinct interest names the reader engaged with
 }
 
 // phaseStats scores one stretch of a scripted reader's life.
@@ -781,7 +792,8 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 	latent := append([]interest(nil), p.latent...)
 	stats := runStats{perInterest: make(map[string]int), firstServed: make(map[string]int),
 		uniqueMatching: make(map[int64]bool),
-		allCats:        make(map[string]bool), exploreCats: make(map[string]bool), exploreDomains: make(map[string]bool)}
+		allCats:        make(map[string]bool), exploreCats: make(map[string]bool), exploreDomains: make(map[string]bool),
+		hitCats: make(map[string]bool), hitDomains: make(map[string]bool), interestWidth: make(map[string]bool)}
 	prev := make(map[string]bool)
 	finishP, skipP := p.finish, p.skip
 	if finishP == 0 {
@@ -902,6 +914,7 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 			}
 			if c.Exploration {
 				stats.explore++
+				stats.exploreShown++
 			}
 			if junkTitle.MatchString(c.Title) {
 				stats.junk++
@@ -936,8 +949,15 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 				stats.boringStreak = 0
 				fetchHadActive = true
 				stats.uniqueMatching[c.ArticleID] = true
+				for _, cat := range cats[c.ArticleID] {
+					stats.hitCats[cat] = true
+					if d := catDomain(cat); d != "" {
+						stats.hitDomains[d] = true
+					}
+				}
 				for _, m := range matched {
 					stats.perInterest[m]++
+					stats.interestWidth[m] = true
 					sessionCounts[m]++
 					if _, ok := stats.firstServed[m]; !ok {
 						stats.firstServed[m] = it
@@ -1016,6 +1036,9 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 					stats.churnEvents++
 					stats.boringStreak = 0
 				}
+			}
+			if c.Exploration && (st == feed.StateFinished || st == feed.StateSaved) {
+				stats.exploreFinished++
 			}
 			if st != "" {
 				actions = append(actions, action{c, st, comp})
@@ -1144,8 +1167,16 @@ func band(runs []runStats) string {
 	sLo, sHi := bounds(func(r runStats) float64 { return float64(r.starved) })
 	cLo, cHi := bounds(func(r runStats) float64 { return float64(len(r.allCats)) })
 	eLo, eHi := bounds(func(r runStats) float64 { return float64(len(r.exploreDomains)) })
-	return fmt.Sprintf("band: appeal %.1f-%.1f | repeats %.1f-%.1f | quits %.0f-%.0f | depth %.0f-%.0f | starved %.0f-%.0f | cats %.0f-%.0f | explore-domains %.0f-%.0f",
-		aLo, aHi, rLo, rHi, qLo, qHi, dLo, dHi, sLo, sHi, cLo, cHi, eLo, eHi)
+	hcLo, hcHi := bounds(func(r runStats) float64 { return float64(len(r.hitDomains)) })
+	iwLo, iwHi := bounds(func(r runStats) float64 { return float64(len(r.interestWidth)) })
+	ecLo, ecHi := bounds(func(r runStats) float64 {
+		if r.exploreShown == 0 {
+			return 0
+		}
+		return 100 * float64(r.exploreFinished) / float64(r.exploreShown)
+	})
+	return fmt.Sprintf("band: appeal %.1f-%.1f | repeats %.1f-%.1f | quits %.0f-%.0f | depth %.0f-%.0f | starved %.0f-%.0f | cats %.0f-%.0f | explore-domains %.0f-%.0f | hit-domains %.0f-%.0f | interest-width %.0f-%.0f | explore-conv %.0f-%.0f%%",
+		aLo, aHi, rLo, rHi, qLo, qHi, dLo, dHi, sLo, sHi, cLo, cHi, eLo, eHi, hcLo, hcHi, iwLo, iwHi, ecLo, ecHi)
 }
 
 // pct is the shared percentage formula the per-run report and the band
@@ -1177,6 +1208,12 @@ func report(p persona, iterations int, s runStats) {
 	parts = append(parts, fmt.Sprintf("depth %d | starved %d | cats %d | explore-cats %d | explore-domains %d",
 		len(s.uniqueMatching), s.starved, len(s.allCats), len(s.exploreCats), len(s.exploreDomains)))
 	fmt.Printf("%-30s interests: %s\n", "", strings.Join(parts, " | "))
+	exploreConv := 0.0
+	if s.exploreShown > 0 {
+		exploreConv = 100 * float64(s.exploreFinished) / float64(s.exploreShown)
+	}
+	fmt.Printf("%-30s diversity: hit-cats %d | hit-domains %d | interest-width %d | explore-conv %.0f%% (%d/%d)\n",
+		"", len(s.hitCats), len(s.hitDomains), len(s.interestWidth), exploreConv, s.exploreFinished, s.exploreShown)
 	for i, ph := range s.phases {
 		var names []string
 		for _, in := range p.phases[i].interests {
