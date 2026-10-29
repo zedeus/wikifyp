@@ -1,0 +1,38 @@
+android/app/src/main/java/com/wikifyp/ui/feed/FeedScreen.kt
+  s_93a39d8e580894::t_caa7f06fb02433 75,93
+  s_93a39d8e580894::t_7c5013e0c7cf9c 211
+  s_93a39d8e580894::t_1d6140b09ee382 3,10,16,18-23,30-33,35,38,40,45-48,55,66,101-102,106-107,110-113,115-122,125-171,175-210,213-216,218-276,278-286,289-300,302-311,315-323,373
+  s_93a39d8e580894::t_ff4f5d99e41728 288
+  s_93a39d8e580894::t_1dca5dcebbdc36 172-174
+android/app/src/test/java/com/wikifyp/ui/feed/FeedScreenTest.kt
+  s_93a39d8e580894::t_335b76df6a1f9e 65
+android/app/src/main/java/com/wikifyp/ui/feed/CardImage.kt
+  s_93a39d8e580894::t_4d4f5d368e3d48 1-13,16-17,22-50,52-62
+  s_93a39d8e580894::t_accb266f44384a 51
+  s_93a39d8e580894::t_cd7bc8373d5fce 18-21
+  s_93a39d8e580894::t_57c8e66f0173b7 14-15
+android/app/src/test/java/com/wikifyp/ui/feed/FeedScreenScreenshotTest.kt
+  s_93a39d8e580894::t_23643329af3dc5 48
+  s_93a39d8e580894::t_89a3fd5b4ce640 38
+android/app/src/main/java/com/wikifyp/ui/feed/Shimmer.kt
+  s_93a39d8e580894::t_deb2e57ceca78c 88-91,95
+  s_93a39d8e580894::t_f67bdbef942b72 1-16,18-19,21-22,24-35,46-58,60,62-69,71-75
+  s_93a39d8e580894::t_f2dd7d0d0fff7f 17,20,23,38-40,42-45,59,61,70,76-87,92-94,96-99
+  s_93a39d8e580894::t_69ad333102ca72 36-37,41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9e5014d1c8434b500cf387e5612b4981102c2677",
+  "prompts": {},
+  "sessions": {
+    "s_93a39d8e580894": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b9316065-a025-4991-8866-5f0d6e55ccc6",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
