@@ -1,0 +1,33 @@
+android/app/src/main/java/com/wikifyp/ui/reader/ReaderSettings.kt
+  s_93a39d8e580894::t_06142efa33e5ad 13-15
+android/app/src/main/java/com/wikifyp/theme/Color.kt
+  s_93a39d8e580894::t_69d20346eab8b8 7-10,13-26,29-41,52-55,69-73,78-81,96-99
+  s_93a39d8e580894::t_8de872f7937fec 43-48
+  s_93a39d8e580894::t_f3eb0c427bd22d 42
+docs/design-system.md
+  s_93a39d8e580894::t_caef813d52a1a8 15-24
+  s_93a39d8e580894::t_d9b1cae89fbae1 25-28
+  s_93a39d8e580894::t_191b87f5ca136a 4-7
+android/app/src/main/java/com/wikifyp/ui/reader/ReaderSettingsSheet.kt
+  s_93a39d8e580894::t_35cd0153314e15 37-39
+android/app/src/test/java/com/wikifyp/ui/reader/ReaderSettingsStoreTest.kt
+  s_93a39d8e580894::t_f3c9d7e9ae40ad 63
+android/app/src/main/java/com/wikifyp/ui/reader/ReaderPalette.kt
+  s_93a39d8e580894::t_376fd8eb253887 9-11,38,43-47,50-66,72-77,84-88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7c1a729cfb42f7a533ddaedf4d65de8ebb1342d5",
+  "prompts": {},
+  "sessions": {
+    "s_93a39d8e580894": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b9316065-a025-4991-8866-5f0d6e55ccc6",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
