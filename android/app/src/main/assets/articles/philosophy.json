@@ -2,6 +2,12 @@
   "id": 1,
   "title": "Philosophy",
   "attribution": "Text from the Wikipedia article \"Philosophy\", https://en.wikipedia.org/wiki/Philosophy (revision 1378768606), licensed CC BY-SA 4.0",
+  "description": "Study of general and fundamental questions",
+  "image": {
+    "url": "file:///android_asset/images/philosophy.jpg",
+    "width": 960,
+    "height": 1280
+  },
   "sentences": [
     {
       "text": "Philosophy (from Ancient Greek φιλοσοφία (philosophía), lit. 'love of wisdom') is a systematic study of general and fundamental questions concerning topics like existence, knowledge, mind, reason, language, and value."
@@ -1095,11 +1101,5 @@
     {
       "text": "According to some academics, philosophy is mainly undertaken for its own sake and does not make significant contributions to existing practices or external goals."
     }
-  ],
-  "description": "Study of general and fundamental questions",
-  "image": {
-    "url": "file:///android_asset/images/philosophy.jpg",
-    "width": 960,
-    "height": 1280
-  }
+  ]
 }

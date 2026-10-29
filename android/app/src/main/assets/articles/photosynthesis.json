@@ -2,6 +2,12 @@
   "id": 2,
   "title": "Photosynthesis",
   "attribution": "Text from the Wikipedia article \"Photosynthesis\", https://en.wikipedia.org/wiki/Photosynthesis (revision 1379238357), licensed CC BY-SA 4.0",
+  "description": "Biological process to convert light into chemical energy",
+  "image": {
+    "url": "file:///android_asset/images/photosynthesis.png",
+    "width": 960,
+    "height": 960
+  },
   "sentences": [
     {
       "text": "Photosynthesis is a system of biological processes by which photopigment-bearing autotrophic organisms, such as most plants, algae and cyanobacteria, convert light energy—typically from sunlight—into the chemical energy necessary to fuel their metabolism."
@@ -1114,11 +1120,5 @@
     {
       "text": "The salvaging pathway for the products of RuBisCO oxygenase activity is more commonly known as photorespiration, since it is characterized by light-dependent oxygen consumption and the release of carbon dioxide."
     }
-  ],
-  "description": "Biological process to convert light into chemical energy",
-  "image": {
-    "url": "file:///android_asset/images/photosynthesis.png",
-    "width": 960,
-    "height": 960
-  }
+  ]
 }

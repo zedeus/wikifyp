@@ -2,9 +2,15 @@
   "id": 5,
   "title": "DNA",
   "attribution": "Text from the Wikipedia article \"DNA\", https://en.wikipedia.org/wiki/DNA (revision 1379332306), licensed CC BY-SA 4.0",
+  "description": "Molecule that carries genetic information",
+  "image": {
+    "url": "file:///android_asset/images/dna.png",
+    "width": 960,
+    "height": 952
+  },
   "sentences": [
     {
-      "text": "Deoxyribonucleic acid (; DNA) is a polymer composed of two polynucleotide chains that coil around each other to form a double helix."
+      "text": "Deoxyribonucleic acid (DNA) is a polymer composed of two polynucleotide chains that coil around each other to form a double helix."
     },
     {
       "text": "The polymer carries genetic instructions for the development, functioning, growth and reproduction of all known organisms and many viruses."
@@ -1451,11 +1457,5 @@
     {
       "text": "Further such DNA profiling led to positive identification of another suspect (Colin Pitchfork) who, in 1988, was found guilty of both rape-murders."
     }
-  ],
-  "description": "Molecule that carries genetic information",
-  "image": {
-    "url": "file:///android_asset/images/dna.png",
-    "width": 960,
-    "height": 952
-  }
+  ]
 }
