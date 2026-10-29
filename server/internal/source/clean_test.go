@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -244,6 +245,23 @@ func BenchmarkClean(b *testing.B) {
 	}
 }
 
+// BenchmarkCleanProse watches Clean's cost on plain prose (BenchmarkClean's
+// exponentiation sample is math-heavy, the pathological case for the bracket
+// repairs). The orphan repairs run on every prose line of every ingested
+// article, so this is the number that matters at dump scale.
+func BenchmarkCleanProse(b *testing.B) {
+	data, err := os.ReadFile(filepath.Join("..", "..", "..", "fixtures", "articles", "barack-obama.txt"))
+	if err != nil {
+		b.Fatal(err)
+	}
+	text := string(data)
+	b.SetBytes(int64(len(text)))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		Clean(text)
+	}
+}
+
 func firstLine(s string) string {
 	line, _, _ := strings.Cut(s, "\n")
 	return line
@@ -280,5 +298,127 @@ func TestCleanSimplewikiSections(t *testing.T) {
 		if !strings.Contains(cleaned, kept) {
 			t.Errorf("cleaned text lost %q", kept)
 		}
+	}
+}
+
+// TestCollapseOrphans pins the orphaned-punctuation repairs. Every case is
+// hand-authored: artifact inputs and their expected repairs come from
+// reading raw fixture and corpus text (the upstream extract renders some
+// templates as nothing, leaving the punctuation that attached them), and the
+// keep cases are real sentences whose punctuation is content, not residue.
+func TestCollapseOrphans(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		// Separator orphaned at a bracket opening (enwiki DNA lead,
+		// simplewiki biography leads).
+		{"leading semicolon", "Deoxyribonucleic acid (; DNA) is a polymer.", "Deoxyribonucleic acid (DNA) is a polymer."},
+		{"leading comma", "The Duke of Rambouillet (, 2 January 1746 – 13 November 1749) died young.", "The Duke of Rambouillet (2 January 1746 – 13 November 1749) died young."},
+		{"leading run", "Hatay State (; ; ), also known informally as the Republic of Hatay, was transitional.", "Hatay State, also known informally as the Republic of Hatay, was transitional."},
+		{"opener glued to the word before", "beat out Jupiter(, Juno, and Minerva) in towns.", "beat out Jupiter(Juno, and Minerva) in towns."},
+		// Separator orphaned before a bracket closing.
+		{"trailing comma", "first wife (excluding Jiyong,) joined.", "first wife (excluding Jiyong) joined."},
+		{"trailing comma before NBSP", "first wife (excluding Jiyong, ) joined.", "first wife (excluding Jiyong) joined."},
+		{"trailing label colon", "90482 Orcus (symbol: ), originally 2004 DW.", "90482 Orcus (symbol), originally 2004 DW."},
+		{"trailing mix", "Caen ( pronounced can (/kɑ̃/);) is a city in France.", "Caen ( pronounced can (/kɑ̃/)) is a city in France."},
+		// Bracket pair left empty by a removed span.
+		{"empty pair after a word", "Antarctica ( ) is Earth's southernmost continent.", "Antarctica is Earth's southernmost continent."},
+		{"empty pair before punctuation", "Hatay State (; ), also known informally.", "Hatay State, also known informally."},
+		// Doubled separators with the removed span between them.
+		{"comma then semicolon", "Keiko Awaji (淡路 恵子, Awaji Keiko, ; 17 July 1933) was an actress.", "Keiko Awaji (淡路 恵子, Awaji Keiko; 17 July 1933) was an actress."},
+		{"comma then comma", "the merger of towns—Saijō, , Hachihonmatsu.", "the merger of towns—Saijō, Hachihonmatsu."},
+		{"semicolon then semicolon", "the empress abdicated; ; and the succession passed on.", "the empress abdicated; and the succession passed on."},
+		{"colon then comma", "The Goths (Gothic: , Gutans) were an East Germanic tribe.", "The Goths (Gothic, Gutans) were an East Germanic tribe."},
+
+		// Punctuation that is content stays, byte for byte.
+		{"mention of a comma", "Lists use commas (,) between items.", "Lists use commas (,) between items."},
+		{"mention of a colon", "This symbol is like a colon (:), but with triangles.", "This symbol is like a colon (:), but with triangles."},
+		{"mention at the line end", "A comma looks like this: ,", "A comma looks like this: ,"},
+		{"empty pair opening a line", "( ) are parentheses or curved brackets.", "( ) are parentheses or curved brackets."},
+		{"album named with empty parens", "( ) (2002)", "( ) (2002)"},
+		{"empty pair glued to code", "after ExitBootServices() is executed.", "after ExitBootServices() is executed."},
+		{"symbol list with glued parens", "punctuation symbols other than +-*/()&=.,' were absent.", "punctuation symbols other than +-*/()&=.,' were absent."},
+		{"IPv6 address", "known as 127.0.0.1 (IPv4) or (::1, IPv6).", "known as 127.0.0.1 (IPv4) or (::1, IPv6)."},
+		{"emoticon", "Western Style: :-), :-(, ;-), :-O, (;D)", "Western Style: :-), :-(, ;-), :-O, (;D)"},
+		{"editorial comma in brackets", "worold are for geaf[,] in the manuscript.", "worold are for geaf[,] in the manuscript."},
+		{"spaced math", "the sum ( 1 3 + 1 5 ) + ( 1 5 + 1 7 ) diverges , slowly.", "the sum ( 1 3 + 1 5 ) + ( 1 5 + 1 7 ) diverges , slowly."},
+		{"spaced number list", "the primes 2 , 3 , 5 , 7 , 11 , 13 , . . .", "the primes 2 , 3 , 5 , 7 , 11 , 13 , . . ."},
+		{"mention of spaced comma in parens", "a comma ( , ), the end number.", "a comma ( , ), the end number."},
+		{"unmatched opener", "C: <, {, [, (, ©, ¢, с", "C: <, {, [, (, ©, ¢, с"},
+		{"fork bomb", ":(){ :|:& };:", ":(){ :|:& };:"},
+
+		// Hostile shapes: cascades, nesting, splice landing on punctuation.
+		{"two empty pairs", "a ( ) ( ) b", "a b"},
+		{"empty pair before a period", "survived ( ).", "survived."},
+		{"nested pair with inner orphan", "a (b (c,) d) e", "a (b (c) d) e"},
+		{"nested separator orphan", "((; x))", "((x))"},
+		{"tripled separators", "a, , , b", "a, b"},
+		{"orphan in an unclosed pair stays", "trailing open (; and no close", "trailing open (; and no close"},
+		{"square pair", "[; foo] bar", "[foo] bar"},
+		{"separator run without a gap stays", "x (;;;;;;) y", "x (;;;;;;) y"},
+		{"interleaved bracket types stay", "mixed ([ ) ] pairs", "mixed ([ ) ] pairs"},
+		{"RTL content", "word (; نص) more", "word (نص) more"},
+		{"doubled separator opening the line", ", ; 17 July 1933 was the date.", "; 17 July 1933 was the date."},
+		{"line-opening double then a later double", ", ; a, , b", "; a, b"},
+		{"empty pair at the line end", "The expedition survived ( )", "The expedition survived"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := collapseOrphans(tt.in); got != tt.want {
+				t.Errorf("collapseOrphans(%q)\n got %q\nwant %q", tt.in, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestCleanFixtureOrphans is the full-fixture pass: the expectations are
+// ground truth authored by reading every fixture's raw text for orphaned
+// punctuation (the two lead sentences below are the only genuine artifacts
+// in the 26 committed articles), and the sweep then checks no fixture line
+// keeps the artifact shapes the repairs target — a separator run glued to a
+// bracket opening with content after it, or an empty pair interrupting
+// prose.
+func TestCleanFixtureOrphans(t *testing.T) {
+	leads := map[string]string{
+		"dna.txt":        "Deoxyribonucleic acid (DNA) is a polymer composed of two polynucleotide chains",
+		"antarctica.txt": "Antarctica is Earth's southernmost and least-populated continent.",
+	}
+	files, err := filepath.Glob(filepath.Join("..", "..", "..", "fixtures", "articles", "*.txt"))
+	if err != nil || len(files) == 0 {
+		t.Fatalf("no fixtures: %v", err)
+	}
+	sepAfterOpen := regexp.MustCompile(`[(\[][,;:]+\s`)
+	emptyPair := regexp.MustCompile(`\pL\pZ+(\(\s*\)|\[\s*\])`)
+	for _, f := range files {
+		data, err := os.ReadFile(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		cleaned := Clean(string(data))
+		if want := leads[filepath.Base(f)]; want != "" && !strings.HasPrefix(cleaned, want) {
+			t.Errorf("%s: cleaned lead is %q, want prefix %q", filepath.Base(f), firstLine(cleaned), want)
+		}
+		for line := range strings.Lines(cleaned) {
+			if indented(line) {
+				continue
+			}
+			if m := sepAfterOpen.FindString(line); m != "" {
+				t.Errorf("%s: separator orphaned at a bracket opening (%q) in %q", filepath.Base(f), m, firstLine(line))
+			}
+			if m := emptyPair.FindString(line); m != "" {
+				t.Errorf("%s: empty bracket pair after a word (%q) in %q", filepath.Base(f), m, firstLine(line))
+			}
+		}
+	}
+	// The repairs must not reach into legitimate glued punctuation: the
+	// exponentiation article's symbol list survives byte for byte.
+	data, err := os.ReadFile(filepath.Join("..", "..", "..", "fixtures", "articles", "exponentiation.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "symbols other than +-*/()&=.,' and so used ** for exponentiation"; !strings.Contains(Clean(string(data)), want) {
+		t.Errorf("exponentiation symbol list no longer contains %q", want)
 	}
 }
