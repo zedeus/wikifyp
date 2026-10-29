@@ -1,0 +1,21 @@
+android/reader/src/test/java/com/wikifyp/reader/FakeClockTest.kt
+  s_93a39d8e580894::t_90ce3d7db833a9 1-44
+android/reader/src/main/java/com/wikifyp/reader/ReaderClock.kt
+  s_93a39d8e580894::t_819393f430b54d 57-64,70,73,76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "abb89b40349bf43a79195e9f5ef4fd6d6d23e711",
+  "prompts": {},
+  "sessions": {
+    "s_93a39d8e580894": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b9316065-a025-4991-8866-5f0d6e55ccc6",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
