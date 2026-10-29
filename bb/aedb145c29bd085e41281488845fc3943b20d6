@@ -1,0 +1,43 @@
+android/reader/src/test/java/com/wikifyp/reader/ReaderEngineEdgeCaseTest.kt
+  s_93a39d8e580894::t_86b974c3bb8b07 180-181
+  s_93a39d8e580894::t_2a16672a714198 60-80
+  s_93a39d8e580894::t_1080dfb69529ab 169-173,175-179
+  s_93a39d8e580894::t_f79e8de1702701 59
+android/reader/src/test/java/com/wikifyp/reader/ReaderEngineSeekTest.kt
+  s_93a39d8e580894::t_6c8855025d0339 1-7,10-111,125,141,143,147-149,151,153-155,157-163,181-182,196-199,203-206
+  s_93a39d8e580894::t_6069c90f46961c 112-123
+  s_93a39d8e580894::t_40552acbac4f12 8-9
+  s_93a39d8e580894::t_3caea7256e9860 124,126-140,142,144-146,150,152,156,164-180,183-195,200-202
+android/reader/src/main/java/com/wikifyp/reader/ReaderEngine.kt
+  s_93a39d8e580894::t_910a40d30af1f6 211-216,218
+  s_93a39d8e580894::t_d6a822cd1e3a72 98-104
+  s_93a39d8e580894::t_1f69b27550de2b 119-121
+  s_93a39d8e580894::t_42ed9ebad6dd50 122
+  s_93a39d8e580894::t_6fdd8bd8f55890 379-381
+  s_93a39d8e580894::t_b0f00d65bee077 265-267
+  s_93a39d8e580894::t_5af86e3c675937 378
+  s_93a39d8e580894::t_ffb28834b69f0b 294
+  s_93a39d8e580894::t_03e5b8e62cb5b0 85-87,96
+  s_93a39d8e580894::t_1751dca3b60faa 88-95,97,210
+  s_93a39d8e580894::t_4fb7b1f54a7d7b 186-189,196
+  s_93a39d8e580894::t_34fab779975fa8 41-49
+  s_93a39d8e580894::t_e462f82cb97200 208
+  s_93a39d8e580894::t_dfc8275af1f95c 278-280
+  s_93a39d8e580894::t_e7d1f5f99204e1 209
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bbaedb145c29bd085e41281488845fc3943b20d6",
+  "prompts": {},
+  "sessions": {
+    "s_93a39d8e580894": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b9316065-a025-4991-8866-5f0d6e55ccc6",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
