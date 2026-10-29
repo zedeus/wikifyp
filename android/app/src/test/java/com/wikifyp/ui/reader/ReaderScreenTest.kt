@@ -80,9 +80,12 @@ class ReaderScreenTest {
             }
         }
 
-        // Progress hidden in IDLE; hold to start, then check percentage.
+        // Progress hidden in IDLE, and focus mode hides the chrome while
+        // playing: hold to start, lift to pause, then check percentage.
         compose.onNodeWithTag("readerSurface").performTouchInput { down(center) }
         clock.advanceBy(151)
+        compose.waitForIdle()
+        compose.onNodeWithTag("readerSurface").performTouchInput { up() }
         compose.waitForIdle()
         compose.onNodeWithText("0%").assertIsDisplayed()
     }

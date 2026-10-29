@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.remember
 import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
 import com.wikifyp.data.CachedFeedRepository
@@ -18,6 +19,7 @@ import com.wikifyp.reader.EventListener
 import com.wikifyp.theme.WikifypTheme
 import com.wikifyp.ui.WikifypApp
 import com.wikifyp.ui.reader.HandlerClock
+import com.wikifyp.ui.reader.ReaderSettingsStore
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.UUID
@@ -41,12 +43,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             WikifypTheme {
                 val prefs = getSharedPreferences("wikifyp", Context.MODE_PRIVATE)
+                val settingsStore = remember { ReaderSettingsStore(prefs) }
+                val initialSettings = remember { settingsStore.load() }
                 WikifypApp(
                     repository = repository,
                     clock = clock,
                     eventListener = eventListener,
-                    initialWpm = prefs.getInt("wpm", 250),
-                    onWpmChange = { prefs.edit { putInt("wpm", it) } },
+                    initialReaderSettings = initialSettings,
+                    onReaderSettingsChange = settingsStore::save,
                 )
             }
         }

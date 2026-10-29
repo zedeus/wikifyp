@@ -17,6 +17,7 @@ import com.wikifyp.ui.feed.FeedScreen
 import com.wikifyp.ui.feed.FeedState
 import com.wikifyp.ui.feed.loadFeed
 import com.wikifyp.ui.reader.ReaderScreen
+import com.wikifyp.ui.reader.ReaderSettings
 import kotlinx.coroutines.CancellationException
 
 /**
@@ -28,8 +29,8 @@ fun WikifypApp(
     repository: FeedRepository,
     clock: ReaderClock,
     eventListener: EventListener = EventListener {},
-    initialWpm: Int = 250,
-    onWpmChange: (Int) -> Unit = {},
+    initialReaderSettings: ReaderSettings = ReaderSettings(),
+    onReaderSettingsChange: (ReaderSettings) -> Unit = {},
 ) {
     var feedState by remember { mutableStateOf<FeedState>(FeedState.Loading) }
     var retry by remember { mutableIntStateOf(0) }
@@ -42,10 +43,11 @@ fun WikifypApp(
     var article by remember { mutableStateOf<Article?>(null) }
     var notice by remember { mutableStateOf<String?>(null) }
 
-    // The reading speed belongs to the reader, not to one article: it
-    // carries between articles, survives recreation, and the caller may
-    // persist it across launches.
-    var wpm by rememberSaveable { mutableIntStateOf(initialWpm) }
+    // Reader settings (speed, type, theme…) belong to the reader, not to
+    // one article: they carry between articles. Recreation re-reads them
+    // from the caller's store (saves are synchronous), so plain remember
+    // is enough.
+    var readerSettings by remember { mutableStateOf(initialReaderSettings) }
 
     LaunchedEffect(retry) {
         feedState = FeedState.Loading
@@ -87,10 +89,10 @@ fun WikifypApp(
             clock = clock,
             onEvent = eventListener,
             onBack = { openArticleId = null },
-            initialWpm = wpm,
-            onWpmChange = {
-                wpm = it
-                onWpmChange(it)
+            settings = readerSettings,
+            onSettingsChange = {
+                readerSettings = it
+                onReaderSettingsChange(it)
             },
         )
     } else {

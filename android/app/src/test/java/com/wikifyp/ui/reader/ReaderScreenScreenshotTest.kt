@@ -1,5 +1,8 @@
 package com.wikifyp.ui.reader
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -18,8 +21,10 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Golden-image screenshots for the reader screen in three states
- * (paused, playing, mid-drag) × two themes (light, dark).
+ * Golden-image screenshots for the reader screen: paused, playing,
+ * mid-drag, browse overlay and the settings sheet, in the light and dark
+ * reader themes (set explicitly through [ReaderSettings] so the goldens
+ * don't depend on the test environment's system theme).
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -52,6 +57,7 @@ class ReaderScreenScreenshotTest {
                     "inquiry.",
                 ),
             ),
+            SentenceTokens(listOf("History"), isHeading = true),
             SentenceTokens(
                 listOf(
                     "Historically,",
@@ -85,58 +91,125 @@ class ReaderScreenScreenshotTest {
             ),
         )
 
-    /** Paused state: word visible, ghost text showing. */
+    private fun settingsFor(dark: Boolean) = ReaderSettings(theme = if (dark) ReaderTheme.DARK else ReaderTheme.LIGHT)
+
+    /** Paused state: word visible, ghost text and chrome showing. */
     @Test
     fun paused_light() {
-        renderPaused(darkTheme = false)
+        renderPaused(dark = false)
         compose.onRoot().captureRoboImage()
     }
 
     @Test
     fun paused_dark() {
-        renderPaused(darkTheme = true)
+        renderPaused(dark = true)
         compose.onRoot().captureRoboImage()
     }
 
-    /** Playing state: word visible, no ghost text. */
+    /** Playing state: focus mode hides the chrome. */
     @Test
     fun playing_light() {
-        renderPlaying(darkTheme = false)
+        renderPlaying(settingsFor(dark = false))
         compose.onRoot().captureRoboImage()
     }
 
     @Test
     fun playing_dark() {
-        renderPlaying(darkTheme = true)
+        renderPlaying(settingsFor(dark = true))
+        compose.onRoot().captureRoboImage()
+    }
+
+    /** True-black theme for OLED reading. */
+    @Test
+    fun playing_black() {
+        renderPlaying(ReaderSettings(theme = ReaderTheme.BLACK))
+        compose.onRoot().captureRoboImage()
+    }
+
+    /** Bionic ghost words: bolded prefixes in the periphery. */
+    @Test
+    fun paused_bionic_light() {
+        renderPaused(dark = false, settings = ReaderSettings(theme = ReaderTheme.LIGHT, bionic = true))
+        compose.onRoot().captureRoboImage()
+    }
+
+    /** Extreme settings: max type and spacing, no ghosts, centred ORP. */
+    @Test
+    fun paused_extremes_light() {
+        renderPaused(
+            dark = false,
+            settings =
+                ReaderSettings(
+                    theme = ReaderTheme.LIGHT,
+                    fontScale = ReaderSettings.FONT_SCALE_MAX,
+                    letterSpacingEm = ReaderSettings.LETTER_SPACING_MAX,
+                    ghostWords = 0,
+                    orpFraction = ReaderSettings.ORP_MAX,
+                ),
+        )
         compose.onRoot().captureRoboImage()
     }
 
     /** Mid-drag state: scrubbing, ghost text visible. */
     @Test
     fun drag_light() {
-        renderDrag(darkTheme = false)
+        renderDrag(dark = false)
         compose.onRoot().captureRoboImage()
     }
 
     @Test
     fun drag_dark() {
-        renderDrag(darkTheme = true)
+        renderDrag(dark = true)
         compose.onRoot().captureRoboImage()
     }
 
-    private fun renderPaused(darkTheme: Boolean) {
+    /** Browse overlay: flowing text with the current word highlighted. */
+    @Test
+    fun browse_light() {
+        renderBrowse(dark = false)
+        compose.onRoot().captureRoboImage()
+    }
+
+    @Test
+    fun browse_dark() {
+        renderBrowse(dark = true)
+        compose.onRoot().captureRoboImage()
+    }
+
+    /** The settings sheet content on the reader surface. */
+    @Test
+    fun settings_light() {
+        renderSettingsContent(dark = false)
+        compose.onRoot().captureRoboImage()
+    }
+
+    @Test
+    fun settings_dark() {
+        renderSettingsContent(dark = true)
+        compose.onRoot().captureRoboImage()
+    }
+
+    private fun showReader(settings: ReaderSettings): FakeClock {
         val clock = FakeClock()
         compose.setContent {
-            WikifypTheme(darkTheme = darkTheme) {
+            WikifypTheme(darkTheme = settings.theme == ReaderTheme.DARK) {
                 ReaderScreen(
                     articleTitle = "Philosophy",
                     sentences = sentences,
                     articleId = 1L,
                     clock = clock,
-                    initialWpm = 250,
+                    settings = settings,
                 )
             }
         }
+        return clock
+    }
+
+    private fun renderPaused(
+        dark: Boolean,
+        settings: ReaderSettings = settingsFor(dark),
+    ) {
+        val clock = showReader(settings)
         // Hold to start.
         compose.onNodeWithTag("readerSurface").performTouchInput {
             down(center)
@@ -153,19 +226,8 @@ class ReaderScreenScreenshotTest {
         compose.waitForIdle()
     }
 
-    private fun renderPlaying(darkTheme: Boolean) {
-        val clock = FakeClock()
-        compose.setContent {
-            WikifypTheme(darkTheme = darkTheme) {
-                ReaderScreen(
-                    articleTitle = "Philosophy",
-                    sentences = sentences,
-                    articleId = 1L,
-                    clock = clock,
-                    initialWpm = 250,
-                )
-            }
-        }
+    private fun renderPlaying(settings: ReaderSettings) {
+        val clock = showReader(settings)
         // Hold to start playing.
         compose.onNodeWithTag("readerSurface").performTouchInput {
             down(center)
@@ -177,19 +239,8 @@ class ReaderScreenScreenshotTest {
         compose.waitForIdle()
     }
 
-    private fun renderDrag(darkTheme: Boolean) {
-        val clock = FakeClock()
-        compose.setContent {
-            WikifypTheme(darkTheme = darkTheme) {
-                ReaderScreen(
-                    articleTitle = "Philosophy",
-                    sentences = sentences,
-                    articleId = 1L,
-                    clock = clock,
-                    initialWpm = 250,
-                )
-            }
-        }
+    private fun renderDrag(dark: Boolean) {
+        val clock = showReader(settingsFor(dark))
         // Hold to start.
         compose.onNodeWithTag("readerSurface").performTouchInput {
             down(center)
@@ -210,5 +261,43 @@ class ReaderScreenScreenshotTest {
             moveBy(Offset(-150f, 0f))
         }
         compose.waitForIdle()
+    }
+
+    private fun renderBrowse(dark: Boolean) {
+        val clock = showReader(settingsFor(dark))
+        // Hold to start, advance into the article, pause.
+        compose.onNodeWithTag("readerSurface").performTouchInput {
+            down(center)
+        }
+        clock.advanceBy(151)
+        compose.waitForIdle()
+        clock.advanceBy(1500)
+        compose.waitForIdle()
+        compose.onNodeWithTag("readerSurface").performTouchInput { up() }
+        compose.waitForIdle()
+        // Vertical drag opens browse.
+        compose.onNodeWithTag("readerSurface").performTouchInput {
+            down(center)
+            moveBy(Offset(0f, -200f))
+            up()
+        }
+        compose.waitForIdle()
+    }
+
+    private fun renderSettingsContent(dark: Boolean) {
+        val palette = readerPalette(if (dark) ReaderTheme.DARK else ReaderTheme.LIGHT, dark)
+        compose.setContent {
+            WikifypTheme(darkTheme = dark) {
+                ReaderSettingsSheetContent(
+                    settings = ReaderSettings(),
+                    palette = palette,
+                    onSettingsChange = {},
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .background(palette.surface),
+                )
+            }
+        }
     }
 }

@@ -1,0 +1,253 @@
+package com.wikifyp.ui.reader
+
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import com.wikifyp.theme.Motion
+import com.wikifyp.theme.Spacing
+import kotlinx.coroutines.flow.first
+
+/**
+ * Browse mode: the article as flowing text over the reader, with the
+ * current word highlighted. Tap a word to jump there; tap anywhere else
+ * to close; hold to resume reading (the overlay fades so the focal word
+ * shows under the finger, and closes on release).
+ *
+ * The overlay stays mounted while [faded] so the hold-to-resume press
+ * keeps its pointer stream until release — unmounting mid-gesture would
+ * drop the final lift and leave the engine playing.
+ */
+@Composable
+internal fun BrowseOverlay(
+    blocks: List<BrowseBlock>,
+    currentFlat: Int,
+    palette: ReaderPalette,
+    settings: ReaderSettings,
+    faded: Boolean,
+    onTapWord: (Int) -> Unit,
+    onTapBackground: () -> Unit,
+    onHold: () -> Unit,
+    onRelease: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val alpha by animateFloatAsState(
+        targetValue = if (faded) 0f else 1f,
+        animationSpec = tween(Motion.STANDARD_MS, easing = Motion.Leave),
+        label = "browseFade",
+    )
+
+    // The hold-to-resume press outlives many recompositions (the overlay
+    // recomposes as the position advances while faded). Route every
+    // callback through rememberUpdatedState so the gesture detectors'
+    // keys stay stable: a pointerInput that restarted mid-press would
+    // drop the final release and leave the engine playing with no finger
+    // down (same pattern as WpmControl in ReaderScreen).
+    val currentOnTapWord by rememberUpdatedState(onTapWord)
+    val currentOnTapBackground by rememberUpdatedState(onTapBackground)
+    val currentOnHold by rememberUpdatedState(onHold)
+    val currentOnRelease by rememberUpdatedState(onRelease)
+    val stableOnTapWord = remember { { flat: Int -> currentOnTapWord(flat) } }
+    val stableOnTapBackground = remember { { currentOnTapBackground() } }
+    val stableOnHold = remember { { currentOnHold() } }
+    val stableOnRelease = remember { { currentOnRelease() } }
+
+    // Freeze the highlighted word while faded: the overlay is invisible
+    // for the whole hold-to-resume press (minutes of reading, with the
+    // position advancing several words a second), and following it would
+    // rebuild and re-lay-out a block's text per word with nothing shown.
+    val highlightFlat = remember { mutableIntStateOf(currentFlat) }
+    if (!faded) highlightFlat.intValue = currentFlat
+
+    val listState = rememberLazyListState()
+
+    // Centre the block holding the current word when the overlay opens;
+    // the viewport size is only known after the first layout.
+    LaunchedEffect(Unit) {
+        val viewport =
+            snapshotFlow { listState.layoutInfo.viewportSize.height }
+                .first { it > 0 }
+        listState.scrollToItem(blockIndexFor(blocks, currentFlat), -viewport / 3)
+    }
+
+    Box(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .graphicsLayer { this.alpha = alpha }
+                .background(palette.background)
+                .safeDrawingPadding()
+                .browseGestures(
+                    onHold = stableOnHold,
+                    onRelease = stableOnRelease,
+                    onTap = { stableOnTapBackground() },
+                ).testTag("browseOverlay"),
+    ) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding =
+                PaddingValues(horizontal = Spacing.lg, vertical = Spacing.xl),
+        ) {
+            items(blocks) { block ->
+                BrowseBlockText(
+                    block = block,
+                    currentFlat = highlightFlat.intValue,
+                    palette = palette,
+                    settings = settings,
+                    onTapWord = stableOnTapWord,
+                    onTapBackground = stableOnTapBackground,
+                    onHold = stableOnHold,
+                    onRelease = stableOnRelease,
+                )
+            }
+        }
+
+        Text(
+            text = "Tap a word to jump · hold to read",
+            style = MaterialTheme.typography.labelMedium,
+            color = palette.chrome,
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = Spacing.md)
+                    .background(
+                        palette.surface.copy(alpha = 0.92f),
+                        RoundedCornerShape(50),
+                    ).padding(horizontal = Spacing.md, vertical = Spacing.xs),
+        )
+    }
+}
+
+/**
+ * The browse gesture contract, shared by the overlay background and each
+ * text block: tap reports a position, long-press starts hold-to-resume,
+ * and every end of a press — lift or cancellation — is reported so the
+ * hold can end. Reporting cancellations too is what keeps hold-to-resume
+ * correct: once [onHold] has started playback, a stolen or cancelled
+ * press must still stop it, or the article keeps playing with no finger
+ * down. A plain scroll never held, so its onRelease is a no-op upstream.
+ */
+private fun Modifier.browseGestures(
+    onHold: () -> Unit,
+    onRelease: () -> Unit,
+    onTap: (Offset) -> Unit,
+): Modifier =
+    this.pointerInput(onHold, onRelease, onTap) {
+        detectTapGestures(
+            onTap = onTap,
+            onLongPress = { onHold() },
+            onPress = {
+                tryAwaitRelease()
+                onRelease()
+            },
+        )
+    }
+
+@Composable
+private fun BrowseBlockText(
+    block: BrowseBlock,
+    currentFlat: Int,
+    palette: ReaderPalette,
+    settings: ReaderSettings,
+    onTapWord: (Int) -> Unit,
+    onTapBackground: () -> Unit,
+    onHold: () -> Unit,
+    onRelease: () -> Unit,
+) {
+    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
+
+    val base =
+        if (block.isHeading) {
+            MaterialTheme.typography.titleLarge
+        } else {
+            MaterialTheme.typography.bodyLarge
+        }
+    val style = remember(base, settings) { settings.scaledStyle(base) }
+
+    // Resolve the highlighted token first so only the block containing
+    // the current word rebuilds its string as playback advances (the
+    // overlay keeps rendering, faded, during hold-to-resume).
+    val current = block.tokens.find { it.flatIndex == currentFlat }
+    val text =
+        remember(block, current, palette) {
+            buildAnnotatedString {
+                append(block.text)
+                addStyle(
+                    SpanStyle(color = if (block.isHeading) palette.word else palette.ghost),
+                    0,
+                    block.text.length,
+                )
+                if (current != null) {
+                    addStyle(
+                        SpanStyle(
+                            color = palette.accent,
+                            fontWeight = FontWeight.Bold,
+                            background = palette.accent.copy(alpha = 0.14f),
+                        ),
+                        current.start,
+                        current.end,
+                    )
+                }
+            }
+        }
+
+    Text(
+        text = text,
+        style = style,
+        onTextLayout = { layout = it },
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(
+                    top = if (block.isHeading) Spacing.lg else Spacing.sm,
+                    bottom = Spacing.xs,
+                ).browseGestures(
+                    onHold = onHold,
+                    onRelease = onRelease,
+                    onTap = { offset ->
+                        val ch = layout?.getOffsetForPosition(offset)
+                        // A tap on the joining space counts as the word
+                        // before it — the miss zone between two words
+                        // should jump, not close the overlay. Only a tap
+                        // past the end of the text is background.
+                        val token =
+                            ch?.takeIf { it < block.text.length }?.let { c ->
+                                block.tokens.firstOrNull { c >= it.start && c <= it.end }
+                            }
+                        if (token != null) onTapWord(token.flatIndex) else onTapBackground()
+                    },
+                ),
+    )
+}

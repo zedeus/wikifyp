@@ -16,7 +16,10 @@ color deliberately off so the reading surface looks the same everywhere).
   `InkMuted`…) and an ink palette for dark (`Night`, `PaperText`…), with a
   muted moss green as the single accent and clay red for errors. Mapped onto
   the Material3 color scheme, so components use `MaterialTheme.colorScheme`
-  roles, never raw colors.
+  roles, never raw colors. The one exception is the reader surface
+  (`ui/reader/ReaderPalette.kt`), which resolves raw tokens from the
+  reader-theme *setting* (system, light, dark or true black) because that
+  choice is independent of the app theme.
 - **Type** (`Type.kt`): `Reading` (serif) for display, titles and body;
   `Label` (sans) for controls. Body styles get generous line height.
 - **Spacing** (`Spacing.kt`): one 4dp-based scale, `xs` through `xxl`. Use

@@ -2,6 +2,9 @@ package com.wikifyp
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.click
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -79,5 +82,59 @@ class ReaderTest {
         compose.onNodeWithTag("readerSurface").performTouchInput {
             up()
         }
+    }
+
+    @OptIn(androidx.compose.ui.test.ExperimentalTestApi::class)
+    @Test
+    fun browseOpensOnVerticalDragAndClosesOnTap() {
+        compose.waitUntilAtLeastOneExists(hasText("DNA"), timeoutMillis = 5_000)
+        compose.onNodeWithText("DNA").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("idleHint").assertIsDisplayed()
+
+        // Vertical drag opens the browse overlay.
+        compose.onNodeWithTag("readerSurface").performTouchInput {
+            down(center)
+            moveBy(Offset(0f, -300f))
+            up()
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag("browseOverlay").assertIsDisplayed()
+
+        // A tap on the overlay (past the text) closes it back to the
+        // reader, paused on the current word.
+        compose.onNodeWithTag("browseOverlay").performTouchInput {
+            click(centerRight)
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag("browseOverlay").assertDoesNotExist()
+        compose.onNodeWithTag("currentWord").assertIsDisplayed()
+    }
+
+    @OptIn(androidx.compose.ui.test.ExperimentalTestApi::class)
+    @Test
+    fun settingsSheetTogglesAndCarriesAcrossArticles() {
+        compose.waitUntilAtLeastOneExists(hasText("DNA"), timeoutMillis = 5_000)
+        compose.onNodeWithText("DNA").performClick()
+        compose.waitForIdle()
+
+        // Open the settings sheet and turn bionic ghost words on.
+        compose.onNodeWithTag("settingsButton").performClick()
+        compose.waitUntilAtLeastOneExists(hasTestTag("bionicToggle"), timeoutMillis = 5_000)
+        compose.onNodeWithTag("bionicToggle").performClick()
+        compose.onNodeWithTag("bionicToggle").assertIsOn()
+
+        // Leave the article through the activity's back dispatcher (the
+        // reader unmounts, taking the sheet with it) and open another:
+        // the setting carried over.
+        compose.activityRule.scenario.onActivity {
+            it.onBackPressedDispatcher.onBackPressed()
+        }
+        compose.waitForIdle()
+        compose.onNodeWithText("Marie Curie").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("settingsButton").performClick()
+        compose.waitUntilAtLeastOneExists(hasTestTag("bionicToggle"), timeoutMillis = 5_000)
+        compose.onNodeWithTag("bionicToggle").assertIsOn()
     }
 }

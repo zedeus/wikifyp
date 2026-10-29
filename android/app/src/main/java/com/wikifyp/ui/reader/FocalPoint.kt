@@ -31,6 +31,22 @@ fun focalIndex(token: String): Int {
 }
 
 /**
+ * Splits a token into (before, focal, after) around its focal letter.
+ * The focal slice is a whole code point: an emoji-only token highlights
+ * the full emoji, never half a surrogate pair.
+ */
+fun focalSlices(word: String): Triple<String, String, String> {
+    if (word.isEmpty()) return Triple("", "", "")
+    val focal = focalPosition(word)
+    val focalEnd = word.offsetByCodePoints(focal, 1)
+    return Triple(
+        word.substring(0, focal),
+        word.substring(focal, focalEnd),
+        if (focalEnd < word.length) word.substring(focalEnd) else "",
+    )
+}
+
+/**
  * Maps a focal index (computed on clean letter/digit characters) back to
  * the position in the original token string, skipping leading non-word
  * characters. This way the highlight lands on the right character even

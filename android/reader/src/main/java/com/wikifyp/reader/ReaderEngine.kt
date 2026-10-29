@@ -251,12 +251,6 @@ class ReaderEngine(
     /** Current position as a flat token index. */
     fun currentPosition(): Int = position
 
-    /** Whether the current token belongs to a heading sentence. */
-    fun currentIsHeading(): Boolean {
-        val (sentIdx, _) = flatToAddress(position) ?: return false
-        return sentences.getOrNull(sentIdx)?.isHeading == true
-    }
-
     // --- internals ---
 
     private fun startPlaying() {

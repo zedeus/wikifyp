@@ -3,9 +3,11 @@ package com.wikifyp.ui.reader
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import com.wikifyp.reader.EventType
 import com.wikifyp.reader.FakeClock
@@ -46,7 +48,6 @@ class ReaderScreenGestureTest {
                     articleId = 42L,
                     clock = clock,
                     onEvent = { events.add(it) },
-                    initialWpm = 250,
                 )
             }
         }
@@ -221,6 +222,48 @@ class ReaderScreenGestureTest {
         assertTrue(
             "Hold after drag should resume playback",
             events.any { it.type == EventType.PLAY },
+        )
+    }
+
+    @Test
+    fun backAfterBrowseOnlyEmitsNoSkip() {
+        val (_, events) = setup()
+
+        // Open browse without ever playing, then close it.
+        compose.onNodeWithTag("readerSurface").performTouchInput {
+            down(center)
+            moveBy(Offset(0f, -200f))
+            up()
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag("browseOverlay").performTouchInput { click(center) }
+        compose.waitForIdle()
+
+        // Leaving now is a preview, not an abandonment: no skip event.
+        compose.onNodeWithTag("backButton").performClick()
+        compose.waitForIdle()
+        assertTrue(
+            "Browse without playing should not emit skip",
+            events.none { it.type == EventType.SKIP },
+        )
+    }
+
+    @Test
+    fun backAfterPlayingEmitsSkip() {
+        val (clock, events) = setup()
+
+        // Hold to play, lift to pause.
+        compose.onNodeWithTag("readerSurface").performTouchInput { down(center) }
+        clock.advanceBy(151)
+        compose.waitForIdle()
+        compose.onNodeWithTag("readerSurface").performTouchInput { up() }
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("backButton").performClick()
+        compose.waitForIdle()
+        assertTrue(
+            "Back after playing should emit skip",
+            events.any { it.type == EventType.SKIP },
         )
     }
 

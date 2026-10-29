@@ -7,17 +7,24 @@ import com.wikifyp.reader.ReaderEngine
 
 /**
  * Pointer-input modifier that translates raw touch events into
- * [ReaderEngine] gesture calls: hold, lift, drag and double-tap.
+ * [ReaderEngine] gesture calls: hold, lift, drag and double-tap — and
+ * routes vertical drags to [onBrowseOpen] (the browse overlay) instead
+ * of the engine's horizontal scrub.
  *
  * A single `awaitPointerEventScope` loop handles everything so gesture
- * detectors don't compete. Double-tap is detected by tracking the time
- * between consecutive short taps (both under the hold threshold and
- * within 300 ms of each other).
+ * detectors don't compete. The first move past the threshold decides the
+ * gesture by its dominant axis: horizontal scrubs tokens, vertical opens
+ * browse (the engine still enters scrubbing, so the browse session ends
+ * in the same scroll_back event a drag does). Double-tap is detected by
+ * tracking the time between consecutive short taps.
  *
  * No manual sync is needed — the engine's [onStateChanged] callback
  * fires after every gesture call.
  */
-fun Modifier.readerGestures(engine: ReaderEngine): Modifier =
+fun Modifier.readerGestures(
+    engine: ReaderEngine,
+    onBrowseOpen: () -> Unit = {},
+): Modifier =
     this.pointerInput(engine) {
         val dragThresholdPx = 12.dp.toPx()
         val tokensPerPx = 24.dp.toPx()
@@ -34,8 +41,10 @@ fun Modifier.readerGestures(engine: ReaderEngine): Modifier =
                 engine.onTouchDown()
 
                 val downX = downChange.position.x
+                val downY = downChange.position.y
                 val downTimeMs = downChange.uptimeMillis
                 var isDragging = false
+                var browseOpened = false
                 var dragAccumulator = 0f
 
                 // Track movement until lift.
@@ -44,6 +53,12 @@ fun Modifier.readerGestures(engine: ReaderEngine): Modifier =
                     val change = event.changes.firstOrNull() ?: break
 
                     if (!change.pressed) {
+                        if (browseOpened) {
+                            // The browse overlay owns the rest of this
+                            // interaction; the lift that opened it is not
+                            // a pause or a tap.
+                            break
+                        }
                         // Finger lifted.
                         engine.onTouchUp()
 
@@ -63,15 +78,31 @@ fun Modifier.readerGestures(engine: ReaderEngine): Modifier =
                         break
                     }
 
-                    val dx = change.position.x - change.previousPosition.x
+                    if (browseOpened) {
+                        change.consume()
+                        continue
+                    }
 
-                    // Start dragging once movement exceeds the threshold.
-                    if (!isDragging &&
-                        kotlin.math.abs(change.position.x - downX) > dragThresholdPx
-                    ) {
-                        isDragging = true
-                        engine.onDragStart()
-                        dragAccumulator = 0f
+                    val dx = change.position.x - change.previousPosition.x
+                    val totalDx = change.position.x - downX
+                    val totalDy = change.position.y - downY
+
+                    // The first move past the threshold decides the
+                    // gesture by its dominant axis.
+                    if (!isDragging) {
+                        if (kotlin.math.abs(totalDx) > dragThresholdPx &&
+                            kotlin.math.abs(totalDx) >= kotlin.math.abs(totalDy)
+                        ) {
+                            isDragging = true
+                            engine.onDragStart()
+                            dragAccumulator = 0f
+                        } else if (kotlin.math.abs(totalDy) > dragThresholdPx) {
+                            browseOpened = true
+                            engine.onDragStart()
+                            onBrowseOpen()
+                            change.consume()
+                            continue
+                        }
                     }
 
                     if (isDragging) {
