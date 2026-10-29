@@ -1,22 +1,14 @@
 package com.wikifyp.ui.reader
 
 import androidx.compose.ui.graphics.Color
-import com.wikifyp.theme.ClayDeep
-import com.wikifyp.theme.ClaySoft
-import com.wikifyp.theme.Ink
-import com.wikifyp.theme.InkMuted
-import com.wikifyp.theme.Night
-import com.wikifyp.theme.NightRaised
-import com.wikifyp.theme.Paper
-import com.wikifyp.theme.PaperSunken
-import com.wikifyp.theme.PaperText
-import com.wikifyp.theme.PaperTextMuted
 
 /**
  * The reader's drawing colors, resolved from the reader theme setting.
  * The reader paints its own surface (a reading room, not a Material
  * screen), so these are deliberate raw tokens rather than the Material
- * color scheme — the one place in the app allowed to do that.
+ * color scheme — the one place in the app allowed to do that. They are
+ * defined here, not in `theme/Color.kt`, because the reader's themes
+ * (paper, sepia, ink, black) are independent of the app theme.
  */
 data class ReaderPalette(
     /** The reading surface. */
@@ -43,39 +35,56 @@ fun readerPalette(
     when (theme) {
         ReaderTheme.SYSTEM -> if (systemDark) darkPalette else lightPalette
         ReaderTheme.LIGHT -> lightPalette
+        ReaderTheme.SEPIA -> sepiaPalette
         ReaderTheme.DARK -> darkPalette
         ReaderTheme.BLACK -> blackPalette
     }
 
+// The accent is the reader's one vivid color: the ORP letter has to pop
+// out of the word at 400 wpm, so it is a saturated vermillion tuned per
+// surface — darker on paper for contrast, brighter on ink and brighter
+// still on true black, where a muted tone reads as gray.
+
 private val lightPalette =
     ReaderPalette(
-        background = Paper,
-        word = Ink,
-        ghost = InkMuted.copy(alpha = 0.75f),
-        accent = ClayDeep,
-        chrome = InkMuted,
-        surface = PaperSunken,
+        background = Color(0xFFFFFFFF),
+        word = Color(0xFF202122),
+        ghost = Color(0xFF54595D).copy(alpha = 0.75f),
+        accent = Color(0xFFD2491D),
+        chrome = Color(0xFF72777D),
+        surface = Color(0xFFF1F3F5),
+        isDark = false,
+    )
+
+private val sepiaPalette =
+    ReaderPalette(
+        background = Color(0xFFF8F1E3),
+        word = Color(0xFF27221A),
+        ghost = Color(0xFF6E6150).copy(alpha = 0.78f),
+        accent = Color(0xFFBF4617),
+        chrome = Color(0xFF6E6150),
+        surface = Color(0xFFF0E6D6),
         isDark = false,
     )
 
 private val darkPalette =
     ReaderPalette(
-        background = Night,
-        word = PaperText,
-        ghost = PaperTextMuted.copy(alpha = 0.8f),
-        accent = ClaySoft,
-        chrome = PaperTextMuted,
-        surface = NightRaised,
+        background = Color(0xFF202122),
+        word = Color(0xFFEAECF0),
+        ghost = Color(0xFFA2A9B1).copy(alpha = 0.8f),
+        accent = Color(0xFFFF7B52),
+        chrome = Color(0xFFA2A9B1),
+        surface = Color(0xFF2E3136),
         isDark = true,
     )
 
 private val blackPalette =
     ReaderPalette(
         background = Color.Black,
-        word = PaperText,
-        ghost = PaperTextMuted.copy(alpha = 0.75f),
-        accent = ClaySoft,
-        chrome = PaperTextMuted,
-        surface = Color(0xFF1A1713),
+        word = Color(0xFFECEDEF),
+        ghost = Color(0xFF9FA6AD).copy(alpha = 0.75f),
+        accent = Color(0xFFFF8257),
+        chrome = Color(0xFF9FA6AD),
+        surface = Color(0xFF17181A),
         isDark = true,
     )

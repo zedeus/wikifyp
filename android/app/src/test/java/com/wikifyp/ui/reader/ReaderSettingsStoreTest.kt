@@ -60,7 +60,7 @@ class ReaderSettingsStoreTest {
 
     @Test
     fun unknownThemeNameFallsBackToDefault() {
-        prefs.edit().putString("readerTheme", "SEPIA").apply()
+        prefs.edit().putString("readerTheme", "SOLARIZED").apply()
         assertEquals(ReaderTheme.SYSTEM, store.load().theme)
     }
 }

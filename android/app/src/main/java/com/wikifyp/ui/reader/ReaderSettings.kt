@@ -10,6 +10,9 @@ enum class ReaderTheme {
     /** Follow the system: paper by day, ink at night. */
     SYSTEM,
     LIGHT,
+
+    /** Warm paper, easy on the eyes in daylight. */
+    SEPIA,
     DARK,
 
     /** True black, for OLED screens and dark rooms. */

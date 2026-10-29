@@ -4,47 +4,55 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
-// Color tokens. The palette is warm paper and ink with one restrained
-// moss-green accent: the app is for long stretches of reading, so the
-// chrome stays quiet and text carries the screen.
+// Color tokens. Neutral grays with a single confident blue accent, in the
+// tradition of Wikipedia's own palette: the app is for long stretches of
+// reading, so the chrome stays quiet and text carries the screen. Cards are
+// white on a gray canvas in the light, raised grays at night.
 
 // Light ("paper")
-val Paper = Color(0xFFFAF7F1)
-val PaperRaised = Color(0xFFFFFDF8)
-val PaperSunken = Color(0xFFF1ECE2)
-val Ink = Color(0xFF211E19)
-val InkMuted = Color(0xFF6E675C)
-val InkFaint = Color(0xFFD9D2C5)
-val MossDeep = Color(0xFF47614F)
-val MossWash = Color(0xFFDCE5DB)
-val OnMossDeep = Color(0xFFF4F1E9)
-val OnMossWash = Color(0xFF24352A)
-val ClayDeep = Color(0xFF8E4A3C)
-val OnClayDeep = Color(0xFFF4F1E9)
-val ClayWash = Color(0xFFF2DFD9)
-val OnClayWash = Color(0xFF52241B)
+val Paper = Color(0xFFF8F9FA)
+val PaperRaised = Color(0xFFFFFFFF)
+val PaperSunken = Color(0xFFEAECF0)
+val Ink = Color(0xFF202122)
+val InkMuted = Color(0xFF54595D)
+val InkFaint = Color(0xFFC8CCD1)
+val BlueDeep = Color(0xFF3366CC)
+val BlueWash = Color(0xFFEAF3FF)
+val OnBlueDeep = Color(0xFFFFFFFF)
+val OnBlueWash = Color(0xFF1D3A73)
+val RedDeep = Color(0xFFB32424)
+val OnRedDeep = Color(0xFFFFFFFF)
+val RedWash = Color(0xFFFDE7E7)
+val OnRedWash = Color(0xFF731919)
 
 // Dark ("ink")
-val Night = Color(0xFF16130E)
-val NightRaised = Color(0xFF1E1A14)
-val NightSunken = Color(0xFF282319)
-val PaperText = Color(0xFFEAE4D8)
-val PaperTextMuted = Color(0xFF9D968A)
-val PaperTextFaint = Color(0xFF433D32)
-val MossSoft = Color(0xFFA3BFA9)
-val MossNight = Color(0xFF2C3C31)
-val OnMossSoft = Color(0xFF1C2920)
-val OnMossNight = Color(0xFFC9D8CC)
-val ClaySoft = Color(0xFFD9A496)
-val ClayNight = Color(0xFF4A2920)
-val OnClayNight = Color(0xFFEFD4CB)
+val Night = Color(0xFF202122)
+val NightRaised = Color(0xFF2E3136)
+val NightSunken = Color(0xFF27292D)
+val PaperText = Color(0xFFEAECF0)
+val PaperTextMuted = Color(0xFFA2A9B1)
+val PaperTextFaint = Color(0xFF404448)
+val BlueSoft = Color(0xFF6699FF)
+val BlueNight = Color(0xFF233A66)
+val OnBlueSoft = Color(0xFF102A52)
+val OnBlueNight = Color(0xFFC9DAFF)
+val RedSoft = Color(0xFFFF6B6B)
+val RedNight = Color(0xFF4A1F1F)
+val OnRedNight = Color(0xFFFFC9C9)
+
+// Placeholder-tile art for articles without a lead image: deep muted
+// grounds with matching pastel letters, rotated by article id. Fixed in
+// both themes, like a photograph would be — these are stand-in images,
+// not chrome.
+val TileGrounds = listOf(Color(0xFF854848), Color(0xFF534FA3), Color(0xFF82456A))
+val TileLetters = listOf(Color(0xFFDCB5B3), Color(0xFFC5B9DD), Color(0xFFD9B4CD))
 
 internal val LightColors =
     lightColorScheme(
-        primary = MossDeep,
-        onPrimary = OnMossDeep,
-        primaryContainer = MossWash,
-        onPrimaryContainer = OnMossWash,
+        primary = BlueDeep,
+        onPrimary = OnBlueDeep,
+        primaryContainer = BlueWash,
+        onPrimaryContainer = OnBlueWash,
         secondary = InkMuted,
         onSecondary = PaperRaised,
         secondaryContainer = PaperSunken,
@@ -58,19 +66,19 @@ internal val LightColors =
         surfaceVariant = PaperSunken,
         onSurfaceVariant = InkMuted,
         outline = InkFaint,
-        outlineVariant = InkFaint,
-        error = ClayDeep,
-        onError = OnClayDeep,
-        errorContainer = ClayWash,
-        onErrorContainer = OnClayWash,
+        outlineVariant = PaperSunken,
+        error = RedDeep,
+        onError = OnRedDeep,
+        errorContainer = RedWash,
+        onErrorContainer = OnRedWash,
     )
 
 internal val DarkColors =
     darkColorScheme(
-        primary = MossSoft,
-        onPrimary = OnMossSoft,
-        primaryContainer = MossNight,
-        onPrimaryContainer = OnMossNight,
+        primary = BlueSoft,
+        onPrimary = OnBlueSoft,
+        primaryContainer = BlueNight,
+        onPrimaryContainer = OnBlueNight,
         secondary = PaperTextMuted,
         onSecondary = Night,
         secondaryContainer = NightSunken,
@@ -85,8 +93,8 @@ internal val DarkColors =
         onSurfaceVariant = PaperTextMuted,
         outline = PaperTextFaint,
         outlineVariant = PaperTextFaint,
-        error = ClaySoft,
-        onError = ClayNight,
-        errorContainer = ClayNight,
-        onErrorContainer = OnClayNight,
+        error = RedSoft,
+        onError = RedNight,
+        errorContainer = RedNight,
+        onErrorContainer = OnRedNight,
     )

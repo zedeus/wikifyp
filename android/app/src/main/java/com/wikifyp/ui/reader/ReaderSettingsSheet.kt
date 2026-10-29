@@ -34,6 +34,9 @@ internal fun readerSliderColors(palette: ReaderPalette) =
         thumbColor = palette.accent,
         activeTrackColor = palette.accent,
         inactiveTrackColor = palette.ghost.copy(alpha = 0.3f),
+        // Ticks default to the Material scheme, which isn't the reader's.
+        activeTickColor = palette.surface,
+        inactiveTickColor = palette.chrome.copy(alpha = 0.5f),
     )
 
 /** Bottom sheet hosting the reader settings. */
