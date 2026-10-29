@@ -1,44 +1,58 @@
 package com.wikifyp.ui.feed
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import com.wikifyp.data.FeedCard
+import com.wikifyp.theme.Reading
 import com.wikifyp.theme.Spacing
-import com.wikifyp.ui.components.ContentCard
 import com.wikifyp.ui.components.PrimaryButton
 
 /**
- * The feed: a list of article cards, with loading, empty, error and offline
- * states. Tapping a card opens the reader; [notice] is a transient line
- * under the title (e.g. an article that failed to open).
+ * The feed: a hero card for the lead article, then a grouped list of the
+ * rest, under a compact top bar with the wordmark and reader settings.
+ * Tapping a card opens the reader; [notice] is a transient banner (e.g. an
+ * article that failed to open).
  */
 @Composable
 fun FeedScreen(
     state: FeedState,
     onCardClick: (FeedCard) -> Unit,
     onRetry: () -> Unit,
+    onOpenSettings: () -> Unit = {},
     notice: String? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -49,12 +63,7 @@ fun FeedScreen(
                     .safeDrawingPadding()
                     .fillMaxSize(),
         ) {
-            Text(
-                text = "wikifyp",
-                style = MaterialTheme.typography.displayLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md),
-            )
+            TopBar(onOpenSettings)
             if (state is FeedState.Content && state.offline) {
                 Banner("Offline — showing your last feed", Modifier.testTag("offlineBanner"))
             }
@@ -63,9 +72,7 @@ fun FeedScreen(
             }
             when (state) {
                 FeedState.Loading -> {
-                    Centered {
-                        CircularProgressIndicator(modifier = Modifier.testTag("feedLoading"))
-                    }
+                    FeedSkeleton()
                 }
 
                 FeedState.Empty -> {
@@ -83,19 +90,7 @@ fun FeedScreen(
                 }
 
                 is FeedState.Content -> {
-                    LazyColumn(
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = Spacing.lg)
-                                .testTag("feedList"),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.sm),
-                        contentPadding = PaddingValues(bottom = Spacing.lg),
-                    ) {
-                        items(state.cards, key = { it.id }) { card ->
-                            FeedCardItem(card, onClick = { onCardClick(card) })
-                        }
-                    }
+                    FeedList(state.cards, onCardClick)
                 }
             }
         }
@@ -103,50 +98,227 @@ fun FeedScreen(
 }
 
 @Composable
-private fun FeedCardItem(
-    card: FeedCard,
-    onClick: () -> Unit,
-) {
-    ContentCard(
+private fun TopBar(onOpenSettings: () -> Unit) {
+    Row(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onClick),
+                .padding(start = Spacing.md, end = Spacing.xs, top = Spacing.xs),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = card.title,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
+            text = "wikifyp",
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.weight(1f),
         )
-        if (card.excerpt.isNotEmpty()) {
-            Spacer(Modifier.height(Spacing.xs))
-            Text(
-                text = card.excerpt,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        Spacer(Modifier.height(Spacing.xs))
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            Text(
-                text = readingTime(card.words),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = "·",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = "${card.words} words",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+        IconButton(
+            onClick = onOpenSettings,
+            modifier = Modifier.testTag("feedSettingsButton"),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Settings,
+                contentDescription = "Reader settings",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
+}
+
+@Composable
+private fun FeedList(
+    cards: List<FeedCard>,
+    onCardClick: (FeedCard) -> Unit,
+) {
+    LazyColumn(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("feedList"),
+        contentPadding =
+            PaddingValues(start = Spacing.md, end = Spacing.md, bottom = Spacing.lg),
+    ) {
+        itemsIndexed(cards, key = { _, card -> card.id }) { index, card ->
+            if (index == 0) {
+                HeroCard(card, onClick = { onCardClick(card) })
+                Spacer(Modifier.height(Spacing.md))
+            } else {
+                FeedRow(
+                    card = card,
+                    shape = rowShape(index - 1, cards.size - 1),
+                    onClick = { onCardClick(card) },
+                )
+                if (index < cards.lastIndex) Spacer(Modifier.height(2.dp))
+            }
+        }
+    }
+}
+
+/**
+ * Grouped-list corners: the first row rounds its top, the last its bottom,
+ * middles stay nearly square — with 2dp gaps the group reads as one card.
+ */
+internal fun rowShape(
+    index: Int,
+    count: Int,
+): Shape {
+    val big = 16.dp
+    val small = 4.dp
+    val top = if (index == 0) big else small
+    val bottom = if (index == count - 1) big else small
+    return RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom)
+}
+
+/** The hero image's aspect ratio; the loading skeleton mirrors it. */
+internal const val HERO_IMAGE_ASPECT = 16f / 10f
+
+// The scrim under the hero title: an eased ramp (not a two-stop gradient)
+// so the image darkens gently before the text needs full contrast.
+private val HeroScrim =
+    Brush.verticalGradient(
+        0f to Color.Transparent,
+        0.18f to Color.Black.copy(alpha = 0.05f),
+        0.38f to Color.Black.copy(alpha = 0.15f),
+        0.58f to Color.Black.copy(alpha = 0.30f),
+        0.76f to Color.Black.copy(alpha = 0.50f),
+        0.90f to Color.Black.copy(alpha = 0.70f),
+        1f to Color.Black.copy(alpha = 0.80f),
+    )
+
+/** The lead article: full-width image, title on an eased scrim, excerpt. */
+@Composable
+private fun HeroCard(
+    card: FeedCard,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.large)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .clickable(onClick = onClick)
+                .testTag("heroCard"),
+    ) {
+        Box {
+            CardImage(
+                image = card.image,
+                title = card.title,
+                cardId = card.id,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(HERO_IMAGE_ASPECT),
+            )
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .background(HeroScrim),
+            )
+            Column(
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(Spacing.md),
+            ) {
+                Text(
+                    text = card.title,
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = Color.White,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (card.description.isNotEmpty()) {
+                    Text(
+                        text = card.description,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color.White.copy(alpha = 0.85f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+        Column(modifier = Modifier.padding(Spacing.md)) {
+            if (card.excerpt.isNotEmpty()) {
+                Text(
+                    text = card.excerpt,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.height(Spacing.sm))
+            }
+            MetaLine(card)
+        }
+    }
+}
+
+/** One article in the grouped list: text left, thumbnail right. */
+@Composable
+private fun FeedRow(
+    card: FeedCard,
+    shape: Shape,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .clickable(onClick = onClick)
+                .padding(Spacing.md)
+                .testTag("feedRow"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = card.title,
+                style =
+                    MaterialTheme.typography.bodyLarge.copy(
+                        fontFamily = Reading,
+                        fontWeight = FontWeight.Medium,
+                    ),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            val sub = card.subtitle
+            if (sub.isNotEmpty()) {
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = sub,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Spacer(Modifier.height(Spacing.xs))
+            MetaLine(card)
+        }
+        Spacer(Modifier.size(Spacing.md, 0.dp))
+        CardImage(
+            image = card.image,
+            title = card.title,
+            cardId = card.id,
+            modifier =
+                Modifier
+                    .size(64.dp)
+                    .clip(MaterialTheme.shapes.small),
+        )
+    }
+}
+
+@Composable
+private fun MetaLine(card: FeedCard) {
+    Text(
+        text = "${readingTime(card.words)} · ${card.words} words",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 /** A rough length signal for the card, at a typical reading speed. */
@@ -198,7 +370,7 @@ private fun Banner(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(horizontal = Spacing.lg)
+                .padding(horizontal = Spacing.md)
                 .padding(bottom = Spacing.sm),
     ) {
         Text(

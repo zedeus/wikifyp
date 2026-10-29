@@ -62,7 +62,7 @@ class FeedScreenTest {
         )
         compose.onNodeWithText("Chemistry").assertIsDisplayed()
         compose.onNodeWithText("Chemistry is the science of matter and how it changes.").assertIsDisplayed()
-        compose.onNodeWithText("5 min").assertIsDisplayed()
+        compose.onNodeWithText("5 min", substring = true).assertIsDisplayed()
         compose.onNodeWithTag("offlineBanner").assertDoesNotExist()
 
         compose.onNodeWithText("Japan").performClick()

@@ -35,6 +35,7 @@ class FeedScreenScreenshotTest {
                 sentences = 180,
                 words = 4200,
                 attribution = "Text from the Wikipedia article \"Photosynthesis\"",
+                description = "Biological process to convert light into chemical energy",
             ),
             FeedCard(
                 id = 2,
@@ -44,6 +45,7 @@ class FeedScreenScreenshotTest {
                 sentences = 240,
                 words = 6100,
                 attribution = "Text from the Wikipedia article \"Roman Empire\"",
+                description = "27 BC–476 AD state and civilization",
             ),
             FeedCard(
                 id = 3,
