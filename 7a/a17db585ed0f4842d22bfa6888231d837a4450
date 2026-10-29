@@ -1,0 +1,37 @@
+android/reader/src/main/java/com/wikifyp/reader/ReadingEvent.kt
+  s_93a39d8e580894::t_bc6eb29d1af5ed 51-53
+android/reader/src/main/java/com/wikifyp/reader/ReaderEngine.kt
+  s_93a39d8e580894::t_6645c23ffeebaf 246-252
+  s_93a39d8e580894::t_5f81a7c90d8aa9 223-234,253
+  s_93a39d8e580894::t_4600797f0662c9 222
+  s_93a39d8e580894::t_2072c86e2ba883 245
+  s_93a39d8e580894::t_548de8c4ecc762 254
+android/reader/src/test/java/com/wikifyp/reader/ReaderEngineSeekTest.kt
+  s_93a39d8e580894::t_cc636d3808e531 82-109
+  s_93a39d8e580894::t_ac6ccf68cc747a 54-56,64
+  s_93a39d8e580894::t_59cf96391414db 50-53,57-63,65-81
+fixtures/events/save.json
+  s_93a39d8e580894::t_dd74646e071c8d 1-13
+docs/events.md
+  s_93a39d8e580894::t_e85d13b07817cf 26,62-64,76
+  s_93a39d8e580894::t_b4ed4d6ae4fdd4 5
+android/reader/src/test/java/com/wikifyp/reader/ReadingEventTest.kt
+  s_93a39d8e580894::t_d464111a82df9d 74-80
+  s_93a39d8e580894::t_f0e25418c8f6c7 73
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7aa17db585ed0f4842d22bfa6888231d837a4450",
+  "prompts": {},
+  "sessions": {
+    "s_93a39d8e580894": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b9316065-a025-4991-8866-5f0d6e55ccc6",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
