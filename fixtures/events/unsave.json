@@ -1,0 +1,13 @@
+{
+    "id": "b8c9d0e1-f2a3-4567-bcde-678901234567",
+    "schema_version": 1,
+    "session_id": "sess-0001-0002-0003-000000000001",
+    "type": "unsave",
+    "timestamp": 1728720020000,
+    "token": {
+        "article_id": 42,
+        "sentence_idx": 3,
+        "token_idx": 5
+    },
+    "wpm": 250
+}

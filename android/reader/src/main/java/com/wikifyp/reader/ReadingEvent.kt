@@ -51,6 +51,9 @@ enum class EventType {
 
     @SerialName("save")
     SAVE,
+
+    @SerialName("unsave")
+    UNSAVE,
 }
 
 /** JSON codec for reading events; lenient on unknown keys for forward compat. */

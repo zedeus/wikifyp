@@ -79,6 +79,13 @@ class ReadingEventTest {
         assertEquals(250, event.wpm)
     }
 
+    @Test
+    fun unsaveFixtureDeserializes() {
+        val event = eventJson.decodeFromString<ReadingEvent>(fixtureJson("unsave.json"))
+        assertEquals(EventType.UNSAVE, event.type)
+        assertEquals(TokenAddress(42, 3, 5), event.token)
+    }
+
     // --- Round-trip: serialize then deserialize ---
 
     @Test

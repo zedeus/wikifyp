@@ -252,6 +252,12 @@ class ReaderEngine(
         emitEvent(EventType.SAVE)
     }
 
+    /** Remove the bookmark again; the mirror of [save]. */
+    fun unsave() {
+        if (sentences.isEmpty()) return
+        emitEvent(EventType.UNSAVE)
+    }
+
     /**
      * Skip the current article.
      */

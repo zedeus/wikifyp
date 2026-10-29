@@ -79,6 +79,13 @@ class ReaderEngineSeekTest {
         assertEquals(0, events.size)
     }
 
+    @Test
+    fun unsaveEmitsEventWithoutChangingState() {
+        engine.unsave()
+        assertEquals(ReaderState.IDLE, engine.state)
+        assertEquals(listOf(EventType.UNSAVE), events.map { it.type })
+    }
+
     // --- jumpTo ---
 
     @Test
