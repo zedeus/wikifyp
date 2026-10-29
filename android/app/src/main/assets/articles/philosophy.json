@@ -1095,5 +1095,11 @@
     {
       "text": "According to some academics, philosophy is mainly undertaken for its own sake and does not make significant contributions to existing practices or external goals."
     }
-  ]
+  ],
+  "description": "Study of general and fundamental questions",
+  "image": {
+    "url": "file:///android_asset/images/philosophy.jpg",
+    "width": 960,
+    "height": 1280
+  }
 }

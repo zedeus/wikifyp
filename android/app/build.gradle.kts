@@ -109,6 +109,15 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.core)
+    // Bookmark, Toc, SkipNext and friends live outside the core set; the
+    // release build shrinks the unused ones away.
+    implementation(libs.androidx.compose.material.icons.extended)
+
+    // Images: Coil loads card and lead images (bundled asset files in the
+    // fixture build, the network against a server).
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
+
     // Tooling
     debugImplementation(libs.androidx.compose.ui.tooling)
 
@@ -118,6 +127,7 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.roborazzi)
     testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.coil.test)
     testImplementation(libs.androidx.compose.ui.test.junit4)
     testImplementation(libs.androidx.compose.ui.test.manifest)
 

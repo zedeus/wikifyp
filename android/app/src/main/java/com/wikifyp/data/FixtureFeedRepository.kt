@@ -51,6 +51,8 @@ class FixtureFeedRepository(
                     sentences = article.sentences.size,
                     words = article.sentences.sumOf { tokenize(it.text).size },
                     attribution = article.attribution,
+                    description = article.description,
+                    image = article.image,
                 )
             },
         )

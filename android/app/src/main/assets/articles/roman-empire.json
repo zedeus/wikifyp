@@ -2431,5 +2431,11 @@
     {
       "text": "In the United States, the founders saw Athenian democracy and Roman republicanism as models for the mixed constitution, but regarded the emperor as a figure of tyranny."
     }
-  ]
+  ],
+  "description": "27 BC–476/1453 AD state and civilization",
+  "image": {
+    "url": "file:///android_asset/images/roman-empire.png",
+    "width": 960,
+    "height": 611
+  }
 }

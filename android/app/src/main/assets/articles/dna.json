@@ -1451,5 +1451,11 @@
     {
       "text": "Further such DNA profiling led to positive identification of another suspect (Colin Pitchfork) who, in 1988, was found guilty of both rape-murders."
     }
-  ]
+  ],
+  "description": "Molecule that carries genetic information",
+  "image": {
+    "url": "file:///android_asset/images/dna.png",
+    "width": 960,
+    "height": 952
+  }
 }

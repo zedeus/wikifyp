@@ -789,7 +789,7 @@
       "text": "Because the Earth's atmosphere contained almost no oxygen during the estimated development of photosynthesis, it is believed that the first photosynthetic cyanobacteria did not generate oxygen."
     },
     {
-      "text": "Available evidence from geobiological studies of Archean (\u003e2500 Ma) sedimentary rocks indicates that life existed 3500 Ma, but the question of when oxygenic photosynthesis evolved is still unanswered."
+      "text": "Available evidence from geobiological studies of Archean (>2500 Ma) sedimentary rocks indicates that life existed 3500 Ma, but the question of when oxygenic photosynthesis evolved is still unanswered."
     },
     {
       "text": "A clear paleontological window on cyanobacterial evolution opened about 2000 Ma, revealing an already-diverse biota of cyanobacteria."
@@ -1114,5 +1114,11 @@
     {
       "text": "The salvaging pathway for the products of RuBisCO oxygenase activity is more commonly known as photorespiration, since it is characterized by light-dependent oxygen consumption and the release of carbon dioxide."
     }
-  ]
+  ],
+  "description": "Biological process to convert light into chemical energy",
+  "image": {
+    "url": "file:///android_asset/images/photosynthesis.png",
+    "width": 960,
+    "height": 960
+  }
 }

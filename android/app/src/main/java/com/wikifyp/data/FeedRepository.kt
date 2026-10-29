@@ -15,7 +15,15 @@ data class FeedCard(
     val sentences: Int,
     val words: Int,
     val attribution: String,
-)
+    /** Wikidata short description, e.g. "Chemical compound"; may be empty. */
+    val description: String = "",
+    /** Lead image thumbnail; null when the article has no free image. */
+    val image: ArticleImage? = null,
+) {
+    /** The card's one-line subtitle: the description, or failing that the
+     *  start of the article itself. One rule for every card surface. */
+    val subtitle: String get() = description.ifEmpty { excerpt }
+}
 
 /** A feed plus where it came from: [offline] means it was served from cache. */
 data class FeedResult(

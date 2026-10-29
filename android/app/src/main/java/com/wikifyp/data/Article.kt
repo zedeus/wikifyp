@@ -16,6 +16,23 @@ data class Article(
     val title: String,
     val attribution: String,
     val sentences: List<Sentence>,
+    /** Wikidata short description, e.g. "Chemical compound"; may be empty. */
+    val description: String = "",
+    /** Lead image thumbnail; null when the article has no free image. */
+    val image: ArticleImage? = null,
+)
+
+/**
+ * An article's lead image thumbnail. Width and height travel with the URL
+ * so a surface that wants the image's own aspect ratio can reserve it
+ * before the bitmap arrives; the current cards crop to fixed shapes and
+ * don't read them yet.
+ */
+@Serializable
+data class ArticleImage(
+    val url: String,
+    val width: Int = 0,
+    val height: Int = 0,
 )
 
 @Serializable

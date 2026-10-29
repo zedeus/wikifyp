@@ -26,6 +26,8 @@ class HttpFeedRepositoryTest {
                 {"articles":[{"id":12,"title":"Chemistry","source":"simplewiki",
                   "excerpt":"Chemistry is a science.","sentences":40,"words":1200,
                   "attribution":"Text from the Simple English Wikipedia article \"Chemistry\"",
+                  "description":"Scientific study of matter",
+                  "image":{"url":"https://example.test/chem.jpg","width":960,"height":640},
                   "unknown_field":true}]}
                 """.trimIndent().toByteArray()
             exchange.sendResponseHeaders(200, body.size.toLong())
@@ -65,6 +67,16 @@ class HttpFeedRepositoryTest {
             assertEquals(12, card.id)
             assertEquals("Chemistry", card.title)
             assertEquals(1200, card.words)
+            assertEquals("Scientific study of matter", card.description)
+            assertEquals(ArticleImage("https://example.test/chem.jpg", 960, 640), card.image)
+        }
+
+    @Test
+    fun articleWithoutImageOrDescriptionDecodesToDefaults() =
+        runTest {
+            val article = repo.article(12)
+            assertEquals("", article.description)
+            assertEquals(null, article.image)
         }
 
     @Test

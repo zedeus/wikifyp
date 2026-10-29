@@ -899,7 +899,7 @@
       "text": "Rue Madame Curie in Beirut, Lebanon"
     },
     {
-      "text": "Beetle species – Psammodes sklodowskae Kamiński \u0026 Gearner"
+      "text": "Beetle species – Psammodes sklodowskae Kamiński & Gearner"
     },
     {
       "text": "Numerous biographies are devoted to her, including:"
@@ -1003,5 +1003,11 @@
     {
       "text": "The plan was announced by the Mayor of Paris, Anne Hidalgo following the recommendations of a committee led by Isabelle Vauglin of Femmes et Sciences and Jean-François Martins, representing the operating company which runs the Eiffel Tower."
     }
-  ]
+  ],
+  "description": "Polish-French physicist and chemist (1867–1934)",
+  "image": {
+    "url": "file:///android_asset/images/marie-curie.jpg",
+    "width": 960,
+    "height": 1305
+  }
 }
