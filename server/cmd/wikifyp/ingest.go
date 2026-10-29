@@ -28,6 +28,7 @@ func runIngest(ctx context.Context, args []string) error {
 	fixturesDir := fs.String("fixtures", "fixtures/articles", "fixtures directory (read by -source fixture, written by -write-fixture)")
 	writeFixture := fs.Bool("write-fixture", false, "also save each fetched article as a fixture pair")
 	refreshMeta := fs.Bool("refresh-meta", false, "fetch only lead image and description for existing fixtures (args are fixture slugs, or \"all\") and rewrite their JSON")
+	reingest := fs.Bool("reingest", false, "store the current pipeline's output for an already-stored revision as a new row (stored rows and addresses stay; the feed prefers the new row)")
 	fs.Usage = func() {
 		fmt.Fprintln(fs.Output(), "usage: wikifyp ingest [flags] <title>...")
 		fs.PrintDefaults()
@@ -101,7 +102,11 @@ func runIngest(ctx context.Context, args []string) error {
 				a.Title, slug, a.RevisionID, len(a.Links), len(a.Categories))
 		}
 		if db != nil {
-			res, err := ingest.Article(ctx, db, a)
+			store := ingest.Article
+			if *reingest {
+				store = ingest.Reingest
+			}
+			res, err := store(ctx, db, a)
 			if err != nil {
 				return err
 			}

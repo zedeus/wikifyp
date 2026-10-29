@@ -101,18 +101,20 @@ func handleFeed(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{"articles": cards})
 }
 
-// articleResponse matches the bundled-asset article format the app reads,
-// so a downloaded article and a bundled one are the same thing to it.
-type articleResponse struct {
+// ArticleResponse is the article wire format the app reads. The bundled
+// assets carry the same shape (export-assets writes this type), so a
+// downloaded article and a bundled one are the same thing to the app and
+// the two cannot drift.
+type ArticleResponse struct {
 	ID          int64              `json:"id"`
 	Title       string             `json:"title"`
 	Attribution string             `json:"attribution"`
 	Description string             `json:"description,omitempty"`
 	Image       *feed.Image        `json:"image,omitempty"`
-	Sentences   []sentenceResponse `json:"sentences"`
+	Sentences   []SentenceResponse `json:"sentences"`
 }
 
-type sentenceResponse struct {
+type SentenceResponse struct {
 	Text         string `json:"text"`
 	HeadingLevel int    `json:"heading_level,omitempty"`
 }
@@ -125,7 +127,7 @@ func handleArticle(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "article id must be a number", http.StatusBadRequest)
 		return
 	}
-	resp := articleResponse{ID: id, Sentences: []sentenceResponse{}}
+	resp := ArticleResponse{ID: id, Sentences: []SentenceResponse{}}
 	var desc, imgURL sql.NullString
 	var imgW, imgH sql.NullInt32
 	err = db.QueryRowContext(r.Context(),
@@ -149,7 +151,7 @@ func handleArticle(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var s sentenceResponse
+		var s SentenceResponse
 		if err := rows.Scan(&s.Text, &s.HeadingLevel); err != nil {
 			serverError(w, err)
 			return

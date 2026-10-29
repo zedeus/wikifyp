@@ -35,9 +35,11 @@ func main() {
 		err = runImportDump(ctx, os.Args[2:])
 	case os.Args[1] == "fetch-categories":
 		err = runFetchCategories(ctx, os.Args[2:])
+	case os.Args[1] == "export-assets":
+		err = runExportAssets(ctx, os.Args[2:])
 	default:
 		// A typo must not silently start the server instead of ingesting.
-		err = fmt.Errorf("unknown command %q (commands are \"ingest\", \"import-dump\" and \"fetch-categories\"; run with no arguments to serve)", os.Args[1])
+		err = fmt.Errorf("unknown command %q (commands are \"ingest\", \"import-dump\", \"fetch-categories\" and \"export-assets\"; run with no arguments to serve)", os.Args[1])
 	}
 	if err != nil {
 		log.Fatal(err)
