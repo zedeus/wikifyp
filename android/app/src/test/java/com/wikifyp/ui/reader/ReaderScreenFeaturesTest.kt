@@ -1,8 +1,15 @@
 package com.wikifyp.ui.reader
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onFirst
@@ -54,15 +61,19 @@ class ReaderScreenFeaturesTest {
 
     private val events = mutableListOf<ReadingEvent>()
     private var nextCalls = 0
-    private var savedCalls = 0
+    private val savedChanges = mutableListOf<Boolean>()
 
     private fun show(
         clock: FakeClock,
         upNext: FeedCard? = nextCard,
         saved: Boolean = false,
+        settings: ReaderSettings = ReaderSettings(),
     ) {
         events.clear()
         compose.setContent {
+            // Mirror the real wiring: the saved flag is state the reader
+            // reports changes to, so a toggle on screen toggles the prop.
+            var savedState by remember { mutableStateOf(saved) }
             WikifypTheme {
                 ReaderScreen(
                     articleTitle = "Test",
@@ -70,10 +81,14 @@ class ReaderScreenFeaturesTest {
                     articleId = 1L,
                     clock = clock,
                     onEvent = { events.add(it) },
+                    settings = settings,
                     upNext = upNext,
                     onNext = { nextCalls++ },
-                    saved = saved,
-                    onSaved = { savedCalls++ },
+                    saved = savedState,
+                    onSavedChange = {
+                        savedState = it
+                        savedChanges.add(it)
+                    },
                 )
             }
         }
@@ -101,6 +116,26 @@ class ReaderScreenFeaturesTest {
         // Paused in the lead section: labelled with the article title.
         // (Crossing into a named section is covered by the TOC jump test.)
         compose.onNodeWithTag("sectionLabel").assertTextEquals("Test")
+    }
+
+    @Test
+    fun sectionLabelHiddenModeNeverShows() {
+        val clock = FakeClock()
+        show(clock, settings = ReaderSettings(sectionLabel = SectionLabelMode.HIDDEN))
+        hold(clock)
+        pause()
+        compose.onNodeWithTag("sectionLabel").assertDoesNotExist()
+    }
+
+    @Test
+    fun sectionLabelAlwaysModeShowsWhilePlaying() {
+        val clock = FakeClock()
+        show(clock, settings = ReaderSettings(sectionLabel = SectionLabelMode.ALWAYS))
+        hold(clock)
+        // Still playing (finger down): auto mode would be receding the
+        // label by now, always keeps it labelled.
+        compose.onNodeWithTag("sectionLabel").assertTextEquals("Test")
+        pause()
     }
 
     // --- Table of contents ---
@@ -138,20 +173,47 @@ class ReaderScreenFeaturesTest {
         compose.waitForIdle()
 
         assertEquals(listOf(EventType.SAVE), events.map { it.type })
-        assertEquals(1, savedCalls)
+        assertEquals(listOf(true), savedChanges)
         compose.onNodeWithTag("savedPill").assertIsDisplayed()
     }
 
     @Test
-    fun saveWhenAlreadySavedDoesNothing() {
+    fun saveButtonTogglesTheBookmarkOff() {
         val clock = FakeClock()
         show(clock, saved = true)
 
         compose.onNodeWithTag("saveButton").performClick()
         compose.waitForIdle()
 
-        assertTrue(events.isEmpty())
-        assertEquals(0, savedCalls)
+        assertEquals(listOf(EventType.UNSAVE), events.map { it.type })
+        assertEquals(listOf(false), savedChanges)
+    }
+
+    @Test
+    fun finishUnsavesOnlyWhenTheSettingIsOn() {
+        val clock = FakeClock()
+        show(clock, saved = true, settings = ReaderSettings(autoUnsaveOnFinish = true))
+        hold(clock)
+        clock.advanceBy(60_000) // play to the end
+        compose.waitForIdle()
+        pause()
+
+        // The finish raised the auto-unsave: the bookmark came off.
+        assertEquals(listOf(EventType.UNSAVE), events.filter { it.type == EventType.UNSAVE }.map { it.type })
+        assertEquals(listOf(false), savedChanges)
+    }
+
+    @Test
+    fun finishKeepsTheBookmarkByDefault() {
+        val clock = FakeClock()
+        show(clock, saved = true)
+        hold(clock)
+        clock.advanceBy(60_000)
+        compose.waitForIdle()
+        pause()
+
+        assertTrue("unsave emitted: ${events.map { it.type }}", events.none { it.type == EventType.UNSAVE })
+        assertTrue("saved changed: $savedChanges", savedChanges.isEmpty())
     }
 
     // --- Next article ---
@@ -222,5 +284,57 @@ class ReaderScreenFeaturesTest {
         compose.onNodeWithTag("bottomChrome").assertIsDisplayed()
         // The back button still works over the open overlay.
         compose.onAllNodesWithTag("backButton").onFirst().assertIsDisplayed()
+    }
+
+    // --- Collapsible sections in browse ---
+
+    private fun openBrowse() {
+        compose.onNodeWithTag("readerSurface").performTouchInput {
+            down(center)
+            moveBy(Offset(0f, -300f))
+            up()
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag("browseOverlay").assertIsDisplayed()
+    }
+
+    @Test
+    fun browseHeadingFoldsAndUnfoldsItsSection() {
+        val clock = FakeClock()
+        show(clock)
+        openBrowse()
+        compose.onNodeWithText("jumps over the lazy dog.").assertIsDisplayed()
+
+        compose.onNodeWithTag("browseHeading").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("jumps over the lazy dog.").assertDoesNotExist()
+        // The lead block has no heading to fold under and stays.
+        compose.onNodeWithText("The quick brown fox").assertIsDisplayed()
+
+        compose.onNodeWithTag("browseHeading").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("jumps over the lazy dog.").assertIsDisplayed()
+    }
+
+    @Test
+    fun jumpIntoCollapsedSectionUnfoldsIt() {
+        val clock = FakeClock()
+        show(clock)
+        openBrowse()
+        compose.onNodeWithTag("browseHeading").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("jumps over the lazy dog.").assertDoesNotExist()
+
+        // Jump into the folded section through the table of contents (the
+        // chrome stays pinned over browse): the fold must open, or the
+        // highlighted word would be invisible.
+        compose.onNodeWithTag("tocButton").performClick()
+        compose.waitForIdle()
+        compose
+            .onNode(hasText("History") and hasAnyAncestor(hasTestTag("tocSheet")))
+            .performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("jumps over the lazy dog.").assertIsDisplayed()
     }
 }

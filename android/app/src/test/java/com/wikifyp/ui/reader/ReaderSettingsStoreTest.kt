@@ -36,6 +36,8 @@ class ReaderSettingsStoreTest {
                 theme = ReaderTheme.BLACK,
                 bionic = true,
                 focusMode = false,
+                sectionLabel = SectionLabelMode.ALWAYS,
+                autoUnsaveOnFinish = true,
             )
         store.save(settings)
         assertEquals(settings, store.load())
@@ -62,5 +64,11 @@ class ReaderSettingsStoreTest {
     fun unknownThemeNameFallsBackToDefault() {
         prefs.edit().putString("readerTheme", "SOLARIZED").apply()
         assertEquals(ReaderTheme.SYSTEM, store.load().theme)
+    }
+
+    @Test
+    fun unknownSectionLabelModeFallsBackToDefault() {
+        prefs.edit().putString("readerSectionLabel", "SOMETIMES").apply()
+        assertEquals(SectionLabelMode.AUTO, store.load().sectionLabel)
     }
 }

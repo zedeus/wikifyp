@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,7 +37,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.wikifyp.data.FeedCard
+import com.wikifyp.theme.BlueSoft
 import com.wikifyp.theme.Reading
 import com.wikifyp.theme.Spacing
 import com.wikifyp.ui.components.PrimaryButton
@@ -53,6 +56,7 @@ fun FeedScreen(
     onCardClick: (FeedCard) -> Unit,
     onRetry: () -> Unit,
     onOpenSettings: () -> Unit = {},
+    onOpenSaved: () -> Unit = {},
     notice: String? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -63,7 +67,7 @@ fun FeedScreen(
                     .safeDrawingPadding()
                     .fillMaxSize(),
         ) {
-            TopBar(onOpenSettings)
+            TopBar(onOpenSettings, onOpenSaved)
             if (state is FeedState.Content && state.offline) {
                 Banner("Offline — showing your last feed", Modifier.testTag("offlineBanner"))
             }
@@ -98,7 +102,10 @@ fun FeedScreen(
 }
 
 @Composable
-private fun TopBar(onOpenSettings: () -> Unit) {
+private fun TopBar(
+    onOpenSettings: () -> Unit,
+    onOpenSaved: () -> Unit,
+) {
     Row(
         modifier =
             Modifier
@@ -112,6 +119,16 @@ private fun TopBar(onOpenSettings: () -> Unit) {
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.weight(1f),
         )
+        IconButton(
+            onClick = onOpenSaved,
+            modifier = Modifier.testTag("savedListButton"),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.BookmarkBorder,
+                contentDescription = "Saved articles",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         IconButton(
             onClick = onOpenSettings,
             modifier = Modifier.testTag("feedSettingsButton"),
@@ -179,10 +196,10 @@ private val HeroScrim =
         0f to Color.Transparent,
         0.18f to Color.Black.copy(alpha = 0.05f),
         0.38f to Color.Black.copy(alpha = 0.15f),
-        0.58f to Color.Black.copy(alpha = 0.30f),
-        0.76f to Color.Black.copy(alpha = 0.50f),
-        0.90f to Color.Black.copy(alpha = 0.70f),
-        1f to Color.Black.copy(alpha = 0.80f),
+        0.58f to Color.Black.copy(alpha = 0.35f),
+        0.76f to Color.Black.copy(alpha = 0.58f),
+        0.90f to Color.Black.copy(alpha = 0.76f),
+        1f to Color.Black.copy(alpha = 0.85f),
     )
 
 /** The lead article: full-width image, title on an eased scrim, excerpt. */
@@ -221,6 +238,18 @@ private fun HeroCard(
                         .align(Alignment.BottomStart)
                         .padding(Spacing.md),
             ) {
+                // The scrim is dark in every theme, so the eyebrow keeps
+                // the soft (dark-surface) accent rather than the theme's.
+                Text(
+                    text = "FEATURED",
+                    style =
+                        MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 1.2.sp,
+                        ),
+                    color = BlueSoft,
+                )
+                Spacer(Modifier.height(2.dp))
                 Text(
                     text = card.title,
                     style = MaterialTheme.typography.headlineMedium,
@@ -257,7 +286,7 @@ private fun HeroCard(
 
 /** One article in the grouped list: text left, thumbnail right. */
 @Composable
-private fun FeedRow(
+internal fun FeedRow(
     card: FeedCard,
     shape: Shape,
     onClick: () -> Unit,
@@ -360,7 +389,7 @@ private fun Message(
 }
 
 @Composable
-private fun Banner(
+internal fun Banner(
     text: String,
     modifier: Modifier = Modifier,
 ) {

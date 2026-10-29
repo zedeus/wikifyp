@@ -216,6 +216,91 @@ class WikifypAppTest {
     }
 
     @Test
+    fun savedArticlesShowOnTheSavedScreenAndOpenFromIt() {
+        var stored: List<com.wikifyp.data.FeedCard>? = null
+        val repository =
+            FakeFeedRepository(
+                onFeed = {
+                    FeedResult(
+                        listOf(
+                            testCard(id = 1, title = "Chemistry"),
+                            testCard(id = 2, title = "Physics"),
+                        ),
+                    )
+                },
+                onArticle = { testArticle(it, title = if (it == 1L) "Chemistry" else "Physics") },
+            )
+        compose.setContent {
+            backOwner = LocalOnBackPressedDispatcherOwner.current
+            WikifypTheme {
+                WikifypApp(
+                    repository = repository,
+                    clock = clock,
+                    onSavedChange = { stored = it },
+                )
+            }
+        }
+
+        // Bookmark Chemistry in the reader; the snapshot reaches the store.
+        compose.onNodeWithText("Chemistry").performClick()
+        compose.onNodeWithTag("saveButton").performClick()
+        compose.waitForIdle()
+        org.junit.Assert.assertEquals(listOf("Chemistry"), stored?.map { it.title })
+
+        // The Saved screen lists it, and tapping it opens the reader.
+        compose.onNodeWithTag("backButton").performClick()
+        compose.onNodeWithTag("savedListButton").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("savedList").assertIsDisplayed()
+        compose.onNodeWithText("Chemistry").performClick()
+        compose.onNodeWithTag("idleHint").assertIsDisplayed()
+
+        // Unsaving removes it: the Saved screen is empty again on return.
+        compose.onNodeWithTag("saveButton").performClick()
+        compose.waitForIdle()
+        org.junit.Assert.assertEquals(emptyList<String>(), stored?.map { it.title })
+        compose.onNodeWithTag("backButton").performClick()
+        compose.onNodeWithText("Nothing saved yet").assertIsDisplayed()
+    }
+
+    @Test
+    fun savedScreenShowsAnEmptyStateAndGoesBack() {
+        show(
+            FakeFeedRepository(
+                onFeed = { FeedResult(listOf(testCard())) },
+                onArticle = { testArticle(it) },
+            ),
+        )
+        compose.onNodeWithTag("savedListButton").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Nothing saved yet").assertIsDisplayed()
+        compose.onNodeWithTag("savedBackButton").performClick()
+        compose.onNodeWithTag("feedList").assertIsDisplayed()
+    }
+
+    @Test
+    fun bookmarksPassedInAtStartAreListed() {
+        // A restart hands the persisted snapshots back in: the Saved screen
+        // lists them even when the feed no longer carries the article.
+        compose.setContent {
+            WikifypTheme {
+                WikifypApp(
+                    repository =
+                        FakeFeedRepository(
+                            onFeed = { FeedResult(emptyList()) },
+                            onArticle = { testArticle(it) },
+                        ),
+                    clock = clock,
+                    initialSaved = listOf(testCard(id = 9, title = "Kept Bookmark")),
+                )
+            }
+        }
+        compose.onNodeWithTag("savedListButton").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Kept Bookmark").assertIsDisplayed()
+    }
+
+    @Test
     fun feedPageOpensReaderSettings() {
         show(
             FakeFeedRepository(

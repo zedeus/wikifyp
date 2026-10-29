@@ -15,6 +15,7 @@ import com.wikifyp.data.FeedCache
 import com.wikifyp.data.FeedRepository
 import com.wikifyp.data.FixtureFeedRepository
 import com.wikifyp.data.HttpFeedRepository
+import com.wikifyp.data.SavedStore
 import com.wikifyp.reader.EventListener
 import com.wikifyp.theme.WikifypTheme
 import com.wikifyp.ui.WikifypApp
@@ -45,12 +46,16 @@ class MainActivity : ComponentActivity() {
                 val prefs = getSharedPreferences("wikifyp", Context.MODE_PRIVATE)
                 val settingsStore = remember { ReaderSettingsStore(prefs) }
                 val initialSettings = remember { settingsStore.load() }
+                val savedStore = remember { SavedStore(prefs) }
+                val initialSaved = remember { savedStore.load() }
                 WikifypApp(
                     repository = repository,
                     clock = clock,
                     eventListener = eventListener,
                     initialReaderSettings = initialSettings,
                     onReaderSettingsChange = settingsStore::save,
+                    initialSaved = initialSaved,
+                    onSavedChange = savedStore::save,
                 )
             }
         }

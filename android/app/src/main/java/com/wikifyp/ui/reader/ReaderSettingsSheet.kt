@@ -144,6 +144,30 @@ internal fun ReaderSettingsSheetContent(
             testTag = "focusModeToggle",
             onChange = { onSettingsChange(settings.copy(focusMode = it)) },
         )
+        SettingToggle(
+            label = "Unsave on finish",
+            description = "Drop the bookmark when you finish an article",
+            checked = settings.autoUnsaveOnFinish,
+            palette = palette,
+            testTag = "autoUnsaveToggle",
+            onChange = { onSettingsChange(settings.copy(autoUnsaveOnFinish = it)) },
+        )
+
+        Spacer(Modifier.height(Spacing.md))
+
+        Text(
+            text = "Section label",
+            style = MaterialTheme.typography.labelLarge,
+            color = palette.chrome,
+        )
+        Spacer(Modifier.height(Spacing.sm))
+        OptionRow(
+            options = SectionLabelMode.entries,
+            selected = settings.sectionLabel,
+            palette = palette,
+            tagPrefix = "label",
+            onChange = { onSettingsChange(settings.copy(sectionLabel = it)) },
+        )
 
         Spacer(Modifier.height(Spacing.md))
 
@@ -153,9 +177,11 @@ internal fun ReaderSettingsSheetContent(
             color = palette.chrome,
         )
         Spacer(Modifier.height(Spacing.sm))
-        ThemeRow(
+        OptionRow(
+            options = ReaderTheme.entries,
             selected = settings.theme,
             palette = palette,
+            tagPrefix = "theme",
             onChange = { onSettingsChange(settings.copy(theme = it)) },
         )
     }
@@ -246,18 +272,21 @@ private fun SettingToggle(
     }
 }
 
+/** A row of exclusive choice chips; the tag is `tagPrefix` + entry name. */
 @Composable
-private fun ThemeRow(
-    selected: ReaderTheme,
+private fun <T : Enum<T>> OptionRow(
+    options: List<T>,
+    selected: T,
     palette: ReaderPalette,
-    onChange: (ReaderTheme) -> Unit,
+    tagPrefix: String,
+    onChange: (T) -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
-        ReaderTheme.entries.forEach { theme ->
-            val isSelected = theme == selected
+        options.forEach { option ->
+            val isSelected = option == selected
             Box(
                 modifier =
                     Modifier
@@ -270,14 +299,14 @@ private fun ThemeRow(
                                     palette.ghost.copy(alpha = 0.12f)
                                 },
                             shape = MaterialTheme.shapes.small,
-                        ).clickable { onChange(theme) }
+                        ).clickable { onChange(option) }
                         .padding(vertical = Spacing.sm)
-                        .testTag("theme${theme.name}"),
+                        .testTag("$tagPrefix${option.name}"),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text =
-                        theme.name.lowercase().replaceFirstChar { it.uppercase() },
+                        option.name.lowercase().replaceFirstChar { it.uppercase() },
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                     color = if (isSelected) palette.accent else palette.chrome,

@@ -124,7 +124,7 @@ fun ReaderScreen(
     upNext: FeedCard? = null,
     onNext: () -> Unit = {},
     saved: Boolean = false,
-    onSaved: () -> Unit = {},
+    onSavedChange: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     // The caller wraps the reader in key(articleId), so every remember
@@ -148,7 +148,7 @@ fun ReaderScreen(
                 }
             ReaderEngine(
                 clock,
-                EventListener { event -> onEvent.onEvent(event) },
+                onEvent,
                 onStateChanged = { sync.fn() },
                 speedScaleFor = ::rampScale,
             ).also { eng ->
@@ -169,6 +169,15 @@ fun ReaderScreen(
     DisposableEffect(settings.wpm) {
         engine.wpm = settings.wpm
         onDispose {}
+    }
+
+    // "Unsave on finish" acts on the mirrored finish state so it reads the
+    // composition's current `saved` and settings at the moment of finishing.
+    LaunchedEffect(finished) {
+        if (finished && settings.autoUnsaveOnFinish && saved) {
+            engine.unsave()
+            onSavedChange(false)
+        }
     }
 
     /** Every exit from browse: end the scrub session, drop the overlay. */
@@ -277,12 +286,15 @@ fun ReaderScreen(
                     label = "ghostFade",
                 )
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    SectionLabel(
-                        title = currentSection(sections, pos)?.title ?: articleTitle,
-                        playing = readerState == ReaderState.PLAYING,
-                        palette = palette,
-                    )
-                    Spacer(Modifier.height(Spacing.md))
+                    if (settings.sectionLabel != SectionLabelMode.HIDDEN) {
+                        SectionLabel(
+                            title = currentSection(sections, pos)?.title ?: articleTitle,
+                            playing = readerState == ReaderState.PLAYING,
+                            always = settings.sectionLabel == SectionLabelMode.ALWAYS,
+                            palette = palette,
+                        )
+                        Spacer(Modifier.height(Spacing.md))
+                    }
                     FocalLine(
                         allTokens = allTokens,
                         pos = pos,
@@ -349,9 +361,12 @@ fun ReaderScreen(
                     onBack = exitArticle,
                     onToc = { showToc = true },
                     onSave = {
-                        if (!saved) {
+                        if (saved) {
+                            engine.unsave()
+                            onSavedChange(false)
+                        } else {
                             engine.save()
-                            onSaved()
+                            onSavedChange(true)
                             savedPill = true
                         }
                     },
@@ -527,13 +542,14 @@ private fun IdleHint(palette: ReaderPalette) {
 private fun SectionLabel(
     title: String,
     playing: Boolean,
+    always: Boolean,
     palette: ReaderPalette,
 ) {
     val alpha = remember { Animatable(1f) }
     var restingTitle by remember { mutableStateOf(title) }
 
-    LaunchedEffect(title, playing) {
-        if (!playing) {
+    LaunchedEffect(title, playing, always) {
+        if (always || !playing) {
             restingTitle = title
             alpha.animateTo(1f, tween(Motion.STANDARD_MS, easing = Motion.Settle))
             return@LaunchedEffect

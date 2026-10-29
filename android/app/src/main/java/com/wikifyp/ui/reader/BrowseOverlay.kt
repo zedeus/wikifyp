@@ -6,14 +6,18 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -97,6 +101,32 @@ internal fun BrowseOverlay(
 
     val listState = rememberLazyListState()
 
+    // Collapsible sections, official-app style: tapping a heading folds
+    // its body blocks away. Keyed by the heading's block index; the lead
+    // blocks before the first heading have no heading to fold under.
+    var collapsed by remember { mutableStateOf(setOf<Int>()) }
+    val headingOf =
+        remember(blocks) {
+            IntArray(blocks.size).also { arr ->
+                var heading = -1
+                for ((i, block) in blocks.withIndex()) {
+                    if (block.isHeading) heading = i
+                    arr[i] = heading
+                }
+            }
+        }
+
+    // A jump into a folded section (table of contents, scrub) unfolds it,
+    // or the highlighted word would be invisible. With nothing folded —
+    // the common case — skip the block scan the effect would otherwise
+    // run on every word the highlight advances.
+    LaunchedEffect(highlightFlat.intValue) {
+        if (collapsed.isEmpty()) return@LaunchedEffect
+        val block = blockIndexFor(blocks, highlightFlat.intValue)
+        val heading = headingOf.getOrNull(block) ?: -1
+        if (heading in collapsed) collapsed = collapsed - heading
+    }
+
     // Centre the block holding the current word when the overlay opens;
     // the viewport size is only known after the first layout.
     LaunchedEffect(Unit) {
@@ -132,17 +162,32 @@ internal fun BrowseOverlay(
                     bottom = bottomPadding + Spacing.xxl,
                 ),
         ) {
-            items(blocks) { block ->
-                BrowseBlockText(
-                    block = block,
-                    currentFlat = highlightFlat.intValue,
-                    palette = palette,
-                    settings = settings,
-                    onTapWord = stableOnTapWord,
-                    onTapBackground = stableOnTapBackground,
-                    onHold = stableOnHold,
-                    onRelease = stableOnRelease,
-                )
+            itemsIndexed(blocks) { index, block ->
+                if (block.isHeading) {
+                    BrowseHeading(
+                        block = block,
+                        collapsed = index in collapsed,
+                        palette = palette,
+                        settings = settings,
+                        onToggle = {
+                            collapsed =
+                                if (index in collapsed) collapsed - index else collapsed + index
+                        },
+                        onHold = stableOnHold,
+                        onRelease = stableOnRelease,
+                    )
+                } else if (headingOf[index] !in collapsed) {
+                    BrowseBlockText(
+                        block = block,
+                        currentFlat = highlightFlat.intValue,
+                        palette = palette,
+                        settings = settings,
+                        onTapWord = stableOnTapWord,
+                        onTapBackground = stableOnTapBackground,
+                        onHold = stableOnHold,
+                        onRelease = stableOnRelease,
+                    )
+                }
             }
         }
 
@@ -181,6 +226,55 @@ private fun Modifier.browseGestures(
             },
         )
     }
+
+/**
+ * A section heading in browse: a fold handle, not a jump target — tap
+ * folds or unfolds the section's body; hold still resumes reading. Jumps
+ * into sections go through the body words or the table of contents.
+ */
+@Composable
+private fun BrowseHeading(
+    block: BrowseBlock,
+    collapsed: Boolean,
+    palette: ReaderPalette,
+    settings: ReaderSettings,
+    onToggle: () -> Unit,
+    onHold: () -> Unit,
+    onRelease: () -> Unit,
+) {
+    val base = MaterialTheme.typography.titleLarge
+    val style = remember(base, settings) { settings.scaledStyle(base) }
+    val chevron by animateFloatAsState(
+        targetValue = if (collapsed) -90f else 0f,
+        animationSpec = tween(Motion.QUICK_MS, easing = Motion.Settle),
+        label = "chevron",
+    )
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(top = Spacing.lg, bottom = Spacing.xs)
+                .browseGestures(
+                    onHold = onHold,
+                    onRelease = onRelease,
+                    onTap = { onToggle() },
+                ).testTag("browseHeading"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = block.text,
+            style = style,
+            color = palette.word,
+            modifier = Modifier.weight(1f),
+        )
+        Icon(
+            imageVector = Icons.Filled.KeyboardArrowDown,
+            contentDescription = if (collapsed) "Expand section" else "Collapse section",
+            tint = palette.chrome,
+            modifier = Modifier.graphicsLayer { rotationZ = chevron },
+        )
+    }
+}
 
 @Composable
 private fun BrowseBlockText(

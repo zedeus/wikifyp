@@ -11,12 +11,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.wikifyp.data.Article
+import com.wikifyp.data.FeedCard
 import com.wikifyp.data.FeedRepository
+import com.wikifyp.data.toFeedCard
 import com.wikifyp.data.toSentenceTokens
 import com.wikifyp.reader.EventListener
 import com.wikifyp.reader.ReaderClock
 import com.wikifyp.ui.feed.FeedScreen
 import com.wikifyp.ui.feed.FeedState
+import com.wikifyp.ui.feed.SavedScreen
 import com.wikifyp.ui.feed.loadFeed
 import com.wikifyp.ui.reader.ReaderScreen
 import com.wikifyp.ui.reader.ReaderSettings
@@ -35,6 +38,8 @@ fun WikifypApp(
     eventListener: EventListener = EventListener {},
     initialReaderSettings: ReaderSettings = ReaderSettings(),
     onReaderSettingsChange: (ReaderSettings) -> Unit = {},
+    initialSaved: List<FeedCard> = emptyList(),
+    onSavedChange: (List<FeedCard>) -> Unit = {},
 ) {
     var feedState by remember { mutableStateOf<FeedState>(FeedState.Loading) }
     var retry by remember { mutableIntStateOf(0) }
@@ -58,9 +63,15 @@ fun WikifypApp(
     }
     var showFeedSettings by remember { mutableStateOf(false) }
 
-    // Which articles this session bookmarked, for the save button's state.
-    // The durable record is the save event; this only drives the icon.
-    var savedIds by rememberSaveable { mutableStateOf(setOf<Long>()) }
+    // The reader's bookmarks, newest first, persisted through the caller's
+    // store so the Saved screen survives restarts. The durable cross-device
+    // record is the save/unsave event stream.
+    var savedCards by remember { mutableStateOf(initialSaved) }
+    val updateSaved: (List<FeedCard>) -> Unit = {
+        savedCards = it
+        onSavedChange(it)
+    }
+    var showSaved by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(retry) {
         feedState = FeedState.Loading
@@ -121,10 +132,34 @@ fun WikifypApp(
                     notice = null
                     openArticleId = upNext?.id
                 },
-                saved = current.id in savedIds,
-                onSaved = { savedIds = savedIds + current.id },
+                saved = savedCards.any { it.id == current.id },
+                onSavedChange = { nowSaved ->
+                    // A save normally means the article is not in the list
+                    // yet, but filter its id anyway: the Saved list is
+                    // keyed by id, and a doubled entry would crash it.
+                    val others = savedCards.filter { it.id != current.id }
+                    updateSaved(
+                        if (nowSaved) {
+                            listOf(cardFor(current, feedState)) + others
+                        } else {
+                            others
+                        },
+                    )
+                },
             )
         }
+    } else if (showSaved) {
+        SavedScreen(
+            cards = savedCards,
+            onCardClick = { card ->
+                notice = null
+                openArticleId = card.id
+            },
+            onBack = { showSaved = false },
+            // A failed open bounces back here, so the error banner must
+            // show here too — not only on the feed behind it.
+            notice = notice,
+        )
     } else {
         FeedScreen(
             state = feedState,
@@ -137,6 +172,7 @@ fun WikifypApp(
                 retry++
             },
             onOpenSettings = { showFeedSettings = true },
+            onOpenSaved = { showSaved = true },
             notice = notice,
         )
         if (showFeedSettings) {
@@ -151,3 +187,15 @@ fun WikifypApp(
         }
     }
 }
+
+/**
+ * The card snapshot stored for a bookmark: the feed's card when the
+ * article is in it, otherwise one derived from the article itself, so
+ * saving never depends on the feed still listing the page.
+ */
+private fun cardFor(
+    article: Article,
+    feedState: FeedState,
+): FeedCard =
+    (feedState as? FeedState.Content)?.cards?.find { it.id == article.id }
+        ?: article.toFeedCard(source = "")

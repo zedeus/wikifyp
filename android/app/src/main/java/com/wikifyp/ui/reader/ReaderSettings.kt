@@ -19,6 +19,16 @@ enum class ReaderTheme {
     BLACK,
 }
 
+/** When the current section's heading shows above the focal line. */
+enum class SectionLabelMode {
+    /** Resting while paused, a brief flash on section changes while playing. */
+    AUTO,
+
+    /** Always visible, playing or not. */
+    ALWAYS,
+    HIDDEN,
+}
+
 /**
  * The reader's appearance and behaviour settings. Persisted via
  * [ReaderSettingsStore] so they carry across articles and launches.
@@ -39,6 +49,10 @@ data class ReaderSettings(
     val bionic: Boolean = false,
     /** Hide the chrome (title, progress, WPM) while playing. */
     val focusMode: Boolean = true,
+    /** When the current section's heading shows above the focal line. */
+    val sectionLabel: SectionLabelMode = SectionLabelMode.AUTO,
+    /** Drop the bookmark automatically when an article is finished. */
+    val autoUnsaveOnFinish: Boolean = false,
 ) {
     companion object {
         const val WPM_MIN = 100
@@ -98,6 +112,12 @@ class ReaderSettingsStore(
                 } ?: d.theme,
             bionic = prefs.getBoolean(KEY_BIONIC, d.bionic),
             focusMode = prefs.getBoolean(KEY_FOCUS_MODE, d.focusMode),
+            sectionLabel =
+                prefs.getString(KEY_SECTION_LABEL, null)?.let { stored ->
+                    SectionLabelMode.entries.find { it.name == stored }
+                } ?: d.sectionLabel,
+            autoUnsaveOnFinish =
+                prefs.getBoolean(KEY_AUTO_UNSAVE, d.autoUnsaveOnFinish),
         )
     }
 
@@ -111,6 +131,8 @@ class ReaderSettingsStore(
             putString(KEY_THEME, settings.theme.name)
             putBoolean(KEY_BIONIC, settings.bionic)
             putBoolean(KEY_FOCUS_MODE, settings.focusMode)
+            putString(KEY_SECTION_LABEL, settings.sectionLabel.name)
+            putBoolean(KEY_AUTO_UNSAVE, settings.autoUnsaveOnFinish)
         }
     }
 
@@ -125,5 +147,7 @@ class ReaderSettingsStore(
         const val KEY_THEME = "readerTheme"
         const val KEY_BIONIC = "readerBionic"
         const val KEY_FOCUS_MODE = "readerFocusMode"
+        const val KEY_SECTION_LABEL = "readerSectionLabel"
+        const val KEY_AUTO_UNSAVE = "readerAutoUnsave"
     }
 }
