@@ -1,0 +1,33 @@
+android/reader/src/test/java/com/wikifyp/reader/ReaderEngineSeekTest.kt
+  s_93a39d8e580894::t_ae4f9caf3bfea1 82-88
+android/reader/src/main/java/com/wikifyp/reader/ReaderEngine.kt
+  s_93a39d8e580894::t_5844bf356adc91 255-260
+android/reader/src/main/java/com/wikifyp/reader/ReadingEvent.kt
+  s_93a39d8e580894::t_1867d639cb1fa8 54-56
+docs/events.md
+  s_93a39d8e580894::t_847becbf94b4e2 5-6
+  s_93a39d8e580894::t_bf4fee70bac31f 63-65
+  s_93a39d8e580894::t_0c97da7f5bd3f1 26
+  s_93a39d8e580894::t_0b046763d6b726 78
+android/reader/src/test/java/com/wikifyp/reader/ReadingEventTest.kt
+  s_93a39d8e580894::t_67ac8bb76171d7 82-87
+  s_93a39d8e580894::t_9d550b21636a5e 81
+fixtures/events/unsave.json
+  s_93a39d8e580894::t_d1623b0c5bb504 1-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ad8317b49a01470d2a91f2d5a5a72d52a461e77d",
+  "prompts": {},
+  "sessions": {
+    "s_93a39d8e580894": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b9316065-a025-4991-8866-5f0d6e55ccc6",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
