@@ -48,6 +48,9 @@ enum class EventType {
 
     @SerialName("skip")
     SKIP,
+
+    @SerialName("save")
+    SAVE,
 }
 
 /** JSON codec for reading events; lenient on unknown keys for forward compat. */

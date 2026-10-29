@@ -47,6 +47,66 @@ class ReaderEngineSeekTest {
         assertEquals(ReaderState.SCRUBBING, engine.state)
     }
 
+    // --- save ---
+
+    @Test
+    fun saveEmitsEventAtCurrentPositionWithoutChangingState() {
+        startScrubbing()
+        engine.seekTo(3) // "Dogs"
+        engine.onTouchUp() // pause there
+        events.clear()
+
+        engine.save()
+
+        assertEquals(ReaderState.PAUSED, engine.state)
+        assertEquals(1, events.size)
+        assertEquals(EventType.SAVE, events[0].type)
+        assertEquals(TokenAddress(42, 1, 0), events[0].token)
+    }
+
+    @Test
+    fun saveWorksFromIdleBeforeAnyPlay() {
+        engine.save()
+        assertEquals(ReaderState.IDLE, engine.state)
+        assertEquals(listOf(EventType.SAVE), events.map { it.type })
+        assertEquals(TokenAddress(42, 0, 0), events[0].token)
+    }
+
+    @Test
+    fun saveWithNoContentEmitsNothing() {
+        engine.load(articleId = 7, sentences = emptyList())
+        engine.save()
+        assertEquals(0, events.size)
+    }
+
+    // --- jumpTo ---
+
+    @Test
+    fun jumpToLandsPausedAndReportsScrollBack() {
+        holdAndPlay()
+        engine.onTouchUp() // pause at 0
+        events.clear()
+
+        engine.jumpTo(3)
+
+        assertEquals(ReaderState.PAUSED, engine.state)
+        assertEquals(3, engine.currentPosition())
+        assertEquals(listOf(EventType.SCROLL_BACK), events.map { it.type })
+        assertEquals(TokenAddress(42, 1, 0), events[0].landedToken)
+    }
+
+    @Test
+    fun jumpToSamePositionEmitsNothing() {
+        holdAndPlay()
+        engine.onTouchUp()
+        events.clear()
+
+        engine.jumpTo(engine.currentPosition())
+
+        assertEquals(ReaderState.PAUSED, engine.state)
+        assertEquals(0, events.size)
+    }
+
     // --- seekTo ---
 
     @Test

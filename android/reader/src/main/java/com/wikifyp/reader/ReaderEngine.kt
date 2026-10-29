@@ -220,6 +220,19 @@ class ReaderEngine(
     }
 
     /**
+     * Jump straight to a flat token index: a deliberate reposition (table
+     * of contents, a future deep link). A jump is a drag that starts and
+     * lands in one step — it reports the same scroll_back event and
+     * settles PAUSED on the target — so every jump entry point shares the
+     * scrub path's event semantics instead of re-choreographing it.
+     */
+    fun jumpTo(flatIndex: Int) {
+        onDragStart()
+        seekTo(flatIndex)
+        onTouchUp()
+    }
+
+    /**
      * Signal a double-tap (ask event).
      */
     fun onDoubleTap() {
@@ -227,6 +240,16 @@ class ReaderEngine(
         if (sentences.isEmpty()) return
         emitEvent(EventType.ASK)
         notifyChanged()
+    }
+
+    /**
+     * Save the current article for later: a point event at the current
+     * position. Playback state is untouched, so a reader can save while
+     * idle, paused or even mid-play.
+     */
+    fun save() {
+        if (sentences.isEmpty()) return
+        emitEvent(EventType.SAVE)
     }
 
     /**

@@ -2,7 +2,7 @@
 
 A reading event is a single thing that happened during a reading session:
 the reader started playing, paused, scrolled back, asked the companion,
-finished or skipped the article. Events are the raw material for friction
+finished, skipped or saved the article. Events are the raw material for friction
 analysis and profile building.
 
 ## Rules
@@ -23,7 +23,7 @@ analysis and profile building.
 | `id`             | string | yes | Client UUID (e.g. `UUID.randomUUID()`). Deduplication key. |
 | `schema_version` | int    | yes | Always `1` for this version. |
 | `session_id`     | string | yes | UUID for the reading session (one per article open). |
-| `type`           | string | yes | One of: `play`, `pause`, `scroll_back`, `ask`, `finish`, `skip`. |
+| `type`           | string | yes | One of: `play`, `pause`, `scroll_back`, `ask`, `finish`, `skip`, `save`. |
 | `timestamp`      | long   | yes | Epoch milliseconds from the reader's clock. |
 | `token`          | object | yes | Token address where the event occurred: `{article_id, sentence_idx, token_idx}`. |
 | `wpm`            | int    | yes | Words per minute at the time of the event. |
@@ -59,6 +59,9 @@ space), and its index is stable forever.
   current word/sentence.
 - **`finish`** — playback reached the end of the article.
 - **`skip`** — the reader skipped the article without finishing.
+- **`save`** — the reader saved the article to read later. The server shelves
+  it: saved articles leave the feed but still feed the interest profile. A
+  later finish or skip replaces the saved state.
 
 ## Examples
 
@@ -70,6 +73,7 @@ Valid examples are in `fixtures/events/`:
 - `ask.json` — a double-tap ask
 - `finish.json` — article finished at a different WPM
 - `skip.json` — article skipped early
+- `save.json` — article saved for later
 
 Invalid examples (for testing decoders):
 
