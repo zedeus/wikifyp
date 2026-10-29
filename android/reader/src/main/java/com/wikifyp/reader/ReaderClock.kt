@@ -54,22 +54,25 @@ class FakeClock(
         advanceTo(timeMs + ms)
     }
 
-    /** Advances time to [targetMs], firing any due actions in order. */
+    /**
+     * Advances time to [targetMs], firing any due actions in order. Each
+     * action runs with [nowMs] set to its own deadline — the time a real
+     * clock would fire it — so work it schedules relative to "now" lands
+     * where it would in production. (Jumping straight to the target first
+     * would push every rescheduled action past it, stalling chains like
+     * the engine's word-advance loop after a single step.)
+     */
     fun advanceTo(targetMs: Long) {
         require(targetMs >= timeMs) { "cannot go backwards" }
-        timeMs = targetMs
-        fireDue()
-    }
-
-    private fun fireDue() {
-        // Fire in deadline order; actions may schedule new work.
         while (true) {
             val next =
                 pending
-                    .filter { it.deadlineMs <= timeMs }
+                    .filter { it.deadlineMs <= targetMs }
                     .minByOrNull { it.deadlineMs } ?: break
             pending.remove(next)
+            timeMs = maxOf(timeMs, next.deadlineMs)
             next.action()
         }
+        timeMs = targetMs
     }
 }
