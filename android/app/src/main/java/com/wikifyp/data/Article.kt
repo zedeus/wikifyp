@@ -46,3 +46,25 @@ data class Sentence(
  */
 fun Article.toSentenceTokens(): List<SentenceTokens> =
     sentences.map { SentenceTokens(tokenize(it.text), isHeading = it.headingLevel > 0) }
+
+/**
+ * Derives the article's feed card the same way the server does: first
+ * prose sentence as the excerpt, words = tokens of every sentence. The one
+ * derivation rule serves the fixture feed and locally built cards alike.
+ */
+fun Article.toFeedCard(source: String): FeedCard =
+    FeedCard(
+        id = id,
+        title = title,
+        source = source,
+        excerpt =
+            sentences
+                .firstOrNull { it.headingLevel == 0 }
+                ?.text
+                .orEmpty(),
+        sentences = sentences.size,
+        words = sentences.sumOf { tokenize(it.text).size },
+        attribution = attribution,
+        description = description,
+        image = image,
+    )

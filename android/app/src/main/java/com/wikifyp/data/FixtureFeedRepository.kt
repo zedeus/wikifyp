@@ -1,7 +1,6 @@
 package com.wikifyp.data
 
 import android.content.Context
-import com.wikifyp.reader.tokenize
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -36,26 +35,7 @@ class FixtureFeedRepository(
             }.also { loaded = it }
         }
 
-    override suspend fun feed(): FeedResult =
-        FeedResult(
-            articles().map { article ->
-                FeedCard(
-                    id = article.id,
-                    title = article.title,
-                    source = "fixture",
-                    excerpt =
-                        article.sentences
-                            .firstOrNull { it.headingLevel == 0 }
-                            ?.text
-                            .orEmpty(),
-                    sentences = article.sentences.size,
-                    words = article.sentences.sumOf { tokenize(it.text).size },
-                    attribution = article.attribution,
-                    description = article.description,
-                    image = article.image,
-                )
-            },
-        )
+    override suspend fun feed(): FeedResult = FeedResult(articles().map { it.toFeedCard("fixture") })
 
     override suspend fun article(id: Long): Article =
         articles().firstOrNull { it.id == id }
