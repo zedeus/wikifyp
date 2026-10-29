@@ -1,0 +1,61 @@
+server/internal/feed/store.go
+  s_93a39d8e580894::t_6692e852bd0090 137-140,146-148
+  s_93a39d8e580894::t_d0c0a21a8b1948 489
+  s_93a39d8e580894::t_4bda3a744404cb 757
+  s_93a39d8e580894::t_907947df0917be 770
+  s_93a39d8e580894::t_bee3e58e2d63a3 858
+  s_93a39d8e580894::t_71309cb79dc621 743-745
+  s_93a39d8e580894::t_2cc640c62805ac 582
+  s_93a39d8e580894::t_4b7187c1a9df86 784
+  s_93a39d8e580894::t_7679fe22584846 622-623,625
+  s_93a39d8e580894::t_22d85fb5edbfb1 447-466
+  s_93a39d8e580894::t_26707aeb67c6b1 655,658,660-661
+  s_93a39d8e580894::t_55e2c4bec684ba 116-118,120-122,135-136,141-145,149-152
+  s_93a39d8e580894::t_5a9d9ec327ea25 153-155
+  s_93a39d8e580894::t_0e45f64c6ae2e9 467-468
+server/internal/event/event_test.go
+  s_93a39d8e580894::t_8162934747d4c6 153-154,174-200,202
+  s_93a39d8e580894::t_b4e1710416fbba 38
+  s_93a39d8e580894::t_da46ec48752f39 201
+  s_93a39d8e580894::t_aa47b2098d446d 203-204
+server/internal/api/api.go
+  s_93a39d8e580894::t_6c571f53a715bc 251-254,260-262
+  s_93a39d8e580894::t_c39d368f12a396 263-264
+server/internal/feed/score.go
+  s_93a39d8e580894::t_e662653bd95a3e 22-26
+server/internal/api/endpoints_test.go
+  s_93a39d8e580894::t_055c2a51ecd637 395,402-403,405-406,410,422-423,433-434,437-438,443-453
+server/cmd/feedsim/main.go
+  s_93a39d8e580894::t_7d95fd3be60a8b 1091-1094,1096-1100,1104-1105
+server/internal/migrate/migrations/0010_saved_flag.sql
+  s_93a39d8e580894::t_8b15a6a048348c 1-19
+server/internal/event/event.go
+  s_93a39d8e580894::t_31d8bdf3ecf444 56
+  s_93a39d8e580894::t_ec4d4d9d8e26c1 133-134,141-142,148-158
+  s_93a39d8e580894::t_c921f71c868891 159-160
+server/internal/devui/templates.go
+  s_93a39d8e580894::t_891b1a3b013019 72
+server/internal/feed/store_test.go
+  s_93a39d8e580894::t_12315d3f45f0e8 325-330,338-345
+  s_93a39d8e580894::t_6248b856b1113d 270-274,278-305,308-313,316-322,324,333-337,346-361,365-370,372-373
+server/internal/devui/devui.go
+  s_93a39d8e580894::t_42d2edafc2f43a 393-397,399-400,405-411
+  s_93a39d8e580894::t_8cb92f0d847a09 586-587,592-595
+  s_93a39d8e580894::t_7c134ccf71e6e7 412
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b26d8a22e6635a8be7e962cc66380e63a6e6c194",
+  "prompts": {},
+  "sessions": {
+    "s_93a39d8e580894": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b9316065-a025-4991-8866-5f0d6e55ccc6",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
