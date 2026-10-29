@@ -1,0 +1,32 @@
+server/internal/ingest/ingest.go
+  s_3411184136fb01::t_b39b3480f20721 195-199,201,207-217
+  s_3411184136fb01::t_14ddabe08054f8 119-135
+  s_3411184136fb01::t_8da3390bbdb45b 52,136
+  s_3411184136fb01::t_e98131b915235c 15,113-117
+  s_3411184136fb01::t_2f243ace7993c3 45-51,63,98,100,103,118,143-153,155,159,162,164-165,167-185
+  s_3411184136fb01::t_ed3448edd043a9 58,66-75,77-84,110,137-141
+  s_3411184136fb01::t_9e03195ac688d2 222,225
+  s_3411184136fb01::t_e37182aed6ef0e 40-42,53-57,60-62,64,85-94,99,102,104-109,142,157-158,166,186-194,200,202-206,218-221,223-224,226-240,242-243,245,247-248,250-276,278-295,309,318,339,358,360
+  s_3411184136fb01::t_48737d9e207860 44
+server/internal/migrate/migrations/0011_reingest.sql
+  s_3411184136fb01::t_ff318adcfc3872 1-30
+server/internal/ingest/ingest_test.go
+  s_3411184136fb01::t_e37182aed6ef0e 650-779
+  s_3411184136fb01::t_ab52a95ac081f6 780-806
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4f69f64b72989c58ee712f0d484ee5896d7e44ff",
+  "prompts": {},
+  "sessions": {
+    "s_3411184136fb01": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e7cea63-3828-45cc-a64c-4f22704d3ed5",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
