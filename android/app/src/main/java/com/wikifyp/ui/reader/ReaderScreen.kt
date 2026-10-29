@@ -3,6 +3,7 @@ package com.wikifyp.ui.reader
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -24,9 +25,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Toc
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,6 +40,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -45,11 +52,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.LastBaseline
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
@@ -58,9 +68,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.core.view.WindowCompat
+import com.wikifyp.data.FeedCard
 import com.wikifyp.reader.EventListener
 import com.wikifyp.reader.ReaderClock
 import com.wikifyp.reader.ReaderEngine
@@ -68,6 +80,7 @@ import com.wikifyp.reader.ReaderState
 import com.wikifyp.reader.SentenceTokens
 import com.wikifyp.theme.Motion
 import com.wikifyp.theme.Spacing
+import kotlinx.coroutines.delay
 
 // Chrome enter/exit: settle in from the nearest edge, leave quickly.
 private val chromeEnterFromTop =
@@ -85,13 +98,18 @@ private val chromeExitToBottom =
 
 /**
  * The RSVP reader screen. The surface follows the reader-theme setting
- * (paper, ink or true black); the ORP letter is offset to the configured
- * focal column with guide dashes. Ghost words surround the focal word.
+ * (paper, sepia, ink or true black); the ORP letter is offset to the
+ * configured focal column with guide dashes. Ghost words surround the
+ * focal word, and the current section's heading sits above the line —
+ * flashing briefly when playback crosses into a new section, resting
+ * visible while paused.
  *
  * Focus mode hides the chrome (title, progress, WPM) while playing and
  * brings it back on pause. A vertical drag opens the browse overlay: the
- * article as flowing text, the current word highlighted; tap a word to
- * jump there, hold to resume reading.
+ * article as flowing text under the pinned chrome, the current word
+ * highlighted; tap a word to jump there, hold to resume reading. The
+ * table of contents jumps by section, the bookmark saves the article for
+ * later, and when an article finishes the next one is one tap away.
  */
 @Composable
 fun ReaderScreen(
@@ -103,18 +121,27 @@ fun ReaderScreen(
     onBack: () -> Unit = {},
     settings: ReaderSettings = ReaderSettings(),
     onSettingsChange: (ReaderSettings) -> Unit = {},
+    upNext: FeedCard? = null,
+    onNext: () -> Unit = {},
+    saved: Boolean = false,
+    onSaved: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
+    // The caller wraps the reader in key(articleId), so every remember
+    // here is born fresh per article; nothing needs its own id key.
     var currentWord by remember { mutableStateOf("") }
     var readerState by remember { mutableStateOf(ReaderState.IDLE) }
     var position by remember { mutableIntStateOf(0) }
     var showWpmPopup by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
-    var browseOpen by remember(articleId) { mutableStateOf(false) }
-    var resumePressed by remember(articleId) { mutableStateOf(false) }
+    var showToc by remember { mutableStateOf(false) }
+    var savedPill by remember { mutableStateOf(false) }
+    var browseOpen by remember { mutableStateOf(false) }
+    var resumePressed by remember { mutableStateOf(false) }
+    var finished by remember { mutableStateOf(false) }
 
     val engine =
-        remember(articleId) {
+        remember {
             val sync =
                 object {
                     var fn: () -> Unit = {}
@@ -129,6 +156,10 @@ fun ReaderScreen(
                     currentWord = eng.currentToken() ?: ""
                     readerState = eng.state
                     position = eng.currentPosition()
+                    // Mirrored into snapshot state: composition (the
+                    // up-next card) must observe it, and a plain engine
+                    // property read wouldn't invalidate anything.
+                    finished = eng.hasFinished
                 }
                 eng.wpm = settings.wpm
                 eng.load(articleId, sentences)
@@ -148,18 +179,26 @@ fun ReaderScreen(
     }
 
     /**
-     * Leave the article, emitting a skip event first when the reader
-     * actually played it (abandonment the server should know about).
-     * Browsing without ever playing leaves the engine paused but is not
-     * a read, so it emits nothing — and neither does leaving an article
-     * that already emitted FINISH: a finished read the reader then
-     * browsed or scrubbed is not an abandonment.
+     * Emits a skip event when the reader actually abandoned the article:
+     * it played, but never finished. Browsing without playing is a
+     * preview, and leaving after FINISH is a completed read — neither is
+     * an abandonment the server should hear about.
      */
-    val exitArticle = {
+    val skipIfAbandoned = {
         if (readerState != ReaderState.IDLE && engine.hasPlayed && !engine.hasFinished) {
             engine.skip()
         }
+    }
+
+    val exitArticle = {
+        skipIfAbandoned()
         onBack()
+    }
+
+    /** Moves on to the next article, counting an unfinished read as a skip. */
+    val goNext = {
+        skipIfAbandoned()
+        onNext()
     }
 
     // System back closes the browse overlay if it is open; otherwise it
@@ -191,6 +230,7 @@ fun ReaderScreen(
 
     val totalTokens = remember(sentences) { sentences.sumOf { it.tokens.size } }
     val allTokens = remember(sentences) { sentences.flatMap { it.tokens } }
+    val sections = remember(sentences, articleTitle) { sectionIndex(sentences, articleTitle) }
 
     // Browse blocks are only needed once the overlay opens; building them
     // walks the whole article, so don't pay that on every article open.
@@ -200,6 +240,12 @@ fun ReaderScreen(
     // Focus mode: chrome leaves while playing, settles back on pause.
     val chromeVisible = !settings.focusMode || readerState != ReaderState.PLAYING
 
+    // The browse overlay slides under the pinned chrome, so its text needs
+    // to start below the top bar and end above the bottom controls.
+    val density = LocalDensity.current
+    var topChromeHeight by remember { mutableStateOf(0.dp) }
+    var bottomChromeHeight by remember { mutableStateOf(0.dp) }
+
     Box(
         modifier =
             modifier
@@ -208,48 +254,35 @@ fun ReaderScreen(
                 .safeDrawingPadding()
                 .testTag("readerSurface"),
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
+        // Reading layer: fills the screen beneath the chrome; the focal
+        // word sits at the vertical centre either way.
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .readerGestures(
+                        engine = engine,
+                        onBrowseOpen = { browseOpen = true },
+                    ),
+            contentAlignment = Alignment.Center,
         ) {
-            AnimatedVisibility(
-                visible = chromeVisible,
-                enter = chromeEnterFromTop,
-                exit = chromeExitToTop,
-                modifier = Modifier.testTag("topChrome"),
-            ) {
-                TopChrome(
-                    articleTitle = articleTitle,
-                    palette = palette,
-                    position = pos,
-                    totalTokens = totalTokens,
-                    started = readerState != ReaderState.IDLE,
-                    onBack = exitArticle,
+            if (readerState == ReaderState.IDLE || allTokens.isEmpty()) {
+                IdleHint(palette)
+            } else if (currentWord.isNotEmpty()) {
+                // While playing the ghosts recede so the focal word
+                // carries the eye; on pause the surroundings fade in.
+                val ghostAlpha by animateFloatAsState(
+                    targetValue = if (readerState == ReaderState.PLAYING) 0.45f else 1f,
+                    animationSpec = tween(Motion.STANDARD_MS, easing = Motion.Settle),
+                    label = "ghostFade",
                 )
-            }
-
-            // Reading area.
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .readerGestures(
-                            engine = engine,
-                            onBrowseOpen = { browseOpen = true },
-                        ),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (readerState == ReaderState.IDLE || allTokens.isEmpty()) {
-                    IdleHint(palette)
-                } else if (currentWord.isNotEmpty()) {
-                    // While playing the ghosts recede so the focal word
-                    // carries the eye; on pause the surroundings fade in.
-                    val ghostAlpha by animateFloatAsState(
-                        targetValue = if (readerState == ReaderState.PLAYING) 0.45f else 1f,
-                        animationSpec = tween(Motion.STANDARD_MS, easing = Motion.Settle),
-                        label = "ghostFade",
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    SectionLabel(
+                        title = currentSection(sections, pos)?.title ?: articleTitle,
+                        playing = readerState == ReaderState.PLAYING,
+                        palette = palette,
                     )
+                    Spacer(Modifier.height(Spacing.md))
                     FocalLine(
                         allTokens = allTokens,
                         pos = pos,
@@ -259,20 +292,108 @@ fun ReaderScreen(
                     )
                 }
             }
+        }
 
-            // Bottom chrome: WPM centred, settings at the end.
+        if (browseOpen) {
+            // Hold-to-resume: the overlay fades out the moment playback
+            // starts (so the reader sees the focal word under their
+            // finger) and fully closes when that press is released. The
+            // chrome stays pinned above it so back, save and contents
+            // remain reachable while browsing.
+            BrowseOverlay(
+                blocks = blocks.value,
+                currentFlat = pos,
+                palette = palette,
+                settings = settings,
+                faded = readerState == ReaderState.PLAYING,
+                topPadding = topChromeHeight + Spacing.sm,
+                bottomPadding = bottomChromeHeight + Spacing.sm,
+                onTapWord = { flat ->
+                    engine.seekTo(flat)
+                    closeBrowse()
+                },
+                onTapBackground = closeBrowse,
+                onHold = {
+                    resumePressed = true
+                    engine.onTouchDown()
+                },
+                onRelease = {
+                    if (resumePressed) {
+                        closeBrowse()
+                    }
+                },
+            )
+        }
+
+        // Chrome layer: pinned above the reading surface and the browse
+        // overlay. The middle spacer has no input handling, so gestures
+        // pass through to whatever is beneath it.
+        Column(modifier = Modifier.fillMaxSize()) {
+            AnimatedVisibility(
+                visible = chromeVisible,
+                enter = chromeEnterFromTop,
+                exit = chromeExitToTop,
+                modifier =
+                    Modifier
+                        .onSizeChanged {
+                            topChromeHeight = with(density) { it.height.toDp() }
+                        }.testTag("topChrome"),
+            ) {
+                TopChrome(
+                    articleTitle = articleTitle,
+                    palette = palette,
+                    position = pos,
+                    totalTokens = totalTokens,
+                    started = readerState != ReaderState.IDLE,
+                    saved = saved,
+                    onBack = exitArticle,
+                    onToc = { showToc = true },
+                    onSave = {
+                        if (!saved) {
+                            engine.save()
+                            onSaved()
+                            savedPill = true
+                        }
+                    },
+                )
+            }
+
+            Spacer(Modifier.weight(1f))
+
             AnimatedVisibility(
                 visible = chromeVisible,
                 enter = chromeEnterFromBottom,
                 exit = chromeExitToBottom,
-                modifier = Modifier.testTag("bottomChrome"),
+                modifier =
+                    Modifier
+                        .onSizeChanged {
+                            bottomChromeHeight = with(density) { it.height.toDp() }
+                        }.testTag("bottomChrome"),
             ) {
                 Box(
                     modifier =
                         Modifier
                             .fillMaxWidth()
+                            .background(palette.background)
                             .padding(bottom = Spacing.sm),
                 ) {
+                    if (upNext != null) {
+                        IconButton(
+                            onClick = goNext,
+                            modifier =
+                                Modifier
+                                    .align(Alignment.CenterStart)
+                                    .padding(start = Spacing.sm)
+                                    .testTag("nextButton"),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.SkipNext,
+                                contentDescription = "Next article",
+                                tint = palette.chrome,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        }
+                    }
                     WpmControl(
                         wpm = settings.wpm,
                         palette = palette,
@@ -311,30 +432,59 @@ fun ReaderScreen(
             }
         }
 
-        if (browseOpen) {
-            // Hold-to-resume: the overlay fades out the moment playback
-            // starts (so the reader sees the focal word under their
-            // finger) and fully closes when that press is released.
-            BrowseOverlay(
-                blocks = blocks.value,
+        // A finished article offers the next one: the feed's whole point
+        // is that reading flows on.
+        AnimatedVisibility(
+            visible = readerState == ReaderState.IDLE && finished && !browseOpen,
+            enter = chromeEnterFromBottom,
+            exit = chromeExitToBottom,
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = Spacing.md)
+                    .padding(bottom = bottomChromeHeight + Spacing.md),
+        ) {
+            UpNextCard(
+                card = upNext,
+                palette = palette,
+                onNext = onNext,
+                onBackToFeed = exitArticle,
+            )
+        }
+
+        // Transient confirmation for the bookmark.
+        if (savedPill) {
+            LaunchedEffect(Unit) {
+                delay(1600)
+                savedPill = false
+            }
+        }
+        AnimatedVisibility(
+            visible = savedPill,
+            enter = fadeIn(tween(Motion.QUICK_MS)),
+            exit = fadeOut(tween(Motion.STANDARD_MS)),
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = bottomChromeHeight + Spacing.lg),
+        ) {
+            ReaderPill(
+                text = "Saved for later",
+                palette = palette,
+                modifier = Modifier.testTag("savedPill"),
+            )
+        }
+
+        if (showToc) {
+            TocSheet(
+                sections = sections,
                 currentFlat = pos,
                 palette = palette,
-                settings = settings,
-                faded = readerState == ReaderState.PLAYING,
-                onTapWord = { flat ->
-                    engine.seekTo(flat)
-                    closeBrowse()
+                onJump = { section ->
+                    engine.jumpTo(section.startFlat)
+                    showToc = false
                 },
-                onTapBackground = closeBrowse,
-                onHold = {
-                    resumePressed = true
-                    engine.onTouchDown()
-                },
-                onRelease = {
-                    if (resumePressed) {
-                        closeBrowse()
-                    }
-                },
+                onDismiss = { showToc = false },
             )
         }
 
@@ -367,7 +517,55 @@ private fun IdleHint(palette: ReaderPalette) {
     }
 }
 
-/** Title row with back button, plus a hairline progress track. */
+/**
+ * The current section's heading above the focal line. While paused it
+ * rests visible; while playing it stays out of the way, flashing in
+ * briefly — fast in, slow out — when playback crosses into a new section
+ * (per the product sketch: `== History ==` above the word line).
+ */
+@Composable
+private fun SectionLabel(
+    title: String,
+    playing: Boolean,
+    palette: ReaderPalette,
+) {
+    val alpha = remember { Animatable(1f) }
+    var restingTitle by remember { mutableStateOf(title) }
+
+    LaunchedEffect(title, playing) {
+        if (!playing) {
+            restingTitle = title
+            alpha.animateTo(1f, tween(Motion.STANDARD_MS, easing = Motion.Settle))
+            return@LaunchedEffect
+        }
+        if (restingTitle == title) {
+            // Play began inside the same section: the label just recedes.
+            alpha.animateTo(0f, tween(Motion.SLOW_MS, easing = Motion.Leave))
+            return@LaunchedEffect
+        }
+        // Crossed into a new section mid-play: flash it.
+        restingTitle = title
+        alpha.snapTo(0f)
+        alpha.animateTo(1f, tween(140, easing = Motion.Settle))
+        delay(800)
+        alpha.animateTo(0f, tween(1100, easing = Motion.Leave))
+    }
+
+    Text(
+        text = title,
+        style = MaterialTheme.typography.labelLarge,
+        color = palette.chrome,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier =
+            Modifier
+                .padding(horizontal = Spacing.lg)
+                .graphicsLayer { this.alpha = alpha.value }
+                .testTag("sectionLabel"),
+    )
+}
+
+/** Title row with back, contents and save actions, plus a hairline progress track. */
 @Composable
 private fun TopChrome(
     articleTitle: String,
@@ -375,9 +573,17 @@ private fun TopChrome(
     position: Int,
     totalTokens: Int,
     started: Boolean,
+    saved: Boolean,
     onBack: () -> Unit,
+    onToc: () -> Unit,
+    onSave: () -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(palette.background),
+    ) {
         Row(
             modifier =
                 Modifier
@@ -408,7 +614,30 @@ private fun TopChrome(
                     text = "${(position * 100) / totalTokens}%",
                     style = MaterialTheme.typography.labelLarge,
                     color = palette.chrome,
-                    modifier = Modifier.padding(horizontal = Spacing.md),
+                    modifier = Modifier.padding(horizontal = Spacing.xs),
+                )
+            }
+            IconButton(
+                onClick = onToc,
+                modifier = Modifier.testTag("tocButton"),
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Toc,
+                    contentDescription = "Contents",
+                    tint = palette.chrome,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            IconButton(
+                onClick = onSave,
+                modifier = Modifier.testTag("saveButton"),
+            ) {
+                Icon(
+                    imageVector =
+                        if (saved) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
+                    contentDescription = if (saved) "Saved" else "Save for later",
+                    tint = if (saved) palette.accent else palette.chrome,
+                    modifier = Modifier.size(22.dp),
                 )
             }
         }

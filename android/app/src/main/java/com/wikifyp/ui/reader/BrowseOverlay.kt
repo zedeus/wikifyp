@@ -35,6 +35,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import com.wikifyp.theme.Motion
 import com.wikifyp.theme.Spacing
 import kotlinx.coroutines.flow.first
@@ -61,6 +62,10 @@ internal fun BrowseOverlay(
     onHold: () -> Unit,
     onRelease: () -> Unit,
     modifier: Modifier = Modifier,
+    // The reader chrome stays pinned above the overlay; these keep the
+    // flowing text clear of the top bar and the bottom controls.
+    topPadding: Dp = Spacing.xl,
+    bottomPadding: Dp = Spacing.xl,
 ) {
     val alpha by animateFloatAsState(
         targetValue = if (faded) 0f else 1f,
@@ -118,7 +123,14 @@ internal fun BrowseOverlay(
             state = listState,
             modifier = Modifier.fillMaxSize(),
             contentPadding =
-                PaddingValues(horizontal = Spacing.lg, vertical = Spacing.xl),
+                PaddingValues(
+                    start = Spacing.lg,
+                    end = Spacing.lg,
+                    top = topPadding,
+                    // Extra room under the last line so the hint pill
+                    // never sits on top of it at full scroll.
+                    bottom = bottomPadding + Spacing.xxl,
+                ),
         ) {
             items(blocks) { block ->
                 BrowseBlockText(
@@ -134,18 +146,13 @@ internal fun BrowseOverlay(
             }
         }
 
-        Text(
+        ReaderPill(
             text = "Tap a word to jump · hold to read",
-            style = MaterialTheme.typography.labelMedium,
-            color = palette.chrome,
+            palette = palette,
             modifier =
                 Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = Spacing.md)
-                    .background(
-                        palette.surface.copy(alpha = 0.92f),
-                        RoundedCornerShape(50),
-                    ).padding(horizontal = Spacing.md, vertical = Spacing.xs),
+                    .padding(bottom = bottomPadding + Spacing.xs),
         )
     }
 }

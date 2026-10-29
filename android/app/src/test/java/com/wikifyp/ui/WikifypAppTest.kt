@@ -186,4 +186,45 @@ class WikifypAppTest {
         compose.onNodeWithTag("backButton").performClick()
         compose.onNodeWithTag("feedList").assertIsDisplayed()
     }
+
+    @Test
+    fun nextButtonOpensTheFollowingFeedArticle() {
+        show(
+            FakeFeedRepository(
+                onFeed = {
+                    FeedResult(
+                        listOf(
+                            testCard(id = 1, title = "Chemistry"),
+                            testCard(id = 2, title = "Physics"),
+                        ),
+                    )
+                },
+                onArticle = { testArticle(it, title = if (it == 1L) "Chemistry" else "Physics") },
+            ),
+        )
+        compose.onNodeWithText("Chemistry").performClick()
+        compose.onNodeWithTag("idleHint").assertIsDisplayed()
+
+        // The skip-forward control moves straight to the next article in
+        // feed order, without a trip through the feed.
+        compose.onNodeWithTag("nextButton").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Physics").assertIsDisplayed()
+
+        // The last article has nothing after it: no next button.
+        compose.onNodeWithTag("nextButton").assertDoesNotExist()
+    }
+
+    @Test
+    fun feedPageOpensReaderSettings() {
+        show(
+            FakeFeedRepository(
+                onFeed = { FeedResult(listOf(testCard())) },
+                onArticle = { testArticle(it) },
+            ),
+        )
+        compose.onNodeWithTag("feedSettingsButton").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("settingsSheet").assertIsDisplayed()
+    }
 }

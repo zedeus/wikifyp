@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.wikifyp.data.FeedCard
 import com.wikifyp.reader.FakeClock
 import com.wikifyp.reader.SentenceTokens
 import com.wikifyp.theme.WikifypTheme
@@ -123,6 +124,68 @@ class ReaderScreenScreenshotTest {
     @Test
     fun playing_black() {
         renderPlaying(ReaderSettings(theme = ReaderTheme.BLACK))
+        compose.onRoot().captureRoboImage()
+    }
+
+    /** Sepia theme: warm paper for daylight reading. */
+    @Test
+    fun paused_sepia() {
+        renderPaused(dark = false, settings = ReaderSettings(theme = ReaderTheme.SEPIA))
+        compose.onRoot().captureRoboImage()
+    }
+
+    /** Table of contents sheet content on the reader surface. */
+    @Test
+    fun toc_light() {
+        val palette = readerPalette(ReaderTheme.LIGHT, systemDark = false)
+        compose.setContent {
+            WikifypTheme(darkTheme = false) {
+                TocSheetContent(
+                    sections =
+                        listOf(
+                            Section(0, "Philosophy"),
+                            Section(15, "History"),
+                            Section(28, "Branches"),
+                            Section(40, "Influence"),
+                        ),
+                    currentFlat = 20,
+                    palette = palette,
+                    onJump = {},
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .background(palette.surface),
+                )
+            }
+        }
+        compose.onRoot().captureRoboImage()
+    }
+
+    /** The up-next card shown when an article finishes. */
+    @Test
+    fun upnext_dark() {
+        val palette = readerPalette(ReaderTheme.DARK, systemDark = true)
+        compose.setContent {
+            WikifypTheme(darkTheme = true) {
+                UpNextCard(
+                    card =
+                        FeedCard(
+                            id = 2,
+                            title = "Roman Empire",
+                            source = "wikipedia",
+                            excerpt = "The Roman Empire ruled the Mediterranean.",
+                            sentences = 240,
+                            words = 6100,
+                            attribution = "Text from the Wikipedia article \"Roman Empire\"",
+                            description = "27 BC–476 AD state and civilization",
+                        ),
+                    palette = palette,
+                    onNext = {},
+                    onBackToFeed = {},
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
         compose.onRoot().captureRoboImage()
     }
 

@@ -1,8 +1,10 @@
 package com.wikifyp.ui
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -18,6 +20,8 @@ import com.wikifyp.ui.feed.FeedState
 import com.wikifyp.ui.feed.loadFeed
 import com.wikifyp.ui.reader.ReaderScreen
 import com.wikifyp.ui.reader.ReaderSettings
+import com.wikifyp.ui.reader.ReaderSettingsSheet
+import com.wikifyp.ui.reader.readerPalette
 import kotlinx.coroutines.CancellationException
 
 /**
@@ -48,6 +52,15 @@ fun WikifypApp(
     // from the caller's store (saves are synchronous), so plain remember
     // is enough.
     var readerSettings by remember { mutableStateOf(initialReaderSettings) }
+    val updateReaderSettings: (ReaderSettings) -> Unit = {
+        readerSettings = it
+        onReaderSettingsChange(it)
+    }
+    var showFeedSettings by remember { mutableStateOf(false) }
+
+    // Which articles this session bookmarked, for the save button's state.
+    // The durable record is the save event; this only drives the icon.
+    var savedIds by rememberSaveable { mutableStateOf(setOf<Long>()) }
 
     LaunchedEffect(retry) {
         feedState = FeedState.Loading
@@ -82,19 +95,36 @@ fun WikifypApp(
     val current = article
     if (current != null) {
         val sentences = remember(current) { current.toSentenceTokens() }
-        ReaderScreen(
-            articleTitle = current.title,
-            sentences = sentences,
-            articleId = current.id,
-            clock = clock,
-            onEvent = eventListener,
-            onBack = { openArticleId = null },
-            settings = readerSettings,
-            onSettingsChange = {
-                readerSettings = it
-                onReaderSettingsChange(it)
-            },
-        )
+        // The article after this one in the feed order, for the reader's
+        // next-article flow (the up-next card and the skip-forward button).
+        val upNext =
+            remember(feedState, current.id) {
+                val cards = (feedState as? FeedState.Content)?.cards.orEmpty()
+                val index = cards.indexOfFirst { it.id == current.id }
+                if (index >= 0) cards.getOrNull(index + 1) else null
+            }
+        // key(): a new article is a new reader — every per-article state
+        // (engine, word, overlays) resets structurally instead of each
+        // variable remembering to key itself on the id.
+        key(current.id) {
+            ReaderScreen(
+                articleTitle = current.title,
+                sentences = sentences,
+                articleId = current.id,
+                clock = clock,
+                onEvent = eventListener,
+                onBack = { openArticleId = null },
+                settings = readerSettings,
+                onSettingsChange = updateReaderSettings,
+                upNext = upNext,
+                onNext = {
+                    notice = null
+                    openArticleId = upNext?.id
+                },
+                saved = current.id in savedIds,
+                onSaved = { savedIds = savedIds + current.id },
+            )
+        }
     } else {
         FeedScreen(
             state = feedState,
@@ -106,7 +136,18 @@ fun WikifypApp(
                 notice = null
                 retry++
             },
+            onOpenSettings = { showFeedSettings = true },
             notice = notice,
         )
+        if (showFeedSettings) {
+            // The same reader settings, reachable before opening an
+            // article; drawn on the reader palette the theme setting picks.
+            ReaderSettingsSheet(
+                settings = readerSettings,
+                palette = readerPalette(readerSettings.theme, isSystemInDarkTheme()),
+                onSettingsChange = updateReaderSettings,
+                onDismiss = { showFeedSettings = false },
+            )
+        }
     }
 }

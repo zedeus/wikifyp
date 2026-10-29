@@ -2,7 +2,6 @@ package com.wikifyp
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -113,16 +112,57 @@ class ReaderTest {
 
     @OptIn(androidx.compose.ui.test.ExperimentalTestApi::class)
     @Test
+    fun tocJumpsToASectionAndSaveConfirms() {
+        compose.waitUntilAtLeastOneExists(hasText("DNA"), timeoutMillis = 5_000)
+        compose.onNodeWithText("DNA").performClick()
+        compose.waitForIdle()
+
+        // Jump to a section from the table of contents. "Properties" is
+        // the first heading in the bundled DNA article.
+        compose.onNodeWithTag("tocButton").performClick()
+        compose.waitUntilAtLeastOneExists(hasTestTag("tocEntry"), timeoutMillis = 5_000)
+        compose
+            .onNode(hasTestTag("tocEntry") and hasText("Properties"))
+            .performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("currentWord").assertIsDisplayed()
+        compose.onNodeWithTag("sectionLabel").assertIsDisplayed()
+
+        // Save the article; the bookmark confirms.
+        compose.onNodeWithTag("saveButton").performClick()
+        compose.waitUntilAtLeastOneExists(hasTestTag("savedPill"), timeoutMillis = 5_000)
+    }
+
+    @OptIn(androidx.compose.ui.test.ExperimentalTestApi::class)
+    @Test
+    fun nextButtonMovesToTheFollowingArticle() {
+        compose.waitUntilAtLeastOneExists(hasText("DNA"), timeoutMillis = 5_000)
+        compose.onNodeWithText("DNA").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("idleHint").assertIsDisplayed()
+
+        // The feed orders the bundled articles alphabetically: after DNA
+        // comes Marie Curie.
+        compose.onNodeWithTag("nextButton").performClick()
+        compose.waitUntilAtLeastOneExists(hasText("Marie Curie"), timeoutMillis = 5_000)
+        compose.onNodeWithTag("idleHint").assertIsDisplayed()
+    }
+
+    @OptIn(androidx.compose.ui.test.ExperimentalTestApi::class)
+    @Test
     fun settingsSheetTogglesAndCarriesAcrossArticles() {
         compose.waitUntilAtLeastOneExists(hasText("DNA"), timeoutMillis = 5_000)
         compose.onNodeWithText("DNA").performClick()
         compose.waitForIdle()
 
-        // Open the settings sheet and turn bionic ghost words on.
+        // Open the settings sheet and flip bionic ghost words. The device
+        // persists settings across runs, so assert against the flipped
+        // value rather than assuming a fresh install's default.
         compose.onNodeWithTag("settingsButton").performClick()
         compose.waitUntilAtLeastOneExists(hasTestTag("bionicToggle"), timeoutMillis = 5_000)
         compose.onNodeWithTag("bionicToggle").performClick()
-        compose.onNodeWithTag("bionicToggle").assertIsOn()
+        compose.waitForIdle()
+        val toggled = bionicState()
 
         // Leave the article through the activity's back dispatcher (the
         // reader unmounts, taking the sheet with it) and open another:
@@ -135,6 +175,12 @@ class ReaderTest {
         compose.waitForIdle()
         compose.onNodeWithTag("settingsButton").performClick()
         compose.waitUntilAtLeastOneExists(hasTestTag("bionicToggle"), timeoutMillis = 5_000)
-        compose.onNodeWithTag("bionicToggle").assertIsOn()
+        org.junit.Assert.assertEquals(toggled, bionicState())
     }
+
+    private fun bionicState(): androidx.compose.ui.state.ToggleableState =
+        compose
+            .onNodeWithTag("bionicToggle")
+            .fetchSemanticsNode()
+            .config[androidx.compose.ui.semantics.SemanticsProperties.ToggleableState]
 }
