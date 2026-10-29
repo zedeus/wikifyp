@@ -68,10 +68,6 @@ func WriteFixture(dir string, a *Article) (string, error) {
 			return "", fmt.Errorf("fixture %s already holds %s article %q; refusing to overwrite it with %q", slug, old.Source, old.Title, a.Title)
 		}
 	}
-	meta, err := json.MarshalIndent(a, "", " ")
-	if err != nil {
-		return "", err
-	}
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", err
 	}
@@ -81,10 +77,21 @@ func WriteFixture(dir string, a *Article) (string, error) {
 	if err := os.WriteFile(filepath.Join(dir, slug+".txt"), []byte(a.Text), 0o644); err != nil {
 		return "", err
 	}
-	if err := os.WriteFile(metaPath, append(meta, '\n'), 0o644); err != nil {
+	if err := WriteFixtureMeta(metaPath, a); err != nil {
 		return "", err
 	}
 	return slug, nil
+}
+
+// WriteFixtureMeta writes a fixture's metadata JSON to path, in the one
+// format every fixture uses. The ingest command's refresh-meta mode calls
+// it to update image and description without touching the article text.
+func WriteFixtureMeta(path string, a *Article) error {
+	meta, err := json.MarshalIndent(a, "", " ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, append(meta, '\n'), 0o644)
 }
 
 func fixtureSlug(a *Article) string {

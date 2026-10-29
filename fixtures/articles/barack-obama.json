@@ -6,5 +6,11 @@
  "revision_id": 1378482076,
  "license": "CC BY-SA 4.0",
  "attribution": "Text from the Wikipedia article \"Barack Obama\", https://en.wikipedia.org/wiki/Barack_Obama (revision 1378482076), licensed CC BY-SA 4.0",
- "fetched": "2026-10-12"
+ "fetched": "2026-10-12",
+ "description": "President of the United States from 2009 to 2017",
+ "image": {
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8d/President_Barack_Obama.jpg/960px-President_Barack_Obama.jpg?utm_source=en.wikipedia.org\u0026utm_campaign=api\u0026utm_content=thumbnail",
+  "width": 960,
+  "height": 1199
+ }
 }

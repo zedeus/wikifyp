@@ -7,6 +7,12 @@
  "license": "CC BY-SA 4.0",
  "attribution": "Text from the Wikipedia article \"Mathematics\", https://en.wikipedia.org/wiki/Mathematics (revision 1379429078), licensed CC BY-SA 4.0",
  "fetched": "2026-10-11",
+ "description": "Field of knowledge",
+ "image": {
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d4/Woman_teaching_geometry.jpg/960px-Woman_teaching_geometry.jpg?utm_source=en.wikipedia.org\u0026utm_campaign=api\u0026utm_content=thumbnail",
+  "width": 960,
+  "height": 1061
+ },
  "links": [
   "A Mathematician's Apology",
   "Abel Prize",

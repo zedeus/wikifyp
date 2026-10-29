@@ -7,6 +7,12 @@
  "license": "CC BY-SA 4.0",
  "attribution": "Text from the Wikipedia article \"Roman Empire\", https://en.wikipedia.org/wiki/Roman_Empire (revision 1379619558), licensed CC BY-SA 4.0",
  "fetched": "2026-10-11",
+ "description": "27 BC–476/1453 AD state and civilization",
+ "image": {
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/00/Roman_Empire_Trajan_117AD.png/960px-Roman_Empire_Trajan_117AD.png?utm_source=en.wikipedia.org\u0026utm_campaign=api\u0026utm_content=thumbnail",
+  "width": 960,
+  "height": 611
+ },
  "links": [
   "14 regions of Augustan Rome",
   "1946 Italian institutional referendum",

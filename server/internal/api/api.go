@@ -107,6 +107,8 @@ type articleResponse struct {
 	ID          int64              `json:"id"`
 	Title       string             `json:"title"`
 	Attribution string             `json:"attribution"`
+	Description string             `json:"description,omitempty"`
+	Image       *feed.Image        `json:"image,omitempty"`
 	Sentences   []sentenceResponse `json:"sentences"`
 }
 
@@ -124,9 +126,11 @@ func handleArticle(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp := articleResponse{ID: id, Sentences: []sentenceResponse{}}
+	var desc, imgURL sql.NullString
+	var imgW, imgH sql.NullInt32
 	err = db.QueryRowContext(r.Context(),
-		"SELECT title, attribution FROM articles WHERE id = $1", id).
-		Scan(&resp.Title, &resp.Attribution)
+		"SELECT title, attribution, description, image_url, image_width, image_height FROM articles WHERE id = $1", id).
+		Scan(&resp.Title, &resp.Attribution, &desc, &imgURL, &imgW, &imgH)
 	if errors.Is(err, sql.ErrNoRows) {
 		http.Error(w, "no such article", http.StatusNotFound)
 		return
@@ -135,6 +139,8 @@ func handleArticle(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
+	resp.Description = desc.String
+	resp.Image = feed.NullImage(imgURL, imgW, imgH)
 	rows, err := db.QueryContext(r.Context(),
 		"SELECT text, heading_level FROM sentences WHERE article_id = $1 ORDER BY sentence_idx", id)
 	if err != nil {
@@ -242,9 +248,12 @@ func handleEvents(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			// finish/skip → update feed state
-			if e.IsFinishOrSkip() {
-				if err := feed.SetState(r.Context(), db, readerID, meta.Source, meta.PageID, e.FeedState()); err != nil {
+			// finish/skip/save → update feed state. reader_article_state
+			// keeps one state per page and the latest write wins, so a
+			// finish after a save overwrites "saved" — the save's history
+			// survives only as the stored event.
+			if state, ok := e.FeedState(); ok {
+				if err := feed.SetState(r.Context(), db, readerID, meta.Source, meta.PageID, state); err != nil {
 					log.Printf("api: events feed state: %v", err)
 				}
 			}

@@ -87,10 +87,31 @@ type Card struct {
 	Title       string `json:"title"`
 	Source      string `json:"source"`
 	Excerpt     string `json:"excerpt"`
+	Description string `json:"description,omitempty"`
+	Image       *Image `json:"image,omitempty"`
 	Sentences   int    `json:"sentences"`
 	Words       int    `json:"words"`
 	Attribution string `json:"attribution"`
 	Exploration bool   `json:"exploration,omitempty"`
+}
+
+// Image is an article's lead image thumbnail, as stored at ingest. It
+// mirrors source.Image field-for-field on purpose: the serving JSON must
+// not silently change shape when the ingest struct does, so the two stay
+// separate types.
+type Image struct {
+	URL    string `json:"url"`
+	Width  int    `json:"width"`
+	Height int    `json:"height"`
+}
+
+// NullImage builds an Image from the articles table's nullable image
+// columns, nil when the article has none.
+func NullImage(url sql.NullString, w, h sql.NullInt32) *Image {
+	if !url.Valid {
+		return nil
+	}
+	return &Image{URL: url.String, Width: int(w.Int32), Height: int(h.Int32)}
 }
 
 // SetState records what a reader did with a page, replacing any earlier
@@ -894,13 +915,16 @@ func cards(ctx context.Context, db *sql.DB, chosen []Candidate) ([]Card, error) 
 	}
 	type detail struct {
 		excerpt     string
+		description string
+		image       *Image
 		attribution string
 		sentences   int
 		words       int
 	}
 	details := make(map[int64]detail, len(ids))
 	rows, err := db.QueryContext(ctx, `
-		SELECT a.id, a.attribution,
+		SELECT a.id, a.attribution, a.description,
+		       a.image_url, a.image_width, a.image_height,
 		       count(*),
 		       sum(array_length(string_to_array(s.text, ' '), 1)),
 		       (SELECT text FROM sentences
@@ -917,11 +941,14 @@ func cards(ctx context.Context, db *sql.DB, chosen []Candidate) ([]Card, error) 
 	for rows.Next() {
 		var id int64
 		var d detail
-		var excerpt sql.NullString
-		if err := rows.Scan(&id, &d.attribution, &d.sentences, &d.words, &excerpt); err != nil {
+		var excerpt, description, imgURL sql.NullString
+		var imgW, imgH sql.NullInt32
+		if err := rows.Scan(&id, &d.attribution, &description, &imgURL, &imgW, &imgH, &d.sentences, &d.words, &excerpt); err != nil {
 			return nil, fmt.Errorf("feed: cards: %w", err)
 		}
 		d.excerpt = excerpt.String
+		d.description = description.String
+		d.image = NullImage(imgURL, imgW, imgH)
 		details[id] = d
 	}
 	if err := rows.Err(); err != nil {
@@ -935,6 +962,8 @@ func cards(ctx context.Context, db *sql.DB, chosen []Candidate) ([]Card, error) 
 			Title:       c.Title,
 			Source:      c.Source,
 			Excerpt:     d.excerpt,
+			Description: d.description,
+			Image:       d.image,
 			Sentences:   d.sentences,
 			Words:       d.words,
 			Attribution: d.attribution,

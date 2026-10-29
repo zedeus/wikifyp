@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<title>Feed Engine Deep Dive</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #fafaf8; --fg: #1a1a1a; --fg2: #555; --fg3: #999;
+  --accent: #2563eb; --accent-soft: #dbeafe;
+  --green: #16a34a; --green-soft: #dcfce7;
+  --red: #dc2626; --red-soft: #fee2e2;
+  --orange: #d97706; --orange-soft: #fef3c7;
+  --purple: #7c3aed; --purple-soft: #ede9fe;
+  --teal: #0d9488; --teal-soft: #ccfbf1;
+  --card-bg: #fff; --card-border: #e2e2de; --code-bg: #f3f3f0;
+  --explore-bg: #eef3ff; --dim: #c5c5c0;
+  --font: 'IBM Plex Sans', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f0f0f; --fg: #e5e5e5; --fg2: #aaa; --fg3: #666;
+    --accent: #60a5fa; --accent-soft: #1e3a5f;
+    --green: #4ade80; --green-soft: #14532d;
+    --red: #f87171; --red-soft: #7f1d1d;
+    --orange: #fbbf24; --orange-soft: #78350f;
+    --purple: #a78bfa; --purple-soft: #3b1f6e;
+    --teal: #2dd4bf; --teal-soft: #134e4a;
+    --card-bg: #1a1a1a; --card-border: #333; --code-bg: #222;
+    --explore-bg: #172035; --dim: #444;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f0f0f; --fg: #e5e5e5; --fg2: #aaa; --fg3: #666;
+  --accent: #60a5fa; --accent-soft: #1e3a5f;
+  --green: #4ade80; --green-soft: #14532d;
+  --red: #f87171; --red-soft: #7f1d1d;
+  --orange: #fbbf24; --orange-soft: #78350f;
+  --purple: #a78bfa; --purple-soft: #3b1f6e;
+  --teal: #2dd4bf; --teal-soft: #134e4a;
+  --card-bg: #1a1a1a; --card-border: #333; --code-bg: #222;
+  --explore-bg: #172035; --dim: #444;
+  color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font); line-height: 1.65;
+  padding: 0 max(16px, env(safe-area-inset-left, 0px));
+  max-width: 780px; margin: 0 auto;
+}
+h1 { font-size: 1.75rem; font-weight: 700; margin: 2rem 0 0.3rem; text-wrap: balance; }
+h2 { font-size: 1.35rem; font-weight: 700; margin: 2.5rem 0 0.6rem; border-bottom: 2px solid var(--card-border); padding-bottom: 0.4rem; }
+h3 { font-size: 1.05rem; font-weight: 600; margin: 1.5rem 0 0.4rem; color: var(--accent); }
+p { margin: 0.7rem 0; }
+.subtitle { color: var(--fg2); font-size: 1.05rem; margin-bottom: 2rem; }
+code { font-family: var(--mono); font-size: 0.88em; background: var(--code-bg); padding: 0.12em 0.3em; border-radius: 3px; }
+
+/* Cards */
+.card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 1rem 1.1rem; margin: 1rem 0; }
+.card-title { font-weight: 700; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; }
+.card-title .icon { font-size: 1.1rem; }
+.card p { margin: 0.3rem 0; color: var(--fg2); font-size: 0.92rem; }
+
+/* Note callout */
+.note { border-left: 3px solid var(--accent); padding: 0.7rem 0.85rem; border-radius: 0 6px 6px 0; margin: 1rem 0; font-size: 0.9rem; background: var(--accent-soft); }
+.note.warn { border-left-color: var(--orange); background: var(--orange-soft); }
+.note.good { border-left-color: var(--green); background: var(--green-soft); }
+.note strong { font-weight: 600; }
+
+/* Flow diagram */
+.flow { display: flex; flex-direction: column; gap: 0; margin: 1.2rem 0; }
+.flow-step { display: flex; gap: 0.8rem; align-items: flex-start; padding: 0.7rem 0; }
+.flow-num { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.flow-arrow { width: 32px; display: flex; justify-content: center; color: var(--fg3); font-size: 0.8rem; flex-shrink: 0; }
+.flow-body { flex: 1; min-width: 0; }
+.flow-body strong { font-weight: 600; }
+.flow-body .detail { font-size: 0.85rem; color: var(--fg2); margin-top: 0.15rem; }
+
+/* Feed mockup */
+.phone { max-width: 400px; margin: 1.2rem auto; border: 2px solid var(--card-border); border-radius: 16px; overflow: hidden; background: var(--card-bg); }
+.phone-header { background: var(--code-bg); padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.75rem; color: var(--fg2); display: flex; justify-content: space-between; align-items: center; }
+.phone-header .feed-num { font-weight: 700; color: var(--fg); }
+.fi { padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--card-border); font-size: 0.88rem; display: flex; align-items: center; gap: 0.5rem; min-height: 2.2rem; transition: background 0.15s; }
+.fi:last-child { border-bottom: none; }
+.fi .idx { font-family: var(--mono); font-size: 0.72rem; color: var(--fg3); width: 1rem; text-align: right; flex-shrink: 0; }
+.fi .title { flex: 1; min-width: 0; font-weight: 500; }
+.fi .tag { font-size: 0.68rem; padding: 0.08em 0.4em; border-radius: 8px; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
+.fi.hit { background: color-mix(in srgb, var(--green-soft), transparent 40%); }
+.fi.hit .title { color: var(--green); }
+.fi.explore { background: color-mix(in srgb, var(--accent-soft), transparent 30%); }
+.fi.skip { background: color-mix(in srgb, var(--red-soft), transparent 60%); }
+.fi.skip .title { color: var(--red); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--red), transparent 60%); }
+.fi.stale { background: color-mix(in srgb, var(--orange-soft), transparent 50%); }
+.fi.stale .title { color: var(--orange); }
+.tag-hit { background: var(--green-soft); color: var(--green); }
+.tag-miss { background: var(--code-bg); color: var(--fg3); }
+.tag-explore { background: var(--accent-soft); color: var(--accent); }
+.tag-stale { background: var(--orange-soft); color: var(--orange); }
+
+/* Param display */
+.params { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.5rem; margin: 1rem 0; }
+.param { background: var(--code-bg); border-radius: 8px; padding: 0.55rem 0.7rem; }
+.param .name { font-family: var(--mono); font-size: 0.78rem; color: var(--accent); font-weight: 500; }
+.param .val { font-weight: 700; font-size: 1.1rem; margin: 0.15rem 0; }
+.param .desc { font-size: 0.75rem; color: var(--fg2); line-height: 1.4; }
+
+/* Interactive slider */
+.slider-row { display: flex; align-items: center; gap: 0.7rem; margin: 0.5rem 0; flex-wrap: wrap; }
+.slider-row label { font-size: 0.85rem; font-weight: 500; min-width: 140px; }
+.slider-row input[type="range"] { flex: 1; min-width: 120px; accent-color: var(--accent); }
+.slider-row .val-display { font-family: var(--mono); font-size: 0.85rem; min-width: 3rem; text-align: right; }
+
+/* Stats */
+.stats { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.8rem 0; }
+.stat { background: var(--code-bg); padding: 0.4rem 0.65rem; border-radius: 6px; font-size: 0.8rem; }
+.stat .val { font-weight: 700; font-family: var(--mono); }
+.stat .lbl { color: var(--fg2); }
+
+/* Persona tabs */
+.tabs { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 1rem 0; }
+.tab { padding: 0.35rem 0.7rem; border-radius: 6px; border: 1px solid var(--card-border); background: var(--card-bg); cursor: pointer; font-size: 0.82rem; font-weight: 500; transition: all 0.15s; color: var(--fg); font-family: var(--font); }
+.tab:hover { border-color: var(--accent); }
+.tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Score breakdown */
+.score-bar { display: flex; height: 24px; border-radius: 6px; overflow: hidden; margin: 0.4rem 0; font-size: 0.7rem; font-weight: 600; }
+.score-bar > div { display: flex; align-items: center; justify-content: center; color: #fff; min-width: 0; overflow: hidden; white-space: nowrap; padding: 0 4px; }
+
+/* Table */
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 1rem 0; font-variant-numeric: tabular-nums; }
+.data-table th { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 2px solid var(--card-border); font-weight: 600; font-size: 0.78rem; color: var(--fg2); }
+.data-table td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--card-border); }
+.data-table .persona { font-weight: 600; }
+.delta-pos { color: var(--green); font-weight: 600; }
+.delta-neg { color: var(--red); font-weight: 600; }
+
+/* Diagram boxes */
+.diagram { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0; justify-content: center; }
+.diagram-box { background: var(--card-bg); border: 2px solid var(--card-border); border-radius: 10px; padding: 0.6rem 0.8rem; text-align: center; min-width: 100px; flex: 1; max-width: 180px; }
+.diagram-box.active { border-color: var(--accent); background: var(--accent-soft); }
+.diagram-box .label { font-weight: 600; font-size: 0.85rem; }
+.diagram-box .sub { font-size: 0.75rem; color: var(--fg2); margin-top: 0.2rem; }
+
+/* Timeline */
+.timeline { position: relative; padding-left: 1.5rem; margin: 1rem 0; }
+.timeline::before { content: ''; position: absolute; left: 0.5rem; top: 0; bottom: 0; width: 2px; background: var(--card-border); }
+.tl-item { position: relative; margin-bottom: 1.25rem; }
+.tl-item::before { content: ''; position: absolute; left: -1.15rem; top: 0.5rem; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.tl-item.shipped::before { background: var(--green); }
+.tl-item.reverted::before { background: var(--red); }
+.tl-label { font-family: var(--mono); font-size: 0.75rem; color: var(--fg3); }
+.tl-title { font-weight: 600; font-size: 0.95rem; }
+.tl-desc { font-size: 0.88rem; color: var(--fg2); margin-top: 0.15rem; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+</style>
+
+<h1>How the Feed Engine Works</h1>
+<p class="subtitle">The complete picture: what each mechanism does, what the current parameters are, and what 600 articles feel like for every type of reader. Updated after Round 14c (InterestFade shipped, E1-E3 and NascentBoost reverted).</p>
+
+<h2>The pipeline at a glance</h2>
+<p>Every time the app needs articles, it runs five stages. Each stage has a different job — and a different tradeoff.</p>
+
+<div class="flow">
+  <div class="flow-step">
+    <div class="flow-num">1</div>
+    <div class="flow-body">
+      <strong>Build the candidate pool</strong>
+      <div class="detail">Take the reader's recent reads (last <code>PoolWindow=200</code> state rows) and find every article that links to or shares categories with them. This is the raw material. A serial-rabbitholer who shifted interests 4 times doesn't need 500 rows of old cars polluting the pool — the window keeps it focused on where they're heading.</div>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-arrow">↓</div>
+    <div class="flow-body"></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">2</div>
+    <div class="flow-body">
+      <strong>Score every candidate</strong>
+      <div class="detail">Each candidate gets a relevance score from shared links (worth <code>1.0</code> each) and shared categories (sqrt-saturated so volume can't dominate). Engagement weights the voice: finishing 95% of a 3000-word article counts far more than bouncing off a 60-word stub. <strong>InterestFade</strong> attenuates abandoned clusters — if you haven't read cars in 30 articles, the car cluster's voice drops to 30% of its peak. This sees the full state history, not just the pool window.</div>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-arrow">↓</div>
+    <div class="flow-body"></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">3</div>
+    <div class="flow-body">
+      <strong>Rotate across interest clusters</strong>
+      <div class="detail">Your positive reads are grouped into clusters (category-cosine connected components). Each cluster gets rotation turns. The newest cluster gets <code>2×</code> more turns than the oldest — so when you shift from cars to football, football ramps up fast while cars fades. A 5-interest juggler's clusters all get roughly equal turns because they're all recent.</div>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-arrow">↓</div>
+    <div class="flow-body"></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">4</div>
+    <div class="flow-body">
+      <strong>Mix in exploration</strong>
+      <div class="detail">A fraction of the feed is doors you didn't ask for: featured Wikipedia articles, random corpus samples, and 2-3 hop random walks from your reads in the category graph. The share adapts: <code>75%</code> for a brand-new reader (you have no pattern, so mostly explore), tapering to <code>20%</code> once you have <code>30</code> clustered reads. If you're skipping a lot (>30% rate), exploration bumps up — the feed senses it's not working.</div>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-arrow">↓</div>
+    <div class="flow-body"></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">5</div>
+    <div class="flow-body">
+      <strong>Enforce diversity (MMR)</strong>
+      <div class="detail">Even within relevance slots, candidates that are too similar to what's already picked get penalized (similarity penalty <code>0.6</code>). This prevents 20 Lamborghini pages in a row. At <code>0.6</code>, similar-but-different articles can coexist (Lamborghini Diablo and Toyota Corolla are both cars but different enough). At <code>1.0</code>, even Toyota Corolla gets pushed down if Toyota Camry is already in the feed.</div>
+    </div>
+  </div>
+</div>
+
+<h2>Current parameters</h2>
+<p>Every knob has been swept individually and in combination. These are the current shipped values:</p>
+
+<div class="params">
+  <div class="param"><div class="name">SimilarityPenalty</div><div class="val">0.6</div><div class="desc">MMR diversity pressure. Lower = more similar articles coexist.</div></div>
+  <div class="param"><div class="name">ExploreShareBase</div><div class="val">20%</div><div class="desc">Exploration floor for established readers.</div></div>
+  <div class="param"><div class="name">ExploreShareMax</div><div class="val">75%</div><div class="desc">Exploration ceiling for cold-start readers.</div></div>
+  <div class="param"><div class="name">ExploreRampRows</div><div class="val">30</div><div class="desc">Clustered reads before exploration reaches base.</div></div>
+  <div class="param"><div class="name">ClusterRecencyBoost</div><div class="val">2.0×</div><div class="desc">Extra rotation turns for newest cluster.</div></div>
+  <div class="param"><div class="name">ClusterWindow</div><div class="val">50</div><div class="desc">Recent state rows that build rotation clusters.</div></div>
+  <div class="param"><div class="name">PoolWindow</div><div class="val">200</div><div class="desc">Recent state rows that generate candidates.</div></div>
+  <div class="param"><div class="name">InterestFade</div><div class="val">ON</div><div class="desc">Attenuates abandoned cluster voice (floor 0.3).</div></div>
+  <div class="param"><div class="name">InterestFadeWindow</div><div class="val">50</div><div class="desc">How many recent rows define "recent" for fade.</div></div>
+  <div class="param"><div class="name">InterestFadeFloor</div><div class="val">0.3</div><div class="desc">Minimum voice for a fully faded cluster.</div></div>
+  <div class="param"><div class="name">ExploreSkipThreshold</div><div class="val">30%</div><div class="desc">Skip rate above which exploration gets boosted.</div></div>
+  <div class="param"><div class="name">RelevanceFloor</div><div class="val">0.3</div><div class="desc">Min score for a relevance slot; below → explore instead.</div></div>
+</div>
+
+<h2>How scoring actually works — an example</h2>
+<p>You've read 8 articles. 6 are about cars, 2 are about music. Here's how a candidate article scores:</p>
+
+<div class="card">
+  <div class="card-title"><span class="icon">📊</span> Scoring "Lamborghini Gallardo"</div>
+  <p>This article links to 2 of your reads (Lamborghini Diablo, Porsche 911) and shares 4 categories with your car reads.</p>
+  <div style="margin: 0.6rem 0;">
+    <div style="font-size: 0.82rem; margin-bottom: 0.25rem;">
+      <strong>Link score:</strong> 2 links × 1.0 weight × voice (engagement × recency decay × InterestFade) = <code>1.4</code>
+    </div>
+    <div style="font-size: 0.82rem; margin-bottom: 0.25rem;">
+      <strong>Category score:</strong> sqrt(Σ liked[cat] × voice) across 4 shared cats = <code>0.8</code>
+    </div>
+    <div style="font-size: 0.82rem; margin-bottom: 0.25rem;">
+      <strong>Total relevance:</strong> <code>2.2</code> (well above floor of 0.3)
+    </div>
+  </div>
+  <p>Now compare "Elvis Presley" — shares 2 music categories but no links. Score: <code>0.5</code>. Still above floor, but the cluster rotation ensures music gets turns even though its total voice is lower.</p>
+</div>
+
+<h3>The engagement signal</h3>
+<p>Not all reads are equal. The engagement weight comes from <em>how much</em> you read:</p>
+
+<div class="card">
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.85rem;">
+    <div style="padding: 0.4rem; background: var(--green-soft); border-radius: 6px;">
+      <strong style="color: var(--green);">Strong positive</strong><br>
+      Read 95% of a 3000-word article<br>
+      Weight: ~1.0 (full voice)
+    </div>
+    <div style="padding: 0.4rem; background: var(--green-soft); border-radius: 6px; opacity: 0.7;">
+      <strong style="color: var(--green);">Moderate positive</strong><br>
+      Saved after reading 40%<br>
+      Weight: ~0.7
+    </div>
+    <div style="padding: 0.4rem; background: var(--orange-soft); border-radius: 6px;">
+      <strong style="color: var(--orange);">Weak positive</strong><br>
+      Read 60% of a 200-word stub<br>
+      Weight: ~0.4
+    </div>
+    <div style="padding: 0.4rem; background: var(--red-soft); border-radius: 6px;">
+      <strong style="color: var(--red);">Negative</strong><br>
+      Bounced after reading 5%<br>
+      Weight: -0.8 (pushes categories down)
+    </div>
+  </div>
+  <p style="margin-top: 0.5rem;">Engagement is normalized to the reader's personal mean — a reader who always reads 90% and one who always reads 50% are both "average" for themselves. Above-average reads boost; below-average reads dampen.</p>
+</div>
+
+<h3>InterestFade — the newest mechanism</h3>
+<p>Before InterestFade, abandoned interests haunted the feed forever. The serial-rabbitholer would shift from cars → astronomy → football → history, and by phase 4, their history feeds were 67% old residue from the first three interests.</p>
+
+<div class="card">
+  <div class="card-title"><span class="icon">📉</span> How InterestFade works</div>
+  <p>For each interest cluster, compute what fraction of its members appear in the recent 50 state rows. Apply a fade multiplier:</p>
+  <div style="margin: 0.5rem 0; font-family: var(--mono); font-size: 0.85rem; background: var(--code-bg); padding: 0.5rem 0.7rem; border-radius: 6px;">
+    fade = 0.3 + 0.7 × √(recentMembers / totalMembers)
+  </div>
+  <p>A cluster with 20 total members and 0 in the recent window: fade = <strong>0.3</strong> (30% voice).</p>
+  <p>A cluster with 5 total members and 3 in the recent window: fade = <strong>0.84</strong> (84% voice).</p>
+  <p>A cluster with 10 members, all recent: fade = <strong>1.0</strong> (full voice).</p>
+</div>
+
+<div class="note good">
+  <strong>The key insight:</strong> InterestFade applies to <em>scoring</em> (voice and nomination strength), not to <em>selection</em> (which clusters get rotation turns). The ClusterWindow already handles selection — old clusters fall off after 50 rows. InterestFade handles the subtler case: a cluster that still has rotation turns (recent enough) but whose engagement has waned. It's the difference between "you read cars recently" (cluster window) and "you used to read every car article, now you skip half of them" (interest fade).
+</div>
+
+<h2>What a feed looks like — by reader type</h2>
+<p>These are from the 6-seed benchmark (267,359 articles, 600 reads per persona). Each number is a range across 6 random seeds — the floor is the worst luck, the ceiling is the best.</p>
+
+<div class="tabs" id="personaTabs">
+  <button class="tab active" data-p="cars">🚗 Cars</button>
+  <button class="tab" data-p="juggler">🤹 Juggler</button>
+  <button class="tab" data-p="picky">😤 Picky</button>
+  <button class="tab" data-p="shifter">🔀 Shifter</button>
+  <button class="tab" data-p="serial">🐇 Serial</button>
+  <button class="tab" data-p="cold">🆕 Cold Start</button>
+  <button class="tab" data-p="scattered">🌊 Scattered</button>
+  <button class="tab" data-p="gundam">🤖 Gundam</button>
+</div>
+
+<div class="tab-content active" id="tc-cars">
+  <h3>🚗 The Focused Reader (cars)</h3>
+  <p><strong>Who:</strong> Seeded with Porsche 911 and Toyota Corolla. Loves cars. Reads everything car-related.</p>
+  <div class="stats">
+    <div class="stat"><span class="val">79.5–81.7%</span> <span class="lbl">appeal</span></div>
+    <div class="stat"><span class="val">7.0–8.7%</span> <span class="lbl">repeats</span></div>
+    <div class="stat"><span class="val">0</span> <span class="lbl">quits</span></div>
+    <div class="stat"><span class="val">3–6</span> <span class="lbl">max boring streak</span></div>
+    <div class="stat"><span class="val">~20%</span> <span class="lbl">explore share</span></div>
+    <div class="stat"><span class="val">180–236</span> <span class="lbl">explore domains</span></div>
+  </div>
+  <p>This is the easiest case. One big interest, lots of corpus articles. The feed locks on fast and stays locked. By feed 10, 8 of 10 articles are cars. The exploration doors occasionally land on related things (racing, engines) but mostly serve as the insurance policy — one door per 5 articles to check if they secretly love something else.</p>
+  <div class="phone">
+    <div class="phone-header"><span class="feed-num">Feed #10 — established reader</span><span>8 of 10 hit</span></div>
+    <div class="fi hit"><span class="idx">1</span><span class="title">Chevrolet Impala</span><span class="tag tag-hit">cars ✓</span></div>
+    <div class="fi hit"><span class="idx">2</span><span class="title">Oldsmobile Cutlass Ciera</span><span class="tag tag-hit">cars ✓</span></div>
+    <div class="fi hit"><span class="idx">3</span><span class="title">Lamborghini Gallardo</span><span class="tag tag-hit">cars ✓</span></div>
+    <div class="fi hit"><span class="idx">4</span><span class="title">Toyota Highlander</span><span class="tag tag-hit">cars ✓</span></div>
+    <div class="fi explore"><span class="idx">5</span><span class="title">Jeremy Corbyn</span><span class="tag tag-explore">explore</span></div>
+    <div class="fi hit"><span class="idx">6</span><span class="title">Lamborghini Urraco</span><span class="tag tag-hit">cars ✓</span></div>
+    <div class="fi hit"><span class="idx">7</span><span class="title">Audi R8</span><span class="tag tag-hit">cars ✓</span></div>
+    <div class="fi hit"><span class="idx">8</span><span class="title">Cadillac CT5</span><span class="tag tag-hit">cars ✓</span></div>
+    <div class="fi explore"><span class="idx">9</span><span class="title">Full-size vehicle</span><span class="tag tag-explore">explore → cars</span></div>
+    <div class="fi hit"><span class="idx">10</span><span class="title">Ford Expedition</span><span class="tag tag-hit">cars ✓</span></div>
+  </div>
+  <p><strong>The experience:</strong> Very satisfying. Like a curated car magazine that occasionally shows you a random article (Jeremy Corbyn). The random walk exploration often lands on car-adjacent things (Full-size vehicle) because the graph naturally leads there. The variety within cars is good — Italian supercars, American sedans, Japanese trucks all show up.</p>
+</div>
+
+<div class="tab-content" id="tc-juggler">
+  <h3>🤹 The Multi-Interest Reader (juggler)</h3>
+  <p><strong>Who:</strong> Seeded with Porsche 911, Lion, Linux, Elvis Presley, Roman Empire. Five genuine interests: cars, animals, computing, music, history.</p>
+  <div class="stats">
+    <div class="stat"><span class="val">75.5–85.3%</span> <span class="lbl">appeal</span></div>
+    <div class="stat"><span class="val">4.3–8.5%</span> <span class="lbl">repeats</span></div>
+    <div class="stat"><span class="val">0</span> <span class="lbl">quits</span></div>
+    <div class="stat"><span class="val">3–5</span> <span class="lbl">max boring streak</span></div>
+    <div class="stat"><span class="val">212–262</span> <span class="lbl">explore domains</span></div>
+  </div>
+  <p>The rotation system is built for this reader. Each of the 5 interest clusters gets equal turns regardless of how many corpus articles exist (there are 100× more music articles than animal articles). The recency boost doesn't distort things because all 5 interests are actively being read.</p>
+  <p><strong>The interesting variance:</strong> Some seeds end up dominated by one interest — seed 3 has <code>music 448</code> vs <code>computing 6</code>. This happens when the random walks from music happen to find more appealing articles than computing's walks. The rotation gives computing turns, but if computing's best candidate scores lower than the exploration threshold, it gets replaced by an exploration door. It's a feature, not a bug — if the corpus has more engaging music content, the reader naturally gravitates there.</p>
+</div>
+
+<div class="tab-content" id="tc-picky">
+  <h3>😤 The Picky Reader</h3>
+  <p><strong>Who:</strong> Seeded with Lion and Penguin. Loves animals but only reads about 35% of what you show them — even within their interest. They skip freely.</p>
+  <div class="stats">
+    <div class="stat"><span class="val">53.2–65.0%</span> <span class="lbl">appeal</span></div>
+    <div class="stat"><span class="val">17.0–25.0%</span> <span class="lbl">repeats</span></div>
+    <div class="stat"><span class="val">0</span> <span class="lbl">quits</span></div>
+    <div class="stat"><span class="val">7–9</span> <span class="lbl">max boring streak</span></div>
+    <div class="stat"><span class="val">27–35%</span> <span class="lbl">explore share</span></div>
+  </div>
+  <p><strong>Why high repeats:</strong> Animals is a smaller corpus slice. After 600 articles at 35% pickiness, the reader has only deeply engaged with ~70 articles. The candidate pool runs thin — there aren't that many animal articles they haven't seen. The engine starts re-serving articles from slightly different angles (different category overlaps nominate the same page).</p>
+  <p><strong>Why high explore share:</strong> Because picky readers skip so much, the skip-rate-reactive exploration kicks in — above 30% skip rate, the explore share increases. This is actually helpful: the relevance pool isn't serving what they want, so more exploration = more chances to find the specific animals they'd read.</p>
+  <p><strong>The 53–65% range:</strong> This is the widest band of any persona. Some seeds happen to include more of the animals this reader likes (big mammals, ocean life) while others get dominated by insects and microscopic organisms they'd skip. It's the pickiness × corpus composition lottery.</p>
+</div>
+
+<div class="tab-content" id="tc-shifter">
+  <h3>🔀 The Shifter</h3>
+  <p><strong>Who:</strong> Started with cars (30 feeds), then switched hard to football (30 feeds). Seeds Messi and Bayern Munich at the transition.</p>
+  <div class="stats">
+    <div class="stat"><span class="val">62.8–79.2%</span> <span class="lbl">appeal</span></div>
+    <div class="stat"><span class="val">6.8–10.8%</span> <span class="lbl">repeats</span></div>
+    <div class="stat"><span class="val">0–7</span> <span class="lbl">quits</span></div>
+    <div class="stat"><span class="val">7–10</span> <span class="lbl">max boring streak</span></div>
+  </div>
+  <p><strong>Phase 1 (cars):</strong> Consistently excellent — 72–83% active hit rate. The reader loves cars and the feed delivers.</p>
+  <p><strong>Phase 2 (football):</strong> This is where it gets interesting. The best seed gets 76% active football, 10% residue cars. The worst seed gets 49% active, 26% residue. That spread is the transition penalty — how quickly the engine can pivot from 300 car reads to the new football signal.</p>
+  <p><strong>What helps the transition:</strong> ClusterRecencyBoost (2×) gives football more rotation turns immediately. InterestFade drops the car cluster's voice as new state rows have no cars. ClusterWindow (50) means the car cluster eventually falls off rotation entirely. PoolWindow (200) keeps some car candidates in the pool (they still score, just lower), preventing a hard cliff.</p>
+  <div class="note warn">
+    <strong>The quits problem:</strong> Seeds 1 and 4 have 6–7 quits — feeds where the reader drew 10 articles and found nothing matching their current interest. These happen right at the transition: the first 2-3 feeds after switching, when football has barely any signal and cars still dominates. This is the worst moment in the reader's experience: "I just told you I like football now, why are you still showing me Lamborghinis?"
+  </div>
+</div>
+
+<div class="tab-content" id="tc-serial">
+  <h3>🐇 The Serial Rabbitholer</h3>
+  <p><strong>Who:</strong> Obsessive deep-diver. Cars (15 feeds) → Astronomy (15) → Football (15) → History (15). Switches hard with new seeds each time. Finishes 85% of appealing articles.</p>
+  <div class="stats">
+    <div class="stat"><span class="val">46.8–61.2%</span> <span class="lbl">appeal</span></div>
+    <div class="stat"><span class="val">5.8–12.3%</span> <span class="lbl">repeats</span></div>
+    <div class="stat"><span class="val">0–10</span> <span class="lbl">quits</span></div>
+    <div class="stat"><span class="val">8–10</span> <span class="lbl">max boring streak</span></div>
+    <div class="stat"><span class="val">0–7</span> <span class="lbl">starved</span></div>
+  </div>
+  <p><strong>This is the hardest persona.</strong> By phase 4, the engine has dealt with 3 complete interest transitions. Each one leaves residue in the state. Even with InterestFade, the engine can't instantly forget 150 reads.</p>
+  <div style="margin: 0.8rem 0;">
+    <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.3rem;">Phase-by-phase active hit rate (seed averages):</div>
+    <div class="score-bar">
+      <div style="width: 25%; background: var(--accent);" title="Phase 1: Cars">🚗 75%</div>
+      <div style="width: 25%; background: var(--green);" title="Phase 2: Astronomy">🔭 60%</div>
+      <div style="width: 25%; background: var(--orange);" title="Phase 3: Football">⚽ 48%</div>
+      <div style="width: 25%; background: var(--red);" title="Phase 4: History">📜 35%</div>
+    </div>
+    <div style="font-size: 0.75rem; color: var(--fg2); margin-top: 0.2rem;">Each bar = 15 feeds = 150 articles. Active % = articles matching the current phase's interest.</div>
+  </div>
+  <p><strong>The decline is structural.</strong> Phase 1 starts clean. By phase 4, there are 3 dead clusters still holding some voice (InterestFade drops them to 30%, but that's not zero). The pool still has residue candidates from old phases. The worst seed (seed 4) has phase 4 at only 7% active with 77% residue — basically the entire feed is old interests. That seed also has 10 quits.</p>
+  <p><strong>What InterestFade added:</strong> Before IF, the average was worse — phase 4 was consistently under 10%. IF brought the average to ~35% and the best seed to 47%. The mechanism works, just not perfectly for 4 sequential transitions.</p>
+</div>
+
+<div class="tab-content" id="tc-cold">
+  <h3>🆕 The Cold-Start Reader</h3>
+  <p><strong>Who:</strong> Brand new. No seeds, no history. Latent love of animals and computing — would devour either if they ever appeared.</p>
+  <div class="stats">
+    <div class="stat"><span class="val">66.5–70.5%</span> <span class="lbl">appeal</span></div>
+    <div class="stat"><span class="val">4.3–5.8%</span> <span class="lbl">repeats</span></div>
+    <div class="stat"><span class="val">0–1</span> <span class="lbl">quits</span></div>
+    <div class="stat"><span class="val">6–10</span> <span class="lbl">max boring streak</span></div>
+  </div>
+  <p><strong>The surprise:</strong> Cold-start is actually one of the better personas now! 66–70% appeal with zero history. How?</p>
+  <p>Feed #1 is 75% exploration (no clustered reads yet). The mix of featured Wikipedia articles and random corpus samples almost always surfaces something the reader would love within the first feed. Computing is ~1% of the corpus but that's still 2,670 articles — random sampling hits it quickly. Once the reader finishes one computing article, the engine has a seed and starts finding neighbors.</p>
+  <p><strong>The asymmetry:</strong> Computing gets found by feed 1 in every seed. Animals is slower (larger but more diffuse in the category graph). Some seeds find both; the worst seed gets computing early but never discovers animals. The 66–70% range reflects that: computing alone gets you to 66%, adding animals pushes toward 70%.</p>
+  <div class="note">
+    <strong>Adoption speed:</strong> Every seed adopted a latent interest at feed 1. The old system (featured articles only) took 3–4 feeds. The random-articles fix was the single biggest cold-start improvement.
+  </div>
+</div>
+
+<div class="tab-content" id="tc-scattered">
+  <h3>🌊 The Scattered Reader</h3>
+  <p><strong>Who:</strong> Read 12 completely unrelated articles: Eiffel Tower, Photosynthesis, Jazz, Mount Everest, Sushi, Basketball, Leonardo da Vinci, Volcano, Bitcoin, Shakespeare, Great Barrier Reef, Chess. Would love astronomy and dogs if found.</p>
+  <div class="stats">
+    <div class="stat"><span class="val">50.5–61.3%</span> <span class="lbl">appeal</span></div>
+    <div class="stat"><span class="val">5.8–12.8%</span> <span class="lbl">repeats</span></div>
+    <div class="stat"><span class="val">5–10</span> <span class="lbl">quits</span></div>
+    <div class="stat"><span class="val">10</span> <span class="lbl">max boring streak</span></div>
+    <div class="stat"><span class="val">233–303</span> <span class="lbl">explore domains</span></div>
+  </div>
+  <p><strong>The noise problem in detail:</strong> 12 random reads create 12 tiny clusters (or a few merged ones where categories happen to overlap — Chess + Leonardo da Vinci both share "Italian" categories). The engine treats each as a genuine interest. It rotates through chess neighbors, mountaineering neighbors, sushi neighbors — none of which the reader actually wants.</p>
+  <p><strong>Dogs: never found.</strong> Dogs are 0.08% of the corpus (~215 articles). The random walks from the reader's 12 seeds never land on a dog breed. Pure random sampling draws from 267,000 articles — the chance of hitting a specific 215-article slice in 120 exploration slots over 600 articles is about 9%. Most seeds miss.</p>
+  <p><strong>Astronomy: found by feed 3–6.</strong> Astronomy is ~1% of the corpus and connected to several of the reader's seeds (Volcano → Earth → Solar System, Mount Everest → Nepal → Himalayas → adjacent to space articles). The walks find it. Once found, it becomes the dominant interest and appeal climbs rapidly.</p>
+  <p><strong>The 50–61% range:</strong> The floor (50.5%) is the seed where astronomy took until feed 6 to appear, and dogs were never found. The ceiling (61.3%) is the seed where astronomy appeared at feed 3 and the walks happened to find more useful adjacent content.</p>
+</div>
+
+<div class="tab-content" id="tc-gundam">
+  <h3>🤖 The Niche Explorer (gundam-dogs-fungi)</h3>
+  <p><strong>Who:</strong> Deep into mecha/anime. Also secretly loves dogs and fungi — two tiny corpus slices (dogs ~0.08%, fungi ~0.03%) that the engine can only find through exploration.</p>
+  <div class="stats">
+    <div class="stat"><span class="val">56.3–62.2%</span> <span class="lbl">appeal</span></div>
+    <div class="stat"><span class="val">10.2–12.3%</span> <span class="lbl">repeats</span></div>
+    <div class="stat"><span class="val">0–3</span> <span class="lbl">quits</span></div>
+    <div class="stat"><span class="val">6–10</span> <span class="lbl">max boring streak</span></div>
+  </div>
+  <p><strong>Mecha dominates:</strong> 327–373 of 600 articles are mecha. The engine locked on immediately — 4 seeds with strong category overlap cluster fast.</p>
+  <p><strong>Dogs: barely found.</strong> 1–15 dog articles across seeds. First contact varies wildly — feed 13 to feed 21. Some seeds find a few dog breeds through random exploration; most find 2–3 total. The corpus slice is just too small for exploration to reliably surface it.</p>
+  <p><strong>Fungi: never found.</strong> Zero fungi articles across all seeds. At 0.03% of the corpus (~80 articles), random sampling essentially never hits it, and no category walk from mecha leads to mycology.</p>
+  <p><strong>What this means:</strong> The engine is great at serving your dominant interest but structurally limited at discovering micro-niches. You can't find 80 articles out of 267,000 by random sampling in 600 draws. This is a real product limitation — a reader who would love mushroom articles will never know it exists unless they search for it themselves.</p>
+</div>
+
+<h2>What it's like to be a first-time reader</h2>
+<p>The cold-start tab above has the numbers. But what does the journey actually <em>feel</em> like — feed by feed — when you open the app with zero history?</p>
+
+<h3>Feed #1 — the blank slate</h3>
+<p>You have no history. The engine knows nothing. Exploration share is 75% (maximum). The feed is a mix of Wikipedia's featured articles and random corpus samples:</p>
+
+<div class="phone">
+  <div class="phone-header"><span class="feed-num">Feed #1 — brand new reader</span><span>100% exploration</span></div>
+  <div class="fi explore"><span class="idx">1</span><span class="title">Abdul El-Sayed</span><span class="tag tag-explore">featured</span></div>
+  <div class="fi explore"><span class="idx">2</span><span class="title">List of sequenced genomes</span><span class="tag tag-explore">random</span></div>
+  <div class="fi explore"><span class="idx">3</span><span class="title">American Airlines Flight 11</span><span class="tag tag-explore">featured</span></div>
+  <div class="fi explore"><span class="idx">4</span><span class="title">Oyster Burns</span><span class="tag tag-explore">random</span></div>
+  <div class="fi explore"><span class="idx">5</span><span class="title">11 Parthenope</span><span class="tag tag-explore">featured</span></div>
+  <div class="fi explore"><span class="idx">6</span><span class="title">The Titan's Curse</span><span class="tag tag-explore">random</span></div>
+  <div class="fi explore"><span class="idx">7</span><span class="title">Jeremy Corbyn</span><span class="tag tag-explore">featured</span></div>
+  <div class="fi explore"><span class="idx">8</span><span class="title">Earth</span><span class="tag tag-explore">random</span></div>
+  <div class="fi explore"><span class="idx">9</span><span class="title">1923 Great Kantō earthquake</span><span class="tag tag-explore">featured</span></div>
+  <div class="fi hit explore"><span class="idx">10</span><span class="title">List of security hacking incidents</span><span class="tag tag-hit">computing ✓</span></div>
+</div>
+
+<p>Everything is a door. The reader scans through — a politician, a genome list, a 9/11 article, a 1800s baseball player, an asteroid, a YA novel, a British politician, the planet Earth, an earthquake. Then at the bottom: "List of security hacking incidents." That catches their eye. They read it. <strong>One article is all it takes.</strong></p>
+
+<h3>Feed #3 — the engine latches on</h3>
+<p>The reader has now finished 3-4 computing-related articles. The engine has a cluster forming. Exploration drops from 75% to ~55% (a few clustered rows now). Computing neighbors start appearing in relevance slots:</p>
+
+<div class="phone">
+  <div class="phone-header"><span class="feed-num">Feed #3 — computing signal forming</span><span>4 of 10 on-topic</span></div>
+  <div class="fi hit"><span class="idx">1</span><span class="title">Advanced Encryption Standard</span><span class="tag tag-hit">computing ✓</span></div>
+  <div class="fi explore"><span class="idx">2</span><span class="title">Altar</span><span class="tag tag-explore">explore</span></div>
+  <div class="fi hit"><span class="idx">3</span><span class="title">Tape drive</span><span class="tag tag-hit">computing</span></div>
+  <div class="fi explore"><span class="idx">4</span><span class="title">Bowls</span><span class="tag tag-explore">explore</span></div>
+  <div class="fi hit"><span class="idx">5</span><span class="title">Hacker</span><span class="tag tag-hit">computing ✓</span></div>
+  <div class="fi explore"><span class="idx">6</span><span class="title">Earth</span><span class="tag tag-explore">explore</span></div>
+  <div class="fi"><span class="idx">7</span><span class="title">System of linear equations</span><span class="tag tag-miss">related</span></div>
+  <div class="fi explore"><span class="idx">8</span><span class="title">Oxalaia</span><span class="tag tag-explore">explore</span></div>
+  <div class="fi hit explore"><span class="idx">9</span><span class="title">Rlogin</span><span class="tag tag-hit">computing ✓</span></div>
+  <div class="fi explore"><span class="idx">10</span><span class="title">1935</span><span class="tag tag-explore">explore</span></div>
+</div>
+
+<p>The feed is half computing, half exploration doors. The exploration is still heavy (this reader has few clustered rows), but the relevance slots are filling with computing articles found through category walks from the hacking article. "Advanced Encryption Standard" shares security/computing categories; "Rlogin" was found through a link chain. The reader finishes all 4 computing articles and skips the rest.</p>
+
+<h3>Feed #8 — the flywheel</h3>
+<p>By now the reader has finished ~25 computing articles. The cluster is strong, exploration share has dropped to ~25%, and the category graph is fully lit up:</p>
+
+<div class="phone">
+  <div class="phone-header"><span class="feed-num">Feed #8 — locked on</span><span>8 of 10 on-topic</span></div>
+  <div class="fi hit"><span class="idx">1</span><span class="title">Computer vision</span><span class="tag tag-hit">computing ✓</span></div>
+  <div class="fi hit"><span class="idx">2</span><span class="title">Flux (software)</span><span class="tag tag-hit">computing ✓</span></div>
+  <div class="fi hit"><span class="idx">3</span><span class="title">Deep learning</span><span class="tag tag-hit">computing ✓</span></div>
+  <div class="fi explore"><span class="idx">4</span><span class="title">Jeremy Corbyn</span><span class="tag tag-explore">explore</span></div>
+  <div class="fi hit"><span class="idx">5</span><span class="title">Linux kernel</span><span class="tag tag-hit">computing ✓</span></div>
+  <div class="fi hit"><span class="idx">6</span><span class="title">Internet protocol suite</span><span class="tag tag-hit">computing ✓</span></div>
+  <div class="fi hit"><span class="idx">7</span><span class="title">Turing machine</span><span class="tag tag-hit">computing ✓</span></div>
+  <div class="fi hit"><span class="idx">8</span><span class="title">Alan Turing</span><span class="tag tag-hit">computing ✓</span></div>
+  <div class="fi explore"><span class="idx">9</span><span class="title">Paint It Black</span><span class="tag tag-explore">explore</span></div>
+  <div class="fi hit"><span class="idx">10</span><span class="title">Compiler</span><span class="tag tag-hit">computing ✓</span></div>
+</div>
+
+<p><strong>Eight of ten are computing.</strong> The engine went from "I know nothing about you" to "you're a computing reader, here's deep learning, Turing machines, and the Linux kernel" in 8 feeds (~80 articles). The two exploration doors (Jeremy Corbyn, Paint It Black) are the 20% insurance policy — in case the reader secretly also loves British politics or classic rock. They'll probably skip both, and that's fine.</p>
+
+<div class="note good">
+  <strong>The cold-start flywheel:</strong> Feed 1 was 100% guessing. Feed 3 was half-and-half. Feed 8 is 80% on-target. The engine ramps up fast once it has signal — the combination of high initial exploration (75%), random sampling to cast a wide net, and the explore-share ramp (drops from 75% to 20% as clustered reads accumulate) means the transition from "I know nothing" to "I know you" takes about 5–8 feeds. Every seed in the benchmark adopted a latent interest by feed 1 — the random articles fix was the single biggest cold-start improvement.
+</div>
+
+<p><strong>But notice what didn't happen:</strong> This reader would also love animals. In all 6 seeds, animals were either never found or found late and sparingly (5–115 animal articles vs. 299–417 computing). Once computing locked in, the engine's exploration doors had to compete with a strong computing signal. Random sampling <em>might</em> surface an animal article, but the reader's computing reads generate walks that lead to more computing. The engine found one interest and ran with it — great for depth, not great for breadth. This is the narrowing problem discussed in the <a href="feed-struggles.html" style="color: var(--accent);">struggles page</a>.</p>
+
+<h2>The full 6-seed scorecard</h2>
+<p>Each row shows the floor–ceiling range across 6 random seeds, over 600 articles. The floor is the worst luck; the ceiling is the best.</p>
+
+<table class="data-table">
+  <thead>
+    <tr><th>Persona</th><th>Appeal range</th><th>Quits</th><th>Max streak</th><th>Explore domains</th><th>One line</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="persona">mono-football</td><td>84.5–87.0%</td><td>0</td><td>3–5</td><td>194–263</td><td>Deep and satisfied</td></tr>
+    <tr><td class="persona">cars</td><td>79.5–81.7%</td><td>0</td><td>3–6</td><td>180–236</td><td>Consistently strong</td></tr>
+    <tr><td class="persona">juggler-five</td><td>75.5–85.3%</td><td>0</td><td>3–5</td><td>212–262</td><td>Wide band, always good</td></tr>
+    <tr><td class="persona">sparse-cars</td><td>69.8–77.5%</td><td>0</td><td>3–7</td><td>196–246</td><td>Thin signal, still finds it</td></tr>
+    <tr><td class="persona">comp-football</td><td>71.0–77.5%</td><td>0</td><td>3–8</td><td>218–289</td><td>Two interests balanced</td></tr>
+    <tr><td class="persona">shifter</td><td>62.8–79.2%</td><td>0–7</td><td>7–10</td><td>188–225</td><td>Transition penalty</td></tr>
+    <tr><td class="persona">adopter</td><td>68.0–80.7%</td><td>0</td><td>4–9</td><td>203–252</td><td>Latent discovery varies</td></tr>
+    <tr><td class="persona">cold-start</td><td>66.5–70.5%</td><td>0–1</td><td>6–10</td><td>203–246</td><td>Surprisingly good</td></tr>
+    <tr><td class="persona">history-broad</td><td>63.7–71.3%</td><td>0</td><td>5–9</td><td>184–273</td><td>Big corpus, diffuse</td></tr>
+    <tr><td class="persona">animals-astro-pres</td><td>60.8–67.2%</td><td>0</td><td>4–8</td><td>208–271</td><td>Presidents too small</td></tr>
+    <tr><td class="persona">gundam-dogs-fungi</td><td>56.3–62.2%</td><td>0–3</td><td>6–10</td><td>200–255</td><td>Micro-niches invisible</td></tr>
+    <tr><td class="persona">picky</td><td>53.2–65.0%</td><td>0</td><td>7–9</td><td>217–337</td><td>Widest band, pickiness</td></tr>
+    <tr><td class="persona">scattered</td><td>50.5–61.3%</td><td>5–10</td><td>10</td><td>233–303</td><td>Noise → slow recovery</td></tr>
+    <tr><td class="persona">serial</td><td>46.8–61.2%</td><td>0–10</td><td>8–10</td><td>197–251</td><td>Accumulated transitions</td></tr>
+  </tbody>
+</table>
+
+<div class="note">
+  <strong>The explore-domains column:</strong> This counts how many distinct Wikipedia category domains the exploration doors touched. Higher = more varied exploration. Scattered gets the highest (233–303) because its elevated explore share sends more random samples. Cars gets the lowest (180–236) because 80% of its feed is cars — only 20% are exploration doors. This number is one proxy for "how narrow is the feed" — a reader with 180 explore domains saw articles from 180 different corners of Wikipedia, even if their main feed was all cars.
+</div>
+
+<h2>What does an appeal percentage feel like?</h2>
+<p>Each row is 20 articles (one feed draw). Green = would want to read. Gray = would scroll past.</p>
+
+<div id="appealViz"></div>
+
+<h2>How the engine evolved</h2>
+
+<div class="timeline">
+  <div class="tl-item shipped">
+    <div class="tl-label">Rounds 8–9 — Engagement model</div>
+    <div class="tl-title">Reading depth matters, not just "finished"</div>
+    <div class="tl-desc">95% of a 3000-word article now counts far more than 95% of a 60-word stub. A 3000-word skip after 10 minutes of reading is a mild negative (−0.21), while an instant bounce is full negative (−1.0). Engagement is mean-normalized: your personal average is the baseline.</div>
+  </div>
+  <div class="tl-item shipped">
+    <div class="tl-label">Round 10 — Scoring calibration</div>
+    <div class="tl-title">Saved ≠ max love; word-count-aware completions</div>
+    <div class="tl-desc">Saving is moderate positive (~0.7), not maximum (1.0). Long articles (>3000w) complete at 45–85%, not 85–100%. Both make the sim more realistic.</div>
+  </div>
+  <div class="tl-item shipped">
+    <div class="tl-label">Round 11 — The big parameter fix</div>
+    <div class="tl-title">Similarity 1.0→0.6, random articles for cold-start</div>
+    <div class="tl-desc">Four flag-default bugs found and fixed. Similarity 0.6 was the single biggest win: picky +15.3, mono +13.7. Random articles for cold-start: +9.5 floor. Tradeoff: scattered and sparse regressed (noise signal gets more trust).</div>
+  </div>
+  <div class="tl-item shipped">
+    <div class="tl-label">Round 12 — Selection structure</div>
+    <div class="tl-title">Cluster window, pool window, recency boost</div>
+    <div class="tl-desc">ClusterWindow=50 limits old interests in rotation. PoolWindow=200 keeps pool focused on recent interests. RecencyBoost=2× accelerates transitions. Serial phase 4 went from 2% to 35–47% active.</div>
+  </div>
+  <div class="tl-item shipped">
+    <div class="tl-label">Round 14 — InterestFade</div>
+    <div class="tl-title">Per-cluster engagement trending for scoring</div>
+    <div class="tl-desc">Clusters that stopped appearing in recent state get voice attenuated to 30%. Works on both voice (category weight) and nominations (link strength). The scoring-side complement to ClusterWindow's selection-side windowing.</div>
+  </div>
+  <div class="tl-item reverted">
+    <div class="tl-label">Round 14b–c — Activity-ratio experiments (reverted)</div>
+    <div class="tl-title">E1-E3, NascentBoost: all failed</div>
+    <div class="tl-desc">Tried applying activity ratio to selection mechanisms (explore share, cluster boost, fresh cap). Every variant hurt at least one persona. Also tried NascentBoost (voice amplification for small new clusters) — helped shifter +10 but hurt others because it can't distinguish real interest transitions from exploration noise. <strong>Conclusion: the system is at its Pareto frontier with InterestFade alone.</strong></div>
+  </div>
+</div>
+
+<h2>The fundamental tradeoffs</h2>
+
+<div class="card">
+  <div class="card-title"><span class="icon">⚖️</span> Trust vs. Explore</div>
+  <p>More trust in the signal → better for readers with clear interests (cars, mono), worse for noisy signals (scattered, serial). Less trust → more exploration → helps noisy readers discover things, but dilutes focused readers' feeds with unwanted doors.</p>
+  <p>Current config: <strong>trust the signal, with a safety net</strong>. Similarity 0.6, base exploration 20%, adaptive ramp from 75% to 20%, skip-reactive boost.</p>
+</div>
+
+<div class="card">
+  <div class="card-title"><span class="icon">⚖️</span> Speed vs. Stability</div>
+  <p>Faster transitions help serial and shifter (the engine pivots to new interests quickly). But faster transitions also mean the engine overreacts to exploration noise — a random astronomy read creates a cluster that competes with established interests.</p>
+  <p>Current config: <strong>medium speed</strong>. RecencyBoost 2×, ClusterWindow 50, InterestFade floor 0.3. An abandoned interest fades but doesn't vanish — enough residual voice to serve its best candidates if they appear, not enough to dominate.</p>
+</div>
+
+<div class="card">
+  <div class="card-title"><span class="icon">⚖️</span> Depth vs. Breadth</div>
+  <p>Depth (more similar articles within an interest) helps focused readers who want to go deep into Italian supercars. Breadth (diverse articles, more exploration) helps readers discover new things. Similarity penalty is the main dial: at 0.6 depth wins; at 1.0 breadth wins.</p>
+  <p>Current config: <strong>slightly favoring depth</strong>. 0.6 similarity penalty lets similar articles coexist. The 20% exploration floor ensures breadth never drops below one-fifth of the feed.</p>
+</div>
+
+<script>
+// Tab switching
+document.getElementById('personaTabs').addEventListener('click', e => {
+  const tab = e.target.closest('.tab');
+  if (!tab) return;
+  document.querySelectorAll('#personaTabs .tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(d => d.classList.remove('active'));
+  tab.classList.add('active');
+  document.getElementById('tc-' + tab.dataset.p).classList.add('active');
+});
+
+// Appeal visualization
+const appealViz = document.getElementById('appealViz');
+const levels = [
+  { pct: 85, label: '85% — "nearly everything hits"', desc: 'Monomaniac-football ceiling. 17 of 20 relevant.' },
+  { pct: 75, label: '75% — "this feed knows me"', desc: 'Juggler, cars, comp-football. 15 of 20 relevant.' },
+  { pct: 65, label: '65% — "solidly good"', desc: 'Cold-start, history, picky ceiling. 13 of 20 relevant.' },
+  { pct: 55, label: '55% — "more hits than misses"', desc: 'Gundam, scattered ceiling. 11 of 20 relevant.' },
+  { pct: 47, label: '47% — "barely half"', desc: 'Serial floor. 9-10 of 20 relevant. The worst experience.' },
+];
+levels.forEach(l => {
+  const row = document.createElement('div');
+  row.style.cssText = 'margin-bottom: 1.2rem;';
+  const label = document.createElement('div');
+  label.style.cssText = 'font-weight: 600; font-size: 0.88rem; margin-bottom: 0.3rem;';
+  label.textContent = l.label;
+  row.appendChild(label);
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display: flex; gap: 3px; flex-wrap: wrap;';
+  const count = 20;
+  const good = Math.round(count * l.pct / 100);
+  // Distribute hits pseudo-randomly
+  const picks = new Set();
+  let s = l.pct * 3 + 7;
+  for (let attempt = 0; picks.size < good && attempt < 200; attempt++) {
+    s = (s * 7 + 13) % count;
+    picks.add(s);
+  }
+  // Fallback fill
+  for (let i = 0; i < count && picks.size < good; i++) picks.add(i);
+  for (let i = 0; i < count; i++) {
+    const dot = document.createElement('div');
+    const isGood = picks.has(i);
+    dot.style.cssText = 'width: 28px; height: 28px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 600;';
+    dot.style.background = isGood ? 'var(--green-soft)' : 'var(--code-bg)';
+    dot.style.color = isGood ? 'var(--green)' : 'var(--fg3)';
+    dot.textContent = isGood ? '✓' : '·';
+    grid.appendChild(dot);
+  }
+  const desc = document.createElement('div');
+  desc.style.cssText = 'font-size: 0.8rem; color: var(--fg2); margin-top: 0.25rem;';
+  desc.textContent = l.desc;
+  row.appendChild(grid);
+  row.appendChild(desc);
+  appealViz.appendChild(row);
+});
+</script>
+</content>
+</invoke>

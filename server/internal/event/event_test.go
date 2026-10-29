@@ -34,6 +34,7 @@ func TestDecodeValidFixtures(t *testing.T) {
 		{"ask.json", "ask"},
 		{"finish.json", "finish"},
 		{"skip.json", "skip"},
+		{"save.json", "save"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.file, func(t *testing.T) {
@@ -141,13 +142,30 @@ func TestDecodeSliceMixedValidity(t *testing.T) {
 }
 
 func TestFeedState(t *testing.T) {
-	e, _ := Decode(readFixture(t, "finish.json"))
-	if got := e.FeedState(); got != "finished" {
-		t.Errorf("FeedState() = %q, want %q", got, "finished")
+	cases := []struct {
+		file      string
+		wantState string
+		wantOK    bool
+	}{
+		{"finish.json", "finished", true},
+		{"skip.json", "skipped", true},
+		{"save.json", "saved", true},
+		{"play.json", "", false},
+		{"pause.json", "", false},
+		{"scroll_back.json", "", false},
+		{"ask.json", "", false},
 	}
-	e, _ = Decode(readFixture(t, "skip.json"))
-	if got := e.FeedState(); got != "skipped" {
-		t.Errorf("FeedState() = %q, want %q", got, "skipped")
+	for _, tc := range cases {
+		t.Run(tc.file, func(t *testing.T) {
+			e, err := Decode(readFixture(t, tc.file))
+			if err != nil {
+				t.Fatal(err)
+			}
+			state, ok := e.FeedState()
+			if state != tc.wantState || ok != tc.wantOK {
+				t.Errorf("FeedState() = (%q, %v), want (%q, %v)", state, ok, tc.wantState, tc.wantOK)
+			}
+		})
 	}
 }
 

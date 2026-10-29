@@ -7,6 +7,12 @@
  "license": "CC BY-SA 4.0",
  "attribution": "Text from the Simple English Wikipedia article \"Physics\", https://simple.wikipedia.org/wiki/Physics (revision 10979726), licensed CC BY-SA 4.0",
  "fetched": "2026-10-11",
+ "description": "study of matter and its motion, along with related concepts such as energy and force",
+ "image": {
+  "url": "https://upload.wikimedia.org/wikipedia/commons/9/9a/CollageFisica.jpg?utm_source=simple.wikipedia.org\u0026utm_campaign=api\u0026utm_content=thumbnail_unscaled",
+  "width": 831,
+  "height": 600
+ },
  "links": [
   "Abdus Salam",
   "Acceleration",

@@ -3,10 +3,13 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -24,6 +27,7 @@ func runIngest(ctx context.Context, args []string) error {
 	srcName := fs.String("source", "wikipedia", "article source: wikipedia, simplewiki or fixture")
 	fixturesDir := fs.String("fixtures", "fixtures/articles", "fixtures directory (read by -source fixture, written by -write-fixture)")
 	writeFixture := fs.Bool("write-fixture", false, "also save each fetched article as a fixture pair")
+	refreshMeta := fs.Bool("refresh-meta", false, "fetch only lead image and description for existing fixtures (args are fixture slugs, or \"all\") and rewrite their JSON")
 	fs.Usage = func() {
 		fmt.Fprintln(fs.Output(), "usage: wikifyp ingest [flags] <title>...")
 		fs.PrintDefaults()
@@ -39,6 +43,9 @@ func runIngest(ctx context.Context, args []string) error {
 	if len(titles) == 0 {
 		fs.Usage()
 		return errors.New("ingest: no titles given")
+	}
+	if *refreshMeta {
+		return refreshFixtureMeta(ctx, *fixturesDir, titles)
 	}
 	// Flag parsing stops at the first non-flag argument, so a flag placed
 	// after a title would silently be fetched as an article. An explicit
@@ -104,6 +111,64 @@ func runIngest(ctx context.Context, args []string) error {
 				log.Printf("%s: revision %d already stored as article %d", a.Title, a.RevisionID, res.ArticleID)
 			}
 		}
+	}
+	return nil
+}
+
+// refreshFixtureMeta backfills lead image and description onto existing
+// fixture JSON files, fetching only pageimages and description for each
+// fixture's page from its own wiki. The fixture's other metadata and its
+// .txt are never touched: the text belongs to its recorded revision, and a
+// full re-fetch would move it. Image and description mirror the wiki's
+// current state, so a page whose image went away loses it here too.
+func refreshFixtureMeta(ctx context.Context, dir string, slugs []string) error {
+	if len(slugs) == 1 && slugs[0] == "all" {
+		matches, err := filepath.Glob(filepath.Join(dir, "*.json"))
+		if err != nil {
+			return fmt.Errorf("refresh-meta: %w", err)
+		}
+		slugs = slugs[:0]
+		for _, m := range matches {
+			slugs = append(slugs, strings.TrimSuffix(filepath.Base(m), ".json"))
+		}
+	}
+	// One client per wiki so the rate limiter spans the whole run.
+	clients := map[string]*source.MediaWiki{
+		"wikipedia":  source.Wikipedia(),
+		"simplewiki": source.SimpleWiki(),
+	}
+	for _, slug := range slugs {
+		path := filepath.Join(dir, slug+".json")
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("refresh-meta: %w", err)
+		}
+		var a source.Article
+		if err := json.Unmarshal(data, &a); err != nil {
+			return fmt.Errorf("refresh-meta: %s: %w", slug, err)
+		}
+		w, ok := clients[a.Source]
+		if !ok {
+			return fmt.Errorf("refresh-meta: %s: unknown source %q", slug, a.Source)
+		}
+		img, desc, err := w.FetchMeta(ctx, a.PageID)
+		if err != nil {
+			return fmt.Errorf("refresh-meta: %s: %w", slug, err)
+		}
+		a.Image = img
+		a.Description = desc
+		if err := source.WriteFixtureMeta(path, &a); err != nil {
+			return fmt.Errorf("refresh-meta: %s: %w", slug, err)
+		}
+		imgPart := "no free image"
+		if img != nil {
+			imgPart = fmt.Sprintf("image %dx%d", img.Width, img.Height)
+		}
+		descPart := "no description"
+		if desc != "" {
+			descPart = fmt.Sprintf("description %q", desc)
+		}
+		log.Printf("%s: %s, %s", slug, imgPart, descPart)
 	}
 	return nil
 }

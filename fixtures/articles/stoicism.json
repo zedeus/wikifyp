@@ -7,6 +7,12 @@
  "license": "CC BY-SA 4.0",
  "attribution": "Text from the Wikipedia article \"Stoicism\", https://en.wikipedia.org/wiki/Stoicism (revision 1379735096), licensed CC BY-SA 4.0",
  "fetched": "2026-10-11",
+ "description": "Ancient philosophy",
+ "image": {
+  "url": "https://upload.wikimedia.org/wikipedia/commons/b/bc/Paolo_Monti_-_Servizio_fotografico_%28Napoli%2C_1969%29_-_BEIC_6353768.jpg?utm_source=en.wikipedia.org\u0026utm_campaign=api\u0026utm_content=thumbnail_unscaled",
+  "width": 867,
+  "height": 1280
+ },
  "links": [
   "16th century",
   "A. A. Long",

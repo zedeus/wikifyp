@@ -7,6 +7,12 @@
  "license": "CC BY-SA 4.0",
  "attribution": "Text from the Wikipedia article \"Photosynthesis\", https://en.wikipedia.org/wiki/Photosynthesis (revision 1379238357), licensed CC BY-SA 4.0",
  "fetched": "2026-10-11",
+ "description": "Biological process to convert light into chemical energy",
+ "image": {
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/55/Photosynthesis_en.svg/960px-Photosynthesis_en.svg.png?utm_source=en.wikipedia.org\u0026utm_campaign=api\u0026utm_content=thumbnail",
+  "width": 960,
+  "height": 960
+ },
  "links": [
   "3-phosphoglycerate",
   "3-phosphoglyceric acid",

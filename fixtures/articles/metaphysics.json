@@ -7,6 +7,12 @@
  "license": "CC BY-SA 4.0",
  "attribution": "Text from the Wikipedia article \"Metaphysics\", https://en.wikipedia.org/wiki/Metaphysics (revision 1375574757), licensed CC BY-SA 4.0",
  "fetched": "2026-10-11",
+ "description": "Study of fundamental reality",
+ "image": {
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bb/Aristotle%2C_Metaphysics%2C_Incunabulum.jpg/960px-Aristotle%2C_Metaphysics%2C_Incunabulum.jpg?utm_source=en.wikipedia.org\u0026utm_campaign=api\u0026utm_content=thumbnail",
+  "width": 960,
+  "height": 1440
+ },
  "links": [
   "A-theory of time",
   "A Treatise Concerning the Principles of Human Knowledge",

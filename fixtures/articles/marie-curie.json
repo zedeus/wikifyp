@@ -7,6 +7,12 @@
  "license": "CC BY-SA 4.0",
  "attribution": "Text from the Wikipedia article \"Marie Curie\", https://en.wikipedia.org/wiki/Marie_Curie (revision 1379680433), licensed CC BY-SA 4.0",
  "fetched": "2026-10-11",
+ "description": "Polish-French physicist and chemist (1867–1934)",
+ "image": {
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c8/Marie_Curie_c._1920s.jpg/960px-Marie_Curie_c._1920s.jpg?utm_source=en.wikipedia.org\u0026utm_campaign=api\u0026utm_content=thumbnail",
+  "width": 960,
+  "height": 1305
+ },
  "links": [
   "1901 Nobel Prize in Physics",
   "1903 Nobel Prize in Literature",

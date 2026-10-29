@@ -7,6 +7,12 @@
  "license": "CC BY-SA 4.0",
  "attribution": "Text from the Simple English Wikipedia article \"Chemistry\", https://simple.wikipedia.org/wiki/Chemistry (revision 10976485), licensed CC BY-SA 4.0",
  "fetched": "2026-10-11",
+ "description": "branch of physical science concerned with the composition, structure and properties of matter",
+ "image": {
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e1/Chemicals_in_flasks.jpg/960px-Chemicals_in_flasks.jpg?utm_source=simple.wikipedia.org\u0026utm_campaign=api\u0026utm_content=thumbnail",
+  "width": 960,
+  "height": 852
+ },
  "links": [
   "3D printing",
   "Absolute zero",

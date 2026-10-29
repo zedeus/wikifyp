@@ -7,6 +7,12 @@
  "license": "CC BY-SA 4.0",
  "attribution": "Text from the Wikipedia article \"Leonardo da Vinci\", https://en.wikipedia.org/wiki/Leonardo_da_Vinci (revision 1377616629), licensed CC BY-SA 4.0",
  "fetched": "2026-10-11",
+ "description": "Italian polymath (1452–1519)",
+ "image": {
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/Francesco_Melzi_-_Portrait_of_Leonardo_%28colour_correction%29.png/960px-Francesco_Melzi_-_Portrait_of_Leonardo_%28colour_correction%29.png?utm_source=en.wikipedia.org\u0026utm_campaign=api\u0026utm_content=thumbnail",
+  "width": 960,
+  "height": 1375
+ },
  "links": [
   "A Mathematician's Apology",
   "A Treatise on Painting",

@@ -7,6 +7,12 @@
  "license": "CC BY-SA 4.0",
  "attribution": "Text from the Wikipedia article \"DNA\", https://en.wikipedia.org/wiki/DNA (revision 1379332306), licensed CC BY-SA 4.0",
  "fetched": "2026-10-11",
+ "description": "Molecule that carries genetic information",
+ "image": {
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4c/DNA_Structure%2BKey%2BLabelled.pn_NoBB.png/960px-DNA_Structure%2BKey%2BLabelled.pn_NoBB.png?utm_source=en.wikipedia.org\u0026utm_campaign=api\u0026utm_content=thumbnail",
+  "width": 960,
+  "height": 952
+ },
  "links": [
   "5-Methylcytosine",
   "5-hydroxymethylcytosine",

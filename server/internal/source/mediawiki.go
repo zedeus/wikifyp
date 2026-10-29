@@ -73,7 +73,9 @@ type apiResponse struct {
 			Revisions []struct {
 				RevID int64 `json:"revid"`
 			} `json:"revisions"`
-			Links []struct {
+			Thumbnail   *thumbnail `json:"thumbnail"`
+			Description string     `json:"description"`
+			Links       []struct {
 				Title string `json:"title"`
 			} `json:"links"`
 			Categories []struct {
@@ -82,6 +84,31 @@ type apiResponse struct {
 			PageProps map[string]any `json:"pageprops"`
 		} `json:"pages"`
 	} `json:"query"`
+}
+
+// thumbnail is the pageimages prop's lead-image shape.
+type thumbnail struct {
+	Source string `json:"source"`
+	Width  int    `json:"width"`
+	Height int    `json:"height"`
+}
+
+// imageOf converts a pageimages thumbnail to an Article image; nil in,
+// nil out (a page with no free lead image).
+func imageOf(t *thumbnail) *Image {
+	if t == nil {
+		return nil
+	}
+	return &Image{URL: t.Source, Width: t.Width, Height: t.Height}
+}
+
+// addPageImageParams asks the pageimages prop for a free-licensed lead
+// thumbnail at card size; one place owns the size and license policy for
+// both Fetch and FetchMeta.
+func addPageImageParams(params url.Values) {
+	params.Set("piprop", "thumbnail")
+	params.Set("pithumbsize", "960")
+	params.Set("pilicense", "free")
 }
 
 // Fetch retrieves one article: its plain-text extract, revision, canonical
@@ -94,7 +121,7 @@ func (w *MediaWiki) Fetch(ctx context.Context, title string) (*Article, error) {
 		"formatversion": {"2"},
 		"redirects":     {"1"},
 		"titles":        {title},
-		"prop":          {"extracts|revisions|info|links|categories"},
+		"prop":          {"extracts|revisions|info|links|categories|pageimages|description"},
 		"explaintext":   {"1"},
 		"rvprop":        {"ids"},
 		"inprop":        {"url"},
@@ -103,6 +130,7 @@ func (w *MediaWiki) Fetch(ctx context.Context, title string) (*Article, error) {
 		"cllimit":       {"max"},
 		"clshow":        {"!hidden"},
 	}
+	addPageImageParams(params)
 
 	a := &Article{
 		Source:  w.Name,
@@ -150,6 +178,14 @@ func (w *MediaWiki) Fetch(ctx context.Context, title string) (*Article, error) {
 		if a.RevisionID == 0 && len(page.Revisions) > 0 {
 			a.RevisionID = page.Revisions[0].RevID
 		}
+		// Image and description are optional: a page with no free lead
+		// image or no short description simply leaves them empty.
+		if a.Image == nil {
+			a.Image = imageOf(page.Thumbnail)
+		}
+		if a.Description == "" {
+			a.Description = page.Description
+		}
 		for _, l := range page.Links {
 			a.Links = append(a.Links, l.Title)
 		}
@@ -180,6 +216,37 @@ func (w *MediaWiki) Fetch(ctx context.Context, title string) (*Article, error) {
 	}
 	a.Attribution = attribution(w.Site, a.Title, a.URL, a.RevisionID, license)
 	return a, nil
+}
+
+// FetchMeta fetches only a page's lead image and short description, by page
+// ID. The ingest command's metadata-refresh mode uses it to backfill
+// existing fixtures without re-fetching their text (which would move the
+// revision). A page with no free image or no description returns nil and ""
+// — that is an answer, not an error.
+func (w *MediaWiki) FetchMeta(ctx context.Context, pageID int64) (*Image, string, error) {
+	params := url.Values{
+		"action":        {"query"},
+		"format":        {"json"},
+		"formatversion": {"2"},
+		"pageids":       {fmt.Sprint(pageID)},
+		"prop":          {"pageimages|description"},
+	}
+	addPageImageParams(params)
+	resp, err := w.get(ctx, params)
+	if err != nil {
+		return nil, "", fmt.Errorf("%s: fetch meta for page %d: %w", w.Name, pageID, err)
+	}
+	if resp.Error != nil {
+		return nil, "", fmt.Errorf("%s: fetch meta for page %d: API error %s: %s", w.Name, pageID, resp.Error.Code, resp.Error.Info)
+	}
+	if len(resp.Query.Pages) != 1 {
+		return nil, "", fmt.Errorf("%s: fetch meta for page %d: expected one page, got %d", w.Name, pageID, len(resp.Query.Pages))
+	}
+	page := resp.Query.Pages[0]
+	if page.Missing {
+		return nil, "", fmt.Errorf("%s: page %d: %w", w.Name, pageID, ErrNotFound)
+	}
+	return imageOf(page.Thumbnail), page.Description, nil
 }
 
 // CategoryPage is one category page on the wiki: its name without the

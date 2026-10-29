@@ -7,6 +7,12 @@
  "license": "CC BY-SA 4.0",
  "attribution": "Text from the Wikipedia article \"Amazon rainforest\", https://en.wikipedia.org/wiki/Amazon_rainforest (revision 1378382105), licensed CC BY-SA 4.0",
  "fetched": "2026-10-11",
+ "description": "Large rainforest in South America",
+ "image": {
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/56/Amazon17_%285641020319%29.jpg/960px-Amazon17_%285641020319%29.jpg?utm_source=en.wikipedia.org\u0026utm_campaign=api\u0026utm_content=thumbnail",
+  "width": 960,
+  "height": 638
+ },
  "links": [
   "2019 Amazon rainforest wildfires",
   "45th parallel south",

@@ -206,12 +206,61 @@ func TestArticleEndpoint(t *testing.T) {
 		t.Errorf("sentence 1 = %q, want the Examples heading", resp.Sentences[1].Text)
 	}
 
+	// A dump article carries no image or description; the keys must be
+	// absent, not null or empty, so clients can rely on omitempty.
+	for _, key := range []string{`"image"`, `"description"`} {
+		if strings.Contains(rec.Body.String(), key) {
+			t.Errorf("metadata-less article response carries %s: %s", key, rec.Body)
+		}
+	}
+
 	// Unknown and malformed ids.
 	if rec := get(t, h, "/v1/articles/999999"); rec.Code != http.StatusNotFound {
 		t.Errorf("unknown article = %d, want 404", rec.Code)
 	}
 	if rec := get(t, h, "/v1/articles/xyz"); rec.Code != http.StatusBadRequest {
 		t.Errorf("malformed id = %d, want 400", rec.Code)
+	}
+}
+
+// TestArticleEndpointImageAndDescription: an article ingested with metadata
+// serves it on /v1/articles/{id} and on its feed card.
+func TestArticleEndpointImageAndDescription(t *testing.T) {
+	h, db := newHandler(t)
+	ctx := context.Background()
+	a := source.Article{
+		Source: "wikipedia", Title: "Pictured", URL: "https://en.wikipedia.org/wiki/Pictured",
+		PageID: 90001, RevisionID: 90001, License: "CC BY-SA 4.0",
+		Attribution: "Text from the Wikipedia article \"Pictured\"", Fetched: "2026-10-12",
+		Description: "A pictured thing",
+		Image:       &source.Image{URL: "https://upload.wikimedia.org/p.jpg", Width: 960, Height: 640},
+		Text:        "One sentence about the pictured thing.",
+	}
+	res, err := ingest.Article(ctx, db, &a)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rec := get(t, h, "/v1/articles/"+strconv.FormatInt(res.ArticleID, 10))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET = %d: %s", rec.Code, rec.Body)
+	}
+	var resp struct {
+		Description string `json:"description"`
+		Image       *struct {
+			URL    string `json:"url"`
+			Width  int    `json:"width"`
+			Height int    `json:"height"`
+		} `json:"image"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.Description != "A pictured thing" {
+		t.Errorf("description = %q", resp.Description)
+	}
+	if resp.Image == nil || resp.Image.URL != a.Image.URL || resp.Image.Width != 960 || resp.Image.Height != 640 {
+		t.Errorf("image = %+v, want the stored one", resp.Image)
 	}
 }
 
@@ -340,6 +389,58 @@ func TestEventsEndpoint(t *testing.T) {
 		// should be > 0 (at least the first token of the first sentence).
 		if completion <= 0 {
 			t.Errorf("completion = %f, want > 0 after a finish event", completion)
+		}
+	})
+
+	t.Run("save sets saved state, finish overwrites it", func(t *testing.T) {
+		// Resolve the article's page key for the state assertions.
+		var src string
+		var pageID int64
+		if err := db.QueryRow("SELECT source, page_id FROM articles WHERE id = $1", aid).Scan(&src, &pageID); err != nil {
+			t.Fatal(err)
+		}
+		state := func() string {
+			var s string
+			err := db.QueryRow(
+				"SELECT state FROM reader_article_state WHERE reader_id = 'r-save' AND source = $1 AND page_id = $2",
+				src, pageID).Scan(&s)
+			if err != nil {
+				t.Fatalf("no feed state row: %v", err)
+			}
+			return s
+		}
+
+		rec := post(t, h, "/v1/events?reader=r-save", fmt.Sprintf(`{"events":[%s]}`, validEvent("save-1", "save")))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("POST = %d: %s", rec.Code, rec.Body)
+		}
+		var resp eventsResponse
+		json.Unmarshal(rec.Body.Bytes(), &resp)
+		if resp.Results[0].Status != "ok" {
+			t.Fatalf("save status = %q: %s", resp.Results[0].Status, resp.Results[0].Error)
+		}
+		if got := state(); got != "saved" {
+			t.Errorf("state after save = %q, want saved", got)
+		}
+
+		// Re-uploading the same save is a duplicate and changes nothing.
+		rec = post(t, h, "/v1/events?reader=r-save", fmt.Sprintf(`{"events":[%s]}`, validEvent("save-1", "save")))
+		resp = eventsResponse{}
+		json.Unmarshal(rec.Body.Bytes(), &resp)
+		if resp.Results[0].Status != "duplicate" {
+			t.Errorf("replayed save status = %q, want duplicate", resp.Results[0].Status)
+		}
+		if got := state(); got != "saved" {
+			t.Errorf("state after duplicate save = %q, want saved", got)
+		}
+
+		// One state per page, latest wins: a later finish replaces saved.
+		rec = post(t, h, "/v1/events?reader=r-save", fmt.Sprintf(`{"events":[%s]}`, validEvent("fin-save-1", "finish")))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("POST = %d: %s", rec.Code, rec.Body)
+		}
+		if got := state(); got != "finished" {
+			t.Errorf("state after save then finish = %q, want finished", got)
 		}
 	})
 

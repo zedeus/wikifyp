@@ -97,6 +97,56 @@ func checkCards(t *testing.T, cards []Card) {
 	}
 }
 
+// TestCardsCarryImageAndDescription: a card for an article ingested with
+// lead-image and description metadata serves them; one without serves
+// neither (nil image, empty description — omitted from JSON by omitempty).
+func TestCardsCarryImageAndDescription(t *testing.T) {
+	db := newDB(t)
+	ctx := context.Background()
+	a := source.Article{
+		Source: "wikipedia", Title: "Pictured", URL: "https://en.wikipedia.org/wiki/Pictured",
+		PageID: 90001, RevisionID: 90001, License: "CC BY-SA 4.0",
+		Attribution: "Text from the Wikipedia article \"Pictured\"", Fetched: "2026-10-12",
+		Description: "A pictured thing",
+		Image:       &source.Image{URL: "https://upload.wikimedia.org/p.jpg", Width: 960, Height: 640},
+		Text:        "One sentence about the pictured thing.",
+	}
+	res, err := ingest.Article(ctx, db, &a)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := cards(ctx, db, []Candidate{{ArticleID: res.ArticleID, PageID: a.PageID, Source: a.Source, Title: a.Title}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("cards = %d, want 1", len(got))
+	}
+	c := got[0]
+	if c.Description != "A pictured thing" {
+		t.Errorf("description = %q, want the stored one", c.Description)
+	}
+	if c.Image == nil || c.Image.URL != a.Image.URL || c.Image.Width != 960 || c.Image.Height != 640 {
+		t.Errorf("image = %+v, want the stored one", c.Image)
+	}
+
+	// An article stored without metadata serves none.
+	var plainID int64
+	var plainPage int64
+	if err := db.QueryRow(
+		"SELECT id, page_id FROM articles WHERE title = 'Red Hot Chili Peppers'").Scan(&plainID, &plainPage); err != nil {
+		t.Fatal(err)
+	}
+	got, err = cards(ctx, db, []Candidate{{ArticleID: plainID, PageID: plainPage, Source: "simplewiki", Title: "Red Hot Chili Peppers"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got[0].Image != nil || got[0].Description != "" {
+		t.Errorf("metadata-less card carries (%+v, %q), want none", got[0].Image, got[0].Description)
+	}
+}
+
 // TestForNewReader: a reader with no state gets featured articles
 // interleaved with random corpus samples — in the loaded data the
 // featured article is the dump sample's Red Hot Chili Peppers

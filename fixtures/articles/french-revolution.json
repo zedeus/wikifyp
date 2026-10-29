@@ -7,6 +7,12 @@
  "license": "CC BY-SA 4.0",
  "attribution": "Text from the Wikipedia article \"French Revolution\", https://en.wikipedia.org/wiki/French_Revolution (revision 1379453214), licensed CC BY-SA 4.0",
  "fetched": "2026-10-11",
+ "description": "1789–1799 sociopolitical change in France",
+ "image": {
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/57/Anonymous_-_Prise_de_la_Bastille.jpg/960px-Anonymous_-_Prise_de_la_Bastille.jpg?utm_source=en.wikipedia.org\u0026utm_campaign=api\u0026utm_content=thumbnail",
+  "width": 960,
+  "height": 757
+ },
  "links": [
   "11 September 1922 Revolution",
   "13 Vendémiaire",

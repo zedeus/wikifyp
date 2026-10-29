@@ -6,5 +6,11 @@
  "revision_id": 1379398229,
  "license": "CC BY-SA 4.0",
  "attribution": "Text from the Wikipedia article \"Computer\", https://en.wikipedia.org/wiki/Computer (revision 1379398229), licensed CC BY-SA 4.0",
- "fetched": "2026-10-12"
+ "fetched": "2026-10-12",
+ "description": "Programmable machine that processes data",
+ "image": {
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0c/ENIAC-changing_a_tube_%28cropped%29.jpg/960px-ENIAC-changing_a_tube_%28cropped%29.jpg?utm_source=en.wikipedia.org\u0026utm_campaign=api\u0026utm_content=thumbnail",
+  "width": 960,
+  "height": 748
+ }
 }

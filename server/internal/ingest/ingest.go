@@ -52,21 +52,54 @@ func Article(ctx context.Context, db *sql.DB, a *source.Article) (Result, error)
 	}
 	defer tx.Rollback()
 
+	// Image and description are nullable presentation metadata, absent for
+	// pages with no free lead image or no short description.
+	var imgURL *string
+	var imgW, imgH *int
+	if a.Image != nil {
+		imgURL, imgW, imgH = &a.Image.URL, &a.Image.Width, &a.Image.Height
+	}
+	var desc *string
+	if a.Description != "" {
+		desc = &a.Description
+	}
+
 	var id int64
 	err = tx.QueryRowContext(ctx, `
-		INSERT INTO articles (source, title, url, page_id, revision_id, license, attribution, fetched_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO articles (source, title, url, page_id, revision_id, license, attribution, fetched_at,
+			image_url, image_width, image_height, description)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		ON CONFLICT (source, revision_id) DO NOTHING
 		RETURNING id`,
 		a.Source, a.Title, a.URL, a.PageID, a.RevisionID, a.License, a.Attribution, a.Fetched,
+		imgURL, imgW, imgH, desc,
 	).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
-		// This revision is already stored; re-ingesting changes nothing.
+		// This revision is already stored; re-ingesting changes nothing for
+		// sentences, links or categories — addressed text is immutable.
+		// Image and description are presentation metadata, not addressed
+		// text, so a re-ingest that carries them may refresh the stored row
+		// (the wiki swaps lead images without a new text revision). Only
+		// non-empty incoming metadata is written: dump imports and older
+		// fixtures carry none, and re-ingesting from those must not wipe
+		// metadata a richer fetch stored earlier.
 		err = tx.QueryRowContext(ctx,
 			"SELECT id FROM articles WHERE source = $1 AND revision_id = $2",
 			a.Source, a.RevisionID).Scan(&id)
 		if err != nil {
 			return Result{}, fmt.Errorf("ingest: find existing revision: %w", err)
+		}
+		if imgURL != nil || desc != nil {
+			if _, err := tx.ExecContext(ctx, `
+				UPDATE articles SET
+					image_url = COALESCE($2, image_url),
+					image_width = COALESCE($3, image_width),
+					image_height = COALESCE($4, image_height),
+					description = COALESCE($5, description)
+				WHERE id = $1`,
+				id, imgURL, imgW, imgH, desc); err != nil {
+				return Result{}, fmt.Errorf("ingest: refresh metadata: %w", err)
+			}
 		}
 		return Result{ArticleID: id, Created: false}, tx.Commit()
 	}

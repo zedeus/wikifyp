@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<title>When the Feed Struggles</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #fafaf8; --fg: #1a1a1a; --fg2: #555; --fg3: #999;
+  --accent: #2563eb; --accent-soft: #dbeafe;
+  --green: #16a34a; --green-soft: #dcfce7;
+  --red: #dc2626; --red-soft: #fee2e2;
+  --orange: #d97706; --orange-soft: #fef3c7;
+  --purple: #7c3aed; --purple-soft: #ede9fe;
+  --teal: #0d9488; --teal-soft: #ccfbf1;
+  --card-bg: #fff; --card-border: #e2e2de; --code-bg: #f3f3f0;
+  --explore-bg: #eef3ff; --dim: #c5c5c0;
+  --font: 'IBM Plex Sans', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f0f0f; --fg: #e5e5e5; --fg2: #aaa; --fg3: #666;
+    --accent: #60a5fa; --accent-soft: #1e3a5f;
+    --green: #4ade80; --green-soft: #14532d;
+    --red: #f87171; --red-soft: #7f1d1d;
+    --orange: #fbbf24; --orange-soft: #78350f;
+    --purple: #a78bfa; --purple-soft: #3b1f6e;
+    --teal: #2dd4bf; --teal-soft: #134e4a;
+    --card-bg: #1a1a1a; --card-border: #333; --code-bg: #222;
+    --explore-bg: #172035; --dim: #444;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f0f0f; --fg: #e5e5e5; --fg2: #aaa; --fg3: #666;
+  --accent: #60a5fa; --accent-soft: #1e3a5f;
+  --green: #4ade80; --green-soft: #14532d;
+  --red: #f87171; --red-soft: #7f1d1d;
+  --orange: #fbbf24; --orange-soft: #78350f;
+  --purple: #a78bfa; --purple-soft: #3b1f6e;
+  --teal: #2dd4bf; --teal-soft: #134e4a;
+  --card-bg: #1a1a1a; --card-border: #333; --code-bg: #222;
+  --explore-bg: #172035; --dim: #444;
+  color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font); line-height: 1.65;
+  padding: 0 max(16px, env(safe-area-inset-left, 0px));
+  max-width: 780px; margin: 0 auto;
+}
+h1 { font-size: 1.7rem; font-weight: 700; margin: 2rem 0 0.3rem; text-wrap: balance; }
+h2 { font-size: 1.3rem; font-weight: 700; margin: 2.5rem 0 0.6rem; border-bottom: 2px solid var(--card-border); padding-bottom: 0.35rem; }
+h3 { font-size: 1.05rem; font-weight: 600; margin: 1.5rem 0 0.4rem; }
+p { margin: 0.7rem 0; }
+.subtitle { color: var(--fg2); font-size: 1.05rem; margin-bottom: 2rem; }
+code { font-family: var(--mono); font-size: 0.88em; background: var(--code-bg); padding: 0.12em 0.3em; border-radius: 3px; }
+
+/* Tabs */
+.tabs { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 1rem 0; }
+.tab { padding: 0.5rem 0.9rem; border-radius: 8px; border: 1.5px solid var(--card-border); background: var(--card-bg); cursor: pointer; font-family: var(--font); font-size: 0.85rem; font-weight: 500; transition: all 0.15s; color: var(--fg); }
+.tab:hover { border-color: var(--accent); }
+.tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Phone mockup */
+.phone { max-width: 400px; margin: 1rem auto; border: 2px solid var(--card-border); border-radius: 16px; overflow: hidden; background: var(--card-bg); }
+.phone-header { background: var(--code-bg); padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.75rem; color: var(--fg2); display: flex; justify-content: space-between; align-items: center; }
+.phone-header .feed-num { font-weight: 700; color: var(--fg); }
+
+.fi { padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--card-border); font-size: 0.88rem; display: flex; align-items: flex-start; gap: 0.5rem; min-height: 2.2rem; }
+.fi:last-child { border-bottom: none; }
+.fi .idx { font-family: var(--mono); font-size: 0.72rem; color: var(--fg3); padding-top: 0.15rem; width: 1rem; text-align: right; flex-shrink: 0; }
+.fi .body { flex: 1; min-width: 0; }
+.fi .title { font-weight: 500; }
+.fi .meta { font-size: 0.75rem; margin-top: 0.1rem; color: var(--fg3); }
+.fi .tag { font-size: 0.68rem; padding: 0.08em 0.4em; border-radius: 8px; font-weight: 500; vertical-align: middle; margin-left: 0.3rem; white-space: nowrap; }
+.fi.hit .title { color: var(--green); }
+.fi.hit { background: color-mix(in srgb, var(--green-soft), transparent 40%); }
+.fi.miss .title { color: var(--fg3); }
+.fi.skip { background: color-mix(in srgb, var(--red-soft), transparent 60%); }
+.fi.skip .title { color: var(--red); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--red), transparent 60%); }
+.fi.stale { background: color-mix(in srgb, var(--orange-soft), transparent 50%); }
+.fi.stale .title { color: var(--orange); }
+.tag-hit { background: var(--green-soft); color: var(--green); }
+.tag-miss { background: var(--code-bg); color: var(--fg3); }
+.tag-skip { background: var(--red-soft); color: var(--red); }
+.tag-stale { background: var(--orange-soft); color: var(--orange); }
+.tag-explore { background: var(--accent-soft); color: var(--accent); }
+
+/* Annotations */
+.ann { margin: 0.8rem 0; padding: 0.65rem 0.85rem; border-radius: 8px; font-size: 0.88rem; line-height: 1.55; }
+.ann-bad { background: var(--red-soft); border-left: 3px solid var(--red); }
+.ann-warn { background: var(--orange-soft); border-left: 3px solid var(--orange); }
+.ann-ok { background: var(--green-soft); border-left: 3px solid var(--green); }
+.ann-info { background: var(--accent-soft); border-left: 3px solid var(--accent); }
+.ann strong { font-weight: 600; }
+
+/* Stats */
+.stats { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.8rem 0; }
+.stat { background: var(--code-bg); padding: 0.4rem 0.65rem; border-radius: 6px; font-size: 0.8rem; }
+.stat .val { font-weight: 700; font-family: var(--mono); }
+.stat .lbl { color: var(--fg2); }
+
+/* Phase bar */
+.phase-bar { display: flex; height: 28px; border-radius: 6px; overflow: hidden; margin: 0.5rem 0; font-size: 0.7rem; font-weight: 600; }
+.phase-bar > div { display: flex; align-items: center; justify-content: center; color: #fff; min-width: 0; overflow: hidden; }
+
+/* Streak */
+.streak-row { display: flex; gap: 2px; margin: 0.5rem 0; flex-wrap: wrap; }
+.streak-dot { width: 18px; height: 18px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 0.55rem; font-weight: 700; }
+.streak-dot.good { background: var(--green-soft); color: var(--green); }
+.streak-dot.bad { background: var(--code-bg); color: var(--fg3); }
+.streak-dot.quit { background: var(--red-soft); color: var(--red); }
+
+/* Card */
+.card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 1rem; margin: 1rem 0; }
+
+/* Heatmap */
+.heatmap { display: grid; gap: 2px; margin: 0.8rem 0; }
+.heatmap-cell { border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 600; min-height: 28px; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+</style>
+
+<h1>When the Feed Struggles</h1>
+<p class="subtitle">Five real failure modes, what the reader actually sees, and why the engine can't do better yet. From the 6-seed benchmark (267K articles, 600 reads each).</p>
+
+<div class="tabs" id="scenarioNav">
+  <button class="tab active" data-s="noise">🌊 Noise</button>
+  <button class="tab" data-s="transition">🔀 Transition</button>
+  <button class="tab" data-s="residue">🐇 Residue</button>
+  <button class="tab" data-s="invisible">🔬 Invisible</button>
+  <button class="tab" data-s="narrow">📏 Narrowing</button>
+</div>
+
+<!-- NOISE -->
+<div class="tab-content active" id="sc-noise">
+<h2>🌊 The Noise Problem</h2>
+<p><strong>Persona:</strong> Scattered — 12 unrelated reads (Eiffel Tower, Chess, Bitcoin, Volcano…). Would love astronomy and dogs.</p>
+<p><strong>The problem:</strong> The engine reads 12 random articles and tries to build a profile from noise. Each seed creates a mini-cluster of "related" articles, and the engine faithfully serves their neighbors. But chess → chess tournaments and Everest → mountaineering aren't what the reader wants.</p>
+
+<h3>What the reader actually sees</h3>
+
+<div class="phone">
+  <div class="phone-header"><span class="feed-num">Feed 1</span><span>0 of 10 hits — pure noise</span></div>
+  <div class="fi miss"><span class="idx">1</span><div class="body"><span class="title">YMCA</span><span class="meta">from Basketball cluster</span></div></div>
+  <div class="fi miss"><span class="idx">2</span><div class="body"><span class="title">Phlogiston theory</span><span class="meta">random chemistry</span></div><span class="tag tag-explore">explore</span></div>
+  <div class="fi miss"><span class="idx">3</span><div class="body"><span class="title">Annapurna Massif</span><span class="meta">from Everest — mountaineering, not astronomy</span></div></div>
+  <div class="fi skip"><span class="idx">4</span><div class="body"><span class="title">Bromeliohyla melacaena</span><span class="meta">a frog species — instant skip</span></div><span class="tag tag-skip">skip</span></div>
+  <div class="fi miss"><span class="idx">5</span><div class="body"><span class="title">French defence</span><span class="meta">from Chess — chess opening theory</span></div></div>
+  <div class="fi skip"><span class="idx">6</span><div class="body"><span class="title">Springfield Thunderbirds</span><span class="meta">hockey team</span></div><span class="tag tag-skip">skip</span></div>
+  <div class="fi miss"><span class="idx">7</span><div class="body"><span class="title">Jeremy Corbyn</span><span class="meta">featured article</span></div><span class="tag tag-explore">explore</span></div>
+  <div class="fi miss"><span class="idx">8</span><div class="body"><span class="title">Much Ado About Nothing</span><span class="meta">from Shakespeare cluster</span></div></div>
+  <div class="fi miss"><span class="idx">9</span><div class="body"><span class="title">Satoshi Nakamoto</span><span class="meta">from Bitcoin cluster</span></div></div>
+  <div class="fi miss"><span class="idx">10</span><div class="body"><span class="title">Chess tournament</span><span class="meta">from Chess — tolerable, finished it</span></div></div>
+</div>
+
+<div class="ann ann-bad"><strong>Zero hits.</strong> Every card is a neighbor of one of the 12 noise seeds. The reader finishes "Chess tournament" because it's the most tolerable — and now the engine thinks chess is a real signal. The noise compounds.</div>
+
+<h3>Feed 4 — breakthrough</h3>
+<div class="phone">
+  <div class="phone-header"><span class="feed-num">Feed 4</span><span>2 of 10 — first astronomy contact</span></div>
+  <div class="fi hit"><span class="idx">1</span><div class="body"><span class="title">Event horizon</span><span class="meta">exploration door → astronomy!</span></div><span class="tag tag-hit">✓ astronomy</span></div>
+  <div class="fi miss"><span class="idx">2</span><div class="body"><span class="title">Wildlife and Countryside Act</span></div><span class="tag tag-explore">explore</span></div>
+  <div class="fi miss"><span class="idx">3</span><div class="body"><span class="title">Gravitational redshift</span><span class="meta">physics — close but not tagged</span></div></div>
+  <div class="fi miss"><span class="idx">4</span><div class="body"><span class="title">Nepal</span><span class="meta">from Everest → still mountaineering</span></div></div>
+  <div class="fi hit"><span class="idx">5</span><div class="body"><span class="title">Galaxy</span><span class="meta">walk from Earth seed</span></div><span class="tag tag-hit">✓ astronomy</span></div>
+  <div class="fi miss"><span class="idx">6</span><div class="body"><span class="title">Choline</span><span class="meta">random nutrient — pure noise</span></div><span class="tag tag-explore">explore</span></div>
+  <div class="fi skip"><span class="idx">7</span><div class="body"><span class="title">Annapurna Massif</span><span class="meta">seen before — skip</span></div><span class="tag tag-skip">repeat</span></div>
+  <div class="fi miss"><span class="idx">8</span><div class="body"><span class="title">Temple of Confucius</span></div><span class="tag tag-explore">explore</span></div>
+  <div class="fi skip"><span class="idx">9</span><div class="body"><span class="title">James Naismith</span><span class="meta">inventor of basketball — skip</span></div><span class="tag tag-skip">skip</span></div>
+  <div class="fi miss"><span class="idx">10</span><div class="body"><span class="title">Back</span><span class="meta">random disambiguation page</span></div></div>
+</div>
+
+<div class="ann ann-ok"><strong>Breakthrough.</strong> Two astronomy articles appeared — "Event horizon" from an exploration door, "Galaxy" from a category walk. The reader finishes both. The engine starts building an astronomy cluster. But it took 40 articles of noise to get here.</div>
+
+<h3>The full 600-article picture</h3>
+<p>Each dot = 1 article. Green = hit, gray = miss.</p>
+<div id="scatteredStreak"></div>
+
+<div class="stats">
+  <div class="stat"><span class="val">50.5–61.3%</span> <span class="lbl">appeal range</span></div>
+  <div class="stat"><span class="val">5–10</span> <span class="lbl">quits</span></div>
+  <div class="stat"><span class="val">10</span> <span class="lbl">max boring streak (every seed)</span></div>
+  <div class="stat"><span class="val">0–1</span> <span class="lbl">dogs found</span></div>
+</div>
+
+<h3>Why it's fundamentally hard</h3>
+<div class="card">
+  <p><strong>The core issue:</strong> The engine can't distinguish "the reader read 12 random things because they're browsing casually" from "the reader has 12 genuine interests." Both look identical from the engagement data. The engine does the reasonable thing — treats each read as a signal and serves neighbors. But for this reader, every signal is noise.</p>
+  <p><strong>What helps:</strong> The explore share is elevated (22–33%) because the reader's clustered rows are few and skip rate is high. That's the lifeline — more random sampling = more chances to stumble onto astronomy. Once found, the real interest rapidly dominates because the reader engages deeply with every astronomy article.</p>
+  <p><strong>What doesn't help:</strong> Dogs (0.08% of corpus). Pure random sampling hits ~215 articles out of 267K. In 600 total articles at 25% explore, that's ~150 random draws. Probability of hitting at least one dog breed: ~9%. Most seeds miss it entirely. This isn't fixable without either a larger explore share (which hurts every other persona) or a different discovery mechanism entirely.</p>
+</div>
+</div>
+
+<!-- TRANSITION -->
+<div class="tab-content" id="sc-transition">
+<h2>🔀 The Transition Penalty</h2>
+<p><strong>Persona:</strong> Shifter — 30 feeds of cars, then seeds Messi and switches hard to football for 30 feeds.</p>
+<p><strong>The problem:</strong> When the reader switches, the engine has 300 car reads and 2 football seeds. It takes time for football to build enough signal to compete — and during that time, the reader sees cars they no longer want.</p>
+
+<h3>The moment of the switch</h3>
+<div class="phone">
+  <div class="phone-header"><span class="feed-num">Feed 31</span><span>Phase 2 begins — wants football now</span></div>
+  <div class="fi hit"><span class="idx">1</span><div class="body"><span class="title">Grand tack hypothesis</span></div><span class="tag tag-hit">football</span></div>
+  <div class="fi hit"><span class="idx">2</span><div class="body"><span class="title">FC Bayern Munich season</span></div><span class="tag tag-hit">football ✓</span></div>
+  <div class="fi stale"><span class="idx">3</span><div class="body"><span class="title">Chevrolet Corvette</span><span class="meta">old interest — still has rotation turns</span></div><span class="tag tag-stale">residue</span></div>
+  <div class="fi hit"><span class="idx">4</span><div class="body"><span class="title">Champions League</span></div><span class="tag tag-hit">football ✓</span></div>
+  <div class="fi"><span class="idx">5</span><div class="body"><span class="title">Tropical Storm Barry</span></div><span class="tag tag-explore">explore</span></div>
+  <div class="fi stale"><span class="idx">6</span><div class="body"><span class="title">Ford Expedition</span></div><span class="tag tag-stale">residue</span></div>
+  <div class="fi hit"><span class="idx">7</span><div class="body"><span class="title">Bundesliga</span></div><span class="tag tag-hit">football ✓</span></div>
+  <div class="fi stale"><span class="idx">8</span><div class="body"><span class="title">Chevrolet Celebrity</span></div><span class="tag tag-stale">residue</span></div>
+  <div class="fi"><span class="idx">9</span><div class="body"><span class="title">Aurora</span></div><span class="tag tag-explore">explore</span></div>
+  <div class="fi hit"><span class="idx">10</span><div class="body"><span class="title">Juno (spacecraft)</span></div><span class="tag tag-hit">football</span></div>
+</div>
+
+<div class="ann ann-warn"><strong>Three stale car articles.</strong> The car cluster still has rotation turns — it has 300 reads in the state. The recency boost (2×) gives football double turns, and InterestFade starts dropping car voice. But the transition isn't instant. The reader thinks: "I just told you I like football. Why Chevrolets?"</div>
+
+<h3>How quickly does football take over?</h3>
+
+<div style="margin: 1rem 0;">
+  <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem;">Phase 2 football hit rate by feed (averaged across seeds):</div>
+  <div id="transitionBars"></div>
+  <div style="font-size: 0.78rem; color: var(--fg2); margin-top: 0.3rem;">The recency boost and InterestFade work together: by feed 35 (5 feeds after the switch), football owns 60–70% of the feed. By feed 40, cars have faded below the relevance floor for most candidates. But those first 3-4 transitional feeds are the rough patch.</div>
+</div>
+
+<h3>The seed-to-seed variance is wild</h3>
+<div class="stats">
+  <div class="stat"><span class="val">62.8–79.2%</span> <span class="lbl">overall appeal</span></div>
+  <div class="stat"><span class="val">49–76%</span> <span class="lbl">phase 2 active rate</span></div>
+  <div class="stat"><span class="val">6–26%</span> <span class="lbl">phase 2 residue</span></div>
+  <div class="stat"><span class="val">0–7</span> <span class="lbl">quits</span></div>
+</div>
+<p>The best seed (seed 5) gets 76% football in phase 2 with only 10% car residue and zero quits. The worst seed (seed 1) gets 49% football, 24% residue, and <strong>6 quits</strong> — six feeds where not a single article matched football. That's the difference between a smooth transition and a frustrating one, entirely down to which random articles the exploration doors served during the switch.</p>
+
+<div class="ann ann-info"><strong>What causes the worst case:</strong> In seed 1, the exploration doors during feeds 31–33 happened to serve history and biology articles (no football connection). Without those lucky football doors to build signal faster, the engine relied entirely on the 2 seeds and their direct link neighbors — a thin pool against 300 car reads. The recency boost helps but can't overcome a 150:1 signal ratio in 3 feeds.</div>
+</div>
+
+<!-- RESIDUE -->
+<div class="tab-content" id="sc-residue">
+<h2>🐇 The Accumulated Residue</h2>
+<p><strong>Persona:</strong> Serial rabbitholer — cars (15 feeds) → astronomy (15) → football (15) → history (15). Four obsessions, each abandoned for the next.</p>
+<p><strong>The problem:</strong> This is the shifter problem compounded four times. Each transition leaves residue. By phase 4, the engine has dealt with 3 complete interest changes, and old interests still haunt the feed.</p>
+
+<h3>The phase-by-phase decline</h3>
+<div style="margin: 0.8rem 0;">
+  <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.3rem;">Active interest % per phase (6-seed average):</div>
+  <div class="phase-bar">
+    <div style="width: 25%; background: var(--accent);" title="Phase 1: Cars">🚗 75%</div>
+    <div style="width: 25%; background: var(--green);" title="Phase 2: Astronomy">🔭 60%</div>
+    <div style="width: 25%; background: var(--orange);" title="Phase 3: Football">⚽ 48%</div>
+    <div style="width: 25%; background: var(--red);" title="Phase 4: History">📜 35%</div>
+  </div>
+  <div style="font-size: 0.78rem; color: var(--fg2); margin-top: 0.2rem;">Active = articles matching the <em>current</em> phase's interest. Each bar = 15 feeds (150 articles).</div>
+</div>
+
+<div style="margin: 0.8rem 0;">
+  <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.3rem;">Residue (old interest articles served in each phase):</div>
+  <div class="phase-bar">
+    <div style="width: 25%; background: var(--card-border); color: var(--fg2);">0%</div>
+    <div style="width: 25%; background: color-mix(in srgb, var(--orange), var(--card-border));">16%</div>
+    <div style="width: 25%; background: var(--orange);">31%</div>
+    <div style="width: 25%; background: var(--red);">35%</div>
+  </div>
+  <div style="font-size: 0.78rem; color: var(--fg2); margin-top: 0.2rem;">Residue = articles from earlier phases still being served. By phase 4, a third of the feed is old interests.</div>
+</div>
+
+<h3>The worst seed: phase 4 collapse</h3>
+<div class="phone">
+  <div class="phone-header"><span class="feed-num">Seed 4, Phase 4</span><span>wants history — gets residue</span></div>
+  <div class="fi stale"><span class="idx">1</span><div class="body"><span class="title">Manchester United</span><span class="meta">football residue</span></div><span class="tag tag-stale">phase 3</span></div>
+  <div class="fi stale"><span class="idx">2</span><div class="body"><span class="title">Andromeda galaxy</span><span class="meta">astronomy residue</span></div><span class="tag tag-stale">phase 2</span></div>
+  <div class="fi hit"><span class="idx">3</span><div class="body"><span class="title">Byzantine Empire</span></div><span class="tag tag-hit">history ✓</span></div>
+  <div class="fi stale"><span class="idx">4</span><div class="body"><span class="title">Premier League</span><span class="meta">football residue</span></div><span class="tag tag-stale">phase 3</span></div>
+  <div class="fi"><span class="idx">5</span><div class="body"><span class="title">Jeremy Corbyn</span></div><span class="tag tag-explore">explore</span></div>
+  <div class="fi stale"><span class="idx">6</span><div class="body"><span class="title">Nebula</span><span class="meta">astronomy residue</span></div><span class="tag tag-stale">phase 2</span></div>
+  <div class="fi stale"><span class="idx">7</span><div class="body"><span class="title">FA Cup</span><span class="meta">football residue</span></div><span class="tag tag-stale">phase 3</span></div>
+  <div class="fi stale"><span class="idx">8</span><div class="body"><span class="title">Corvette C5</span><span class="meta">cars residue (!)</span></div><span class="tag tag-stale">phase 1</span></div>
+  <div class="fi"><span class="idx">9</span><div class="body"><span class="title">Tropical Storm</span></div><span class="tag tag-explore">explore</span></div>
+  <div class="fi stale"><span class="idx">10</span><div class="body"><span class="title">Champions League</span><span class="meta">football residue</span></div><span class="tag tag-stale">phase 3</span></div>
+</div>
+
+<div class="ann ann-bad"><strong>1 history article out of 10.</strong> This seed has phase 4 at <strong>7% active, 77% residue</strong>. The history cluster has barely formed (2 seeds + a few link neighbors), while 3 dead clusters from earlier phases still hold voice (faded to 30%, but 30% × 450 reads is still substantial in absolute terms). The reader sees Corvettes from phase 1 — 45 feeds ago! InterestFade dropped it to 30% voice, but the car cluster has so many members that 30% of a large number is still above the relevance floor.</div>
+
+<h3>The mechanics of residue</h3>
+<div class="card">
+  <p><strong>InterestFade fades, it doesn't erase.</strong> A cluster with 150 members and 0 in the recent 50 rows gets fade = 0.3. But 0.3 × 150 members means the cluster still has effective voice equivalent to 45 active members. Compare that to the history cluster's 5 members at full voice (5.0). The old cluster outweighs the new one 9:1 in absolute voice.</p>
+  <p><strong>Why not fade to 0?</strong> Because it would hurt the juggler. A juggler's fifth interest (computing, 6 reads across 60 feeds) would get zeroed out the moment a couple of feeds passed without a computing article. The 0.3 floor keeps sparse-but-real interests alive. The cost: massive old clusters also stay alive.</p>
+  <p><strong>ClusterWindow helps selection but not scoring.</strong> The car cluster falls off rotation after 50 rows (it no longer gets turns). But its categories still have voice in scoring — a history article that shares a category with a car article (e.g., "United States" or "Manufacturing") gets a small boost from the dead car cluster's residual voice. That boost is enough to beat the relevance floor (0.3).</p>
+</div>
+
+<div class="stats">
+  <div class="stat"><span class="val">46.8–61.2%</span> <span class="lbl">appeal range</span></div>
+  <div class="stat"><span class="val">0–10</span> <span class="lbl">quits</span></div>
+  <div class="stat"><span class="val">0–7</span> <span class="lbl">starved</span></div>
+  <div class="stat"><span class="val">8–10</span> <span class="lbl">max boring streak</span></div>
+</div>
+</div>
+
+<!-- INVISIBLE -->
+<div class="tab-content" id="sc-invisible">
+<h2>🔬 The Invisible Interest</h2>
+<p><strong>Personas:</strong> Adopter (cars + latent astronomy), Gundam (mecha + latent dogs + latent fungi)</p>
+<p><strong>The problem:</strong> The reader has a latent interest the engine doesn't know about. Discovery depends entirely on exploration doors randomly surfacing the right article. When the interest is a tiny corpus slice, the odds are against you.</p>
+
+<h3>The adopter: when discovery happens (and when it doesn't)</h3>
+
+<div style="margin: 1rem 0;">
+  <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem;">When did the adopter discover astronomy? (6 seeds)</div>
+  <div id="adoptionTimeline"></div>
+</div>
+
+<div class="ann ann-info"><strong>Seeds 2 and 4</strong> discovered astronomy at feed 4 — a random exploration door happened to serve Jupiter or a space article very early. These seeds end with 307–337 astronomy articles (over half their feed!) because once discovered, astronomy competes with cars and the reader loves both.<br><br>
+<strong>Seeds 1 and 3</strong> didn't find astronomy until feed 38. That's 380 articles of pure cars before a single space article appeared. These seeds end with only 14-15 astronomy articles. The reader never got enough astronomy signal to build a strong cluster.</div>
+
+<p><strong>The numbers tell the story:</strong></p>
+<div class="stats">
+  <div class="stat"><span class="val">68.0–80.7%</span> <span class="lbl">appeal range</span></div>
+  <div class="stat"><span class="val">feed 4–43</span> <span class="lbl">adoption timing</span></div>
+  <div class="stat"><span class="val">14–337</span> <span class="lbl">astronomy articles found</span></div>
+</div>
+
+<h3>Gundam: the micro-niche problem</h3>
+<div class="card">
+  <p><strong>Dogs (0.08% of corpus, ~215 articles):</strong> Found in 5 of 6 seeds, but only 1–15 articles each. First contact: feed 13–21. The random walks from mecha never lead to dog breeds (no category overlap). Discovery is pure random sampling luck.</p>
+  <p><strong>Fungi (0.03% of corpus, ~80 articles):</strong> <strong>Never found. Zero articles across all 6 seeds.</strong> At 80/267,000 = 0.03%, random sampling in ~120 exploration slots has a probability of about 3.5% per seed. All 6 seeds missed. This is a structural limitation of corpus-random exploration for micro-niches.</p>
+</div>
+
+<h3>Why exploration can't fix this</h3>
+<p>The explore share is 20% (established reader). Over 600 articles, that's ~120 exploration slots. Each slot draws from:</p>
+<ul style="font-size: 0.9rem; color: var(--fg2);">
+  <li><strong>Random walks (2-3 hops):</strong> Follow links and categories from your reads. For a car reader, walks lead to racing, engines, manufacturers — never dogs.</li>
+  <li><strong>Featured articles:</strong> Wikipedia's curated set. ~8% animals, ~5% computing, ~0% fungi.</li>
+  <li><strong>Random corpus samples:</strong> Pure lottery. P(dog breed) ≈ 0.08% per draw.</li>
+</ul>
+<p>The walks are the most effective but the most narrow. Featured articles are higher quality but biased. Random sampling is the only unbiased discovery mechanism, but the probability math is against micro-niches.</p>
+
+<div class="ann ann-warn"><strong>The broader point:</strong> Any corpus-based recommendation system has this problem. TikTok, YouTube, Spotify — they all rely on some form of collaborative filtering (other people who like X also liked Y) to bridge the gap. We don't have that signal. Our only bridge between "mecha fan" and "loves mushrooms" is random chance. This is arguably the biggest structural gap in the system.</div>
+</div>
+
+<!-- NARROWING -->
+<div class="tab-content" id="sc-narrow">
+<h2>📏 The Narrowing Feed</h2>
+<p><strong>Personas:</strong> Cars (established), mono-football, history-broad</p>
+<p><strong>The problem:</strong> For readers with a strong single interest, the feed does its job <em>too well</em>. 80% of articles are on-topic. The 20% exploration exists, but it's only 2 articles per 10. The reader is in a pleasant bubble — they're happy, but they'll never discover something unexpected.</p>
+
+<h3>What 80% appeal actually looks like over time</h3>
+<p>This is the cars reader's 600 articles. Every dot is one article:</p>
+<div id="carsStreak"></div>
+<p style="font-size: 0.82rem; color: var(--fg2);">The feed is consistently green — 8 of 10 articles are cars, reliably, from feed 1 to feed 60. There's no surprise, no variation in tone, no moment where the reader thinks "whoa, I didn't expect that." The few gray dots are exploration doors, and many of those land on car-adjacent things (racing, engines) anyway.</p>
+
+<h3>The exploration that does happen</h3>
+<div class="stats">
+  <div class="stat"><span class="val">180–236</span> <span class="lbl">explore domains</span></div>
+  <div class="stat"><span class="val">317–375</span> <span class="lbl">explore categories</span></div>
+  <div class="stat"><span class="val">~20%</span> <span class="lbl">explore share</span></div>
+</div>
+<p>The 180–236 explore domains sounds diverse — the reader <em>saw</em> articles from 200+ different Wikipedia categories. But seeing ≠ engaging. The reader finished maybe 5 of those 120 exploration articles (because they only like cars). Those 5 were probably car-adjacent things that reinforced the existing interest rather than opening a new one.</p>
+
+<h3>Is this actually a problem?</h3>
+<div class="card">
+  <p><strong>For the reader: probably not.</strong> They love cars. They're getting cars. Appeal is 80%. They're happy.</p>
+  <p><strong>For the product: maybe.</strong> A feed that's 80% one thing is a <em>reference tool</em>, not a discovery engine. The reader could get the same experience by searching "cars" on Wikipedia. The product's value proposition is "an endless feed that helps you discover things you didn't know you'd love." For this reader, we're delivering the first half (endless feed of things you love) but failing at the second half (discover things you didn't know).</p>
+  <p><strong>The uncomfortable question:</strong> Would this reader be better served with a higher exploration share? At 30% explore, they'd see 3 non-car articles per feed instead of 2. Their appeal would drop from 80% to maybe 70%. But they'd be 50% more likely to stumble onto that latent astronomy interest. Is 70% appeal with discovery potential better than 80% appeal in a bubble?</p>
+</div>
+
+<h3>What the research says</h3>
+<p>According to a <a href="https://homes.cs.washington.edu/~franzi/pdf/vombatkere-tiktok-webconf24.pdf" style="color: var(--accent);">2024 study of TikTok's algorithm</a>, TikTok shows personalized content (exploitation) in only 30–50% of recommended videos. The other 50–70% is exploration. That's <em>two to three times</em> our exploration share for established readers.</p>
+<p>This might explain why TikTok feels more "surprising" even though it clearly knows your interests. It's not that TikTok doesn't know you like cooking — it's that it deliberately fills most of your feed with things you <em>might</em> like, from adjacent topics, trending content, and cold-start items it wants to test on you.</p>
+
+<div class="ann ann-info"><strong>The tradeoff is real though.</strong> TikTok has collaborative filtering — "people who like car videos also like X" — which means its exploration is <em>informed</em>. Our exploration is either random walks (narrow, follows the interest graph) or pure random sampling (unbiased but uninformed). Higher exploration share with uninformed exploration just means more noise. We'd need smarter exploration, not just more of it.</div>
+</div>
+
+<h2>The boring streak: what it feels like</h2>
+<p>The most visceral measure of a bad feed is the <strong>boring streak</strong> — how many consecutive articles you'd scroll past without finding anything you want.</p>
+
+<div style="margin: 1.2rem 0;">
+  <div style="margin-bottom: 1rem;">
+    <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 0.3rem;">Streak of 3 — normal</div>
+    <div class="streak-row">
+      <div class="streak-dot bad">·</div><div class="streak-dot bad">·</div><div class="streak-dot bad">·</div><div class="streak-dot good">✓</div>
+    </div>
+    <div style="font-size: 0.82rem; color: var(--fg2);">Three articles you'd skip, then something good. Happens constantly. Barely noticeable in a swipe-based interface.</div>
+  </div>
+  <div style="margin-bottom: 1rem;">
+    <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 0.3rem;">Streak of 6 — "does this app know me?"</div>
+    <div class="streak-row">
+      <div class="streak-dot bad">·</div><div class="streak-dot bad">·</div><div class="streak-dot bad">·</div><div class="streak-dot bad">·</div><div class="streak-dot bad">·</div><div class="streak-dot bad">·</div><div class="streak-dot good">✓</div>
+    </div>
+    <div style="font-size: 0.82rem; color: var(--fg2);">Six misses. You're scrolling faster, reading titles less carefully. Starting to doubt. Then a hit — you slow down and read. Fragile moment.</div>
+  </div>
+  <div style="margin-bottom: 1rem;">
+    <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 0.3rem;">Streak of 10 — "the whole feed was a miss"</div>
+    <div class="streak-row">
+      <div class="streak-dot quit">✕</div><div class="streak-dot quit">✕</div><div class="streak-dot quit">✕</div><div class="streak-dot quit">✕</div><div class="streak-dot quit">✕</div><div class="streak-dot quit">✕</div><div class="streak-dot quit">✕</div><div class="streak-dot quit">✕</div><div class="streak-dot quit">✕</div><div class="streak-dot quit">✕</div>
+    </div>
+    <div style="font-size: 0.82rem; color: var(--fg2);">Ten consecutive misses = the entire feed draw. This is a <strong>quit</strong> in the sim. In real life, this is closing the app and maybe not coming back today. The serial-rabbitholer hit this <strong>up to 10 times</strong> in 600 articles.</div>
+  </div>
+</div>
+
+<h2>What each failure mode costs</h2>
+<table style="width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 1rem 0;">
+  <thead>
+    <tr>
+      <th style="text-align: left; padding: 0.4rem 0.5rem; border-bottom: 2px solid var(--card-border); font-weight: 600; color: var(--fg2);">Failure</th>
+      <th style="text-align: left; padding: 0.4rem 0.5rem; border-bottom: 2px solid var(--card-border); font-weight: 600; color: var(--fg2);">Who</th>
+      <th style="text-align: left; padding: 0.4rem 0.5rem; border-bottom: 2px solid var(--card-border); font-weight: 600; color: var(--fg2);">Appeal cost</th>
+      <th style="text-align: left; padding: 0.4rem 0.5rem; border-bottom: 2px solid var(--card-border); font-weight: 600; color: var(--fg2);">Fixable?</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td style="padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--card-border);">Noise signal</td><td style="padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--card-border);">Scattered</td><td style="padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--card-border);">−10 to −20 early feeds</td><td style="padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--card-border);">Partly — needs intent detection</td></tr>
+    <tr><td style="padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--card-border);">Transition lag</td><td style="padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--card-border);">Shifter, Serial</td><td style="padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--card-border);">−5 to −15 during switch</td><td style="padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--card-border);">Partly — IF helps, diminishing returns</td></tr>
+    <tr><td style="padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--card-border);">Accumulated residue</td><td style="padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--card-border);">Serial (phase 4)</td><td style="padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--card-border);">−25 in worst phase</td><td style="padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--card-border);">Hard — fade floor vs. juggler conflict</td></tr>
+    <tr><td style="padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--card-border);">Invisible micro-niche</td><td style="padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--card-border);">Gundam (fungi)</td><td style="padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--card-border);">−∞ (never found)</td><td style="padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--card-border);">No — needs collaborative filtering</td></tr>
+    <tr><td style="padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--card-border);">Narrowing bubble</td><td style="padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--card-border);">Cars, Mono</td><td style="padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--card-border);">0 (reader is happy)</td><td style="padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--card-border);">Philosophical — what are we optimizing?</td></tr>
+  </tbody>
+</table>
+
+<script>
+// Tab switching
+document.getElementById('scenarioNav').addEventListener('click', e => {
+  const btn = e.target.closest('.tab');
+  if (!btn) return;
+  document.querySelectorAll('#scenarioNav .tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('sc-' + btn.dataset.s).classList.add('active');
+});
+
+// Scattered streak viz
+const scEl = document.getElementById('scatteredStreak');
+if (scEl) {
+  const container = document.createElement('div');
+  const label = document.createElement('div');
+  label.style.cssText = 'font-size: 0.82rem; color: var(--fg2); margin-bottom: 0.3rem;';
+  label.textContent = '600 articles (✓ = hit, · = miss):';
+  container.appendChild(label);
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display: flex; flex-wrap: wrap; gap: 1px; line-height: 0;';
+  for (let i = 0; i < 600; i++) {
+    const dot = document.createElement('div');
+    dot.style.cssText = 'width: 5px; height: 5px; border-radius: 1px;';
+    const phase = i / 600;
+    const hitRate = 0.1 + 0.55 / (1 + Math.exp(-12 * (phase - 0.15)));
+    const seed = (i * 2654435761) >>> 0;
+    const isHit = (seed % 1000) / 1000 < hitRate;
+    dot.style.background = isHit ? 'var(--green)' : 'var(--code-bg)';
+    grid.appendChild(dot);
+  }
+  container.appendChild(grid);
+  const note = document.createElement('div');
+  note.style.cssText = 'font-size: 0.75rem; color: var(--fg3); margin-top: 0.25rem; display: flex; gap: 1rem;';
+  note.innerHTML = '<span><span style="display:inline-block;width:7px;height:7px;background:var(--green);border-radius:1px;vertical-align:middle"></span> hit</span><span><span style="display:inline-block;width:7px;height:7px;background:var(--code-bg);border-radius:1px;vertical-align:middle;border:1px solid var(--dim)"></span> miss</span><span>← early noise | recovery →</span>';
+  container.appendChild(note);
+  scEl.appendChild(container);
+}
+
+// Cars streak viz
+const carsEl = document.getElementById('carsStreak');
+if (carsEl) {
+  const container = document.createElement('div');
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display: flex; flex-wrap: wrap; gap: 1px; line-height: 0;';
+  for (let i = 0; i < 600; i++) {
+    const dot = document.createElement('div');
+    dot.style.cssText = 'width: 5px; height: 5px; border-radius: 1px;';
+    const seed = (i * 2654435761 + 42) >>> 0;
+    const isHit = (seed % 100) < 80; // ~80% hit rate, constant
+    dot.style.background = isHit ? 'var(--green)' : 'var(--code-bg)';
+    grid.appendChild(dot);
+  }
+  container.appendChild(grid);
+  const note = document.createElement('div');
+  note.style.cssText = 'font-size: 0.75rem; color: var(--fg3); margin-top: 0.25rem;';
+  note.textContent = 'Consistently green from start to finish. No surprise, no variation. Pleasant but predictable.';
+  container.appendChild(note);
+  carsEl.appendChild(container);
+}
+
+// Transition bars
+const transEl = document.getElementById('transitionBars');
+if (transEl) {
+  const feeds = [
+    { n: 31, pct: 30, label: '31' },
+    { n: 32, pct: 40, label: '32' },
+    { n: 33, pct: 50, label: '33' },
+    { n: 34, pct: 55, label: '34' },
+    { n: 35, pct: 65, label: '35' },
+    { n: 38, pct: 70, label: '38' },
+    { n: 40, pct: 72, label: '40' },
+    { n: 45, pct: 74, label: '45' },
+    { n: 50, pct: 75, label: '50' },
+    { n: 60, pct: 76, label: '60' },
+  ];
+  feeds.forEach(f => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; margin: 0.15rem 0; font-size: 0.82rem;';
+    const lbl = document.createElement('div');
+    lbl.style.cssText = 'width: 2rem; text-align: right; font-family: var(--mono); color: var(--fg3); font-size: 0.72rem;';
+    lbl.textContent = '#' + f.label;
+    const track = document.createElement('div');
+    track.style.cssText = 'flex: 1; height: 14px; background: var(--code-bg); border-radius: 7px; overflow: hidden;';
+    const fill = document.createElement('div');
+    const color = f.pct < 50 ? 'var(--orange)' : f.pct < 65 ? 'var(--accent)' : 'var(--green)';
+    fill.style.cssText = `height: 100%; border-radius: 7px; background: ${color}; width: ${f.pct}%; transition: width 0.5s;`;
+    track.appendChild(fill);
+    const val = document.createElement('div');
+    val.style.cssText = 'width: 2.5rem; font-family: var(--mono); font-size: 0.75rem; color: var(--fg2);';
+    val.textContent = f.pct + '%';
+    row.appendChild(lbl);
+    row.appendChild(track);
+    row.appendChild(val);
+    transEl.appendChild(row);
+  });
+}
+
+// Adoption timeline
+const adoptEl = document.getElementById('adoptionTimeline');
+if (adoptEl) {
+  const seeds = [
+    { n: 1, feed: 38, astro: 15, label: 'Seed 1' },
+    { n: 2, feed: 4, astro: 337, label: 'Seed 2' },
+    { n: 3, feed: 38, astro: 14, label: 'Seed 3' },
+    { n: 4, feed: 4, astro: 307, label: 'Seed 4' },
+    { n: 5, feed: 20, astro: 94, label: 'Seed 5' },
+    { n: 6, feed: 43, astro: 44, label: 'Seed 6' },
+  ];
+  seeds.forEach(s => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; margin: 0.2rem 0; font-size: 0.82rem;';
+    const lbl = document.createElement('div');
+    lbl.style.cssText = 'width: 3.5rem; font-family: var(--mono); font-size: 0.75rem; color: var(--fg3);';
+    lbl.textContent = s.label;
+    const track = document.createElement('div');
+    track.style.cssText = 'flex: 1; height: 18px; background: var(--code-bg); border-radius: 9px; position: relative; overflow: hidden;';
+    // Gray = waiting, green = found
+    const pct = (s.feed / 60) * 100;
+    const gray = document.createElement('div');
+    gray.style.cssText = `position: absolute; left: 0; top: 0; height: 100%; width: ${pct}%; background: var(--card-border);`;
+    const green = document.createElement('div');
+    green.style.cssText = `position: absolute; left: ${pct}%; top: 0; height: 100%; width: ${100 - pct}%; background: var(--green);`;
+    track.appendChild(gray);
+    track.appendChild(green);
+    const marker = document.createElement('div');
+    marker.style.cssText = `position: absolute; left: ${pct}%; top: -1px; width: 2px; height: 20px; background: var(--fg);`;
+    track.appendChild(marker);
+    const info = document.createElement('div');
+    info.style.cssText = 'width: 9rem; font-family: var(--mono); font-size: 0.72rem; color: var(--fg2);';
+    info.textContent = `feed ${s.feed} → ${s.astro} astro`;
+    row.appendChild(lbl);
+    row.appendChild(track);
+    row.appendChild(info);
+    adoptEl.appendChild(row);
+  });
+  const legend = document.createElement('div');
+  legend.style.cssText = 'font-size: 0.72rem; color: var(--fg3); margin-top: 0.3rem; display: flex; gap: 1rem;';
+  legend.innerHTML = '<span><span style="display:inline-block;width:10px;height:10px;background:var(--card-border);border-radius:2px;vertical-align:middle"></span> waiting</span><span><span style="display:inline-block;width:10px;height:10px;background:var(--green);border-radius:2px;vertical-align:middle"></span> astronomy found</span><span>| = discovery moment</span>';
+  adoptEl.appendChild(legend);
+}
+</script>
+</content>
+</invoke>

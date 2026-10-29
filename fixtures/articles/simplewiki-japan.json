@@ -7,6 +7,12 @@
  "license": "CC BY-SA 4.0",
  "attribution": "Text from the Simple English Wikipedia article \"Japan\", https://simple.wikipedia.org/wiki/Japan (revision 10972806), licensed CC BY-SA 4.0",
  "fetched": "2026-10-11",
+ "description": "island country in East Asia",
+ "image": {
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9e/Flag_of_Japan.svg/960px-Flag_of_Japan.svg.png?utm_source=simple.wikipedia.org\u0026utm_campaign=api\u0026utm_content=thumbnail",
+  "width": 960,
+  "height": 640
+ },
  "links": [
   ".jp",
   "10th G7 summit",

@@ -7,6 +7,12 @@
  "license": "CC BY-SA 4.0",
  "attribution": "Text from the Wikipedia article \"Japan\", https://en.wikipedia.org/wiki/Japan (revision 1379759746), licensed CC BY-SA 4.0",
  "fetched": "2026-10-11",
+ "description": "Country in East Asia",
+ "image": {
+  "url": "https://thumb.wikimedia.org/wikipedia/en/thumb/9/9e/Flag_of_Japan.svg/960px-Flag_of_Japan.svg.png?utm_source=en.wikipedia.org\u0026utm_campaign=api\u0026utm_content=thumbnail",
+  "width": 960,
+  "height": 640
+ },
  "links": [
   "+81",
   ".jp",

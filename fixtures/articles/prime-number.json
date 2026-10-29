@@ -7,6 +7,12 @@
  "license": "CC BY-SA 4.0",
  "attribution": "Text from the Wikipedia article \"Prime number\", https://en.wikipedia.org/wiki/Prime_number (revision 1376977902), licensed CC BY-SA 4.0",
  "fetched": "2026-10-11",
+ "description": "Number divisible only by 1 and itself",
+ "image": {
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f0/Primes-vs-composites.svg/960px-Primes-vs-composites.svg.png?utm_source=en.wikipedia.org\u0026utm_campaign=api\u0026utm_content=thumbnail",
+  "width": 960,
+  "height": 1350
+ },
  "links": [
   "0",
   "1",

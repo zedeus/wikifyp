@@ -46,17 +46,27 @@ func attribution(site, title, url string, revisionID int64, license string) stri
 // on-disk key order: a fixture is this struct marshaled to <slug>.json, with
 // Text in <slug>.txt beside it.
 type Article struct {
-	Title       string   `json:"title"`                // canonical title, redirects resolved
-	Source      string   `json:"source"`               // which wiki: "wikipedia" or "simplewiki"
-	URL         string   `json:"url"`                  // canonical page URL
-	PageID      int64    `json:"page_id"`              // wiki page ID, the key grouping revisions of one page
-	RevisionID  int64    `json:"revision_id"`          // revision the text was taken from
-	License     string   `json:"license"`              // e.g. "CC BY-SA 4.0"
-	Attribution string   `json:"attribution"`          // human-readable attribution line
-	Fetched     string   `json:"fetched"`              // date the text was fetched, YYYY-MM-DD
-	Links       []string `json:"links,omitempty"`      // outgoing article links (main namespace)
-	Categories  []string `json:"categories,omitempty"` // visible categories, "Category:" stripped
-	Text        string   `json:"-"`                    // raw plain-text extract
+	Title       string   `json:"title"`                 // canonical title, redirects resolved
+	Source      string   `json:"source"`                // which wiki: "wikipedia" or "simplewiki"
+	URL         string   `json:"url"`                   // canonical page URL
+	PageID      int64    `json:"page_id"`               // wiki page ID, the key grouping revisions of one page
+	RevisionID  int64    `json:"revision_id"`           // revision the text was taken from
+	License     string   `json:"license"`               // e.g. "CC BY-SA 4.0"
+	Attribution string   `json:"attribution"`           // human-readable attribution line
+	Fetched     string   `json:"fetched"`               // date the text was fetched, YYYY-MM-DD
+	Description string   `json:"description,omitempty"` // the wiki's short description, when it has one
+	Image       *Image   `json:"image,omitempty"`       // free lead image thumbnail, when the page has one
+	Links       []string `json:"links,omitempty"`       // outgoing article links (main namespace)
+	Categories  []string `json:"categories,omitempty"`  // visible categories, "Category:" stripped
+	Text        string   `json:"-"`                     // raw plain-text extract
+}
+
+// Image is an article's lead image thumbnail: the free (pilicense=free)
+// image the wiki shows for the page, scaled to at most 960px wide.
+type Image struct {
+	URL    string `json:"url"`
+	Width  int    `json:"width"`
+	Height int    `json:"height"`
 }
 
 // Validate reports the fields an article cannot be ingested without.

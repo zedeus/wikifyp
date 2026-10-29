@@ -52,6 +52,7 @@ var validTypes = map[string]bool{
 	"ask":         true,
 	"finish":      true,
 	"skip":        true,
+	"save":        true,
 }
 
 // Decode parses a single event from JSON, tolerating unknown fields but
@@ -127,23 +128,20 @@ func (e Event) validate() error {
 	return nil
 }
 
-// IsFinishOrSkip reports whether the event type signals the reader is
-// done with an article, requiring a feed state update.
-func (e Event) IsFinishOrSkip() bool {
-	return e.Type == "finish" || e.Type == "skip"
+// feedStates maps the event types that change a page's feed state to the
+// reader_article_state value they set.
+var feedStates = map[string]string{
+	"finish": "finished",
+	"skip":   "skipped",
+	"save":   "saved",
 }
 
-// FeedState returns the reader_article_state value for a finish or skip
-// event: "finished" or "skipped". It panics for other types.
-func (e Event) FeedState() string {
-	switch e.Type {
-	case "finish":
-		return "finished"
-	case "skip":
-		return "skipped"
-	default:
-		panic(fmt.Sprintf("event: FeedState called on %q", e.Type))
-	}
+// FeedState returns the reader_article_state value this event sets and
+// whether it sets one at all: finish, skip and save do, the in-article
+// events (play, pause, scroll_back, ask) do not.
+func (e Event) FeedState() (string, bool) {
+	s, ok := feedStates[e.Type]
+	return s, ok
 }
 
 // TokenCount returns the number of tokens in a sentence by splitting

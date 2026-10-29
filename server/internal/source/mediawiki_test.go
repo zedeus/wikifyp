@@ -198,6 +198,115 @@ func TestMediaWikiFetchDeferredProps(t *testing.T) {
 	}
 }
 
+// TestMediaWikiFetchImageAndDescription covers the pageimages and
+// description props: both present, both absent, and each alone. Missing
+// image or description is an answer (the page has none), never an error.
+func TestMediaWikiFetchImageAndDescription(t *testing.T) {
+	page := func(extra string) string {
+		return `{"query":{"pages":[{"pageid":1,"title":"T",
+			"extract":"One sentence.","fullurl":"https://en.wikipedia.org/wiki/T",
+			"revisions":[{"revid":7}]` + extra + `}]}}`
+	}
+	thumb := `,"thumbnail":{"source":"https://upload.wikimedia.org/x.jpg","width":960,"height":540}`
+	desc := `,"description":"Branch of science"`
+	cases := []struct {
+		name     string
+		body     string
+		wantImg  *Image
+		wantDesc string
+	}{
+		{"both present", page(thumb + desc),
+			&Image{URL: "https://upload.wikimedia.org/x.jpg", Width: 960, Height: 540}, "Branch of science"},
+		{"both absent", page(""), nil, ""},
+		{"image only", page(thumb),
+			&Image{URL: "https://upload.wikimedia.org/x.jpg", Width: 960, Height: 540}, ""},
+		{"description only", page(desc), nil, "Branch of science"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				for k, v := range map[string]string{"piprop": "thumbnail", "pithumbsize": "960", "pilicense": "free"} {
+					if got := r.URL.Query().Get(k); got != v {
+						t.Errorf("request %s = %q, want %q", k, got, v)
+					}
+				}
+				if props := r.URL.Query().Get("prop"); !strings.Contains(props, "pageimages") || !strings.Contains(props, "description") {
+					t.Errorf("request prop = %q, want pageimages and description in it", props)
+				}
+				w.Write([]byte(tc.body))
+			}))
+			t.Cleanup(srv.Close)
+
+			a, err := testClient(Wikipedia(), srv.URL).Fetch(context.Background(), "T")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(a.Image, tc.wantImg) {
+				t.Errorf("image = %+v, want %+v", a.Image, tc.wantImg)
+			}
+			if a.Description != tc.wantDesc {
+				t.Errorf("description = %q, want %q", a.Description, tc.wantDesc)
+			}
+			if err := a.Validate(); err != nil {
+				t.Errorf("fetched article invalid: %v", err)
+			}
+		})
+	}
+}
+
+// TestMediaWikiFetchMeta covers the metadata-only fetch the refresh mode
+// uses: it asks for pageimages and description by page ID and nothing else.
+func TestMediaWikiFetchMeta(t *testing.T) {
+	cases := []struct {
+		name     string
+		body     string
+		wantImg  *Image
+		wantDesc string
+		wantErr  error
+	}{
+		{"both present",
+			`{"query":{"pages":[{"pageid":5,"title":"T",
+			  "thumbnail":{"source":"https://upload.wikimedia.org/y.png","width":800,"height":600},
+			  "description":"A thing"}]}}`,
+			&Image{URL: "https://upload.wikimedia.org/y.png", Width: 800, Height: 600}, "A thing", nil},
+		{"neither",
+			`{"query":{"pages":[{"pageid":5,"title":"T"}]}}`, nil, "", nil},
+		{"missing page",
+			`{"query":{"pages":[{"pageid":5,"missing":true}]}}`, nil, "", ErrNotFound},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if got := r.URL.Query().Get("pageids"); got != "5" {
+					t.Errorf("pageids = %q, want 5", got)
+				}
+				if got := r.URL.Query().Get("prop"); got != "pageimages|description" {
+					t.Errorf("prop = %q, want pageimages|description", got)
+				}
+				w.Write([]byte(tc.body))
+			}))
+			t.Cleanup(srv.Close)
+
+			img, desc, err := testClient(Wikipedia(), srv.URL).FetchMeta(context.Background(), 5)
+			if tc.wantErr != nil {
+				if !errors.Is(err, tc.wantErr) {
+					t.Fatalf("err = %v, want %v", err, tc.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(img, tc.wantImg) {
+				t.Errorf("image = %+v, want %+v", img, tc.wantImg)
+			}
+			if desc != tc.wantDesc {
+				t.Errorf("description = %q, want %q", desc, tc.wantDesc)
+			}
+		})
+	}
+}
+
 func TestMediaWikiFetchMissing(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, filepath.Join("testdata", "missing-page.json"))

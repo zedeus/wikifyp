@@ -7,6 +7,12 @@
  "license": "CC BY-SA 4.0",
  "attribution": "Text from the Wikipedia article \"Antarctica\", https://en.wikipedia.org/wiki/Antarctica (revision 1379748415), licensed CC BY-SA 4.0",
  "fetched": "2026-10-11",
+ "description": "Earth's southernmost continent",
+ "image": {
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f2/Antarctica_%28orthographic_projection%29.svg/960px-Antarctica_%28orthographic_projection%29.svg.png?utm_source=en.wikipedia.org\u0026utm_campaign=api\u0026utm_content=thumbnail",
+  "width": 960,
+  "height": 958
+ },
  "links": [
   ".aq",
   "1st Soviet Antarctic Expedition",

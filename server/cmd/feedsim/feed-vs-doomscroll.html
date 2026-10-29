@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<title>Feed vs Doomscroll</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #fafaf8; --fg: #1a1a1a; --fg2: #555; --fg3: #999;
+  --accent: #2563eb; --accent-soft: #dbeafe;
+  --green: #16a34a; --green-soft: #dcfce7;
+  --red: #dc2626; --red-soft: #fee2e2;
+  --orange: #d97706; --orange-soft: #fef3c7;
+  --purple: #7c3aed; --purple-soft: #ede9fe;
+  --teal: #0d9488; --teal-soft: #ccfbf1;
+  --pink: #db2777; --pink-soft: #fce7f3;
+  --card-bg: #fff; --card-border: #e2e2de; --code-bg: #f3f3f0;
+  --dim: #c5c5c0;
+  --font: 'IBM Plex Sans', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f0f0f; --fg: #e5e5e5; --fg2: #aaa; --fg3: #666;
+    --accent: #60a5fa; --accent-soft: #1e3a5f;
+    --green: #4ade80; --green-soft: #14532d;
+    --red: #f87171; --red-soft: #7f1d1d;
+    --orange: #fbbf24; --orange-soft: #78350f;
+    --purple: #a78bfa; --purple-soft: #3b1f6e;
+    --teal: #2dd4bf; --teal-soft: #134e4a;
+    --pink: #f472b6; --pink-soft: #831843;
+    --card-bg: #1a1a1a; --card-border: #333; --code-bg: #222;
+    --dim: #444;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f0f0f; --fg: #e5e5e5; --fg2: #aaa; --fg3: #666;
+  --accent: #60a5fa; --accent-soft: #1e3a5f;
+  --green: #4ade80; --green-soft: #14532d;
+  --red: #f87171; --red-soft: #7f1d1d;
+  --orange: #fbbf24; --orange-soft: #78350f;
+  --purple: #a78bfa; --purple-soft: #3b1f6e;
+  --teal: #2dd4bf; --teal-soft: #134e4a;
+  --pink: #f472b6; --pink-soft: #831843;
+  --card-bg: #1a1a1a; --card-border: #333; --code-bg: #222;
+  --dim: #444;
+  color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font); line-height: 1.65;
+  padding: 0 max(16px, env(safe-area-inset-left, 0px));
+  max-width: 780px; margin: 0 auto;
+}
+h1 { font-size: 1.75rem; font-weight: 700; margin: 2rem 0 0.3rem; text-wrap: balance; }
+h2 { font-size: 1.35rem; font-weight: 700; margin: 2.5rem 0 0.6rem; border-bottom: 2px solid var(--card-border); padding-bottom: 0.35rem; }
+h3 { font-size: 1.05rem; font-weight: 600; margin: 1.5rem 0 0.4rem; }
+p { margin: 0.7rem 0; }
+.subtitle { color: var(--fg2); font-size: 1.05rem; margin-bottom: 2rem; }
+code { font-family: var(--mono); font-size: 0.88em; background: var(--code-bg); padding: 0.12em 0.3em; border-radius: 3px; }
+a { color: var(--accent); }
+
+/* Card */
+.card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 1rem 1.1rem; margin: 1rem 0; }
+.card-title { font-weight: 700; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; font-size: 1rem; }
+.card p { margin: 0.3rem 0; color: var(--fg2); font-size: 0.92rem; }
+
+/* Note */
+.note { border-left: 3px solid var(--accent); padding: 0.7rem 0.85rem; border-radius: 0 6px 6px 0; margin: 1rem 0; font-size: 0.9rem; background: var(--accent-soft); }
+.note.warn { border-left-color: var(--orange); background: var(--orange-soft); }
+.note.good { border-left-color: var(--green); background: var(--green-soft); }
+.note.idea { border-left-color: var(--purple); background: var(--purple-soft); }
+.note strong { font-weight: 600; }
+
+/* Comparison grid */
+.cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin: 1rem 0; background: var(--card-border); border-radius: 10px; overflow: hidden; }
+@media (max-width: 500px) { .cmp { grid-template-columns: 1fr; } }
+.cmp-cell { background: var(--card-bg); padding: 0.8rem; }
+.cmp-cell.header { background: var(--code-bg); font-weight: 700; font-size: 0.9rem; }
+.cmp-cell .label { font-size: 0.78rem; color: var(--fg3); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem; }
+.cmp-cell .val { font-size: 0.92rem; }
+
+/* Feed mockup strips */
+.feed-strip { display: flex; gap: 2px; margin: 0.4rem 0; }
+.feed-strip .item { flex: 1; height: 28px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 600; min-width: 0; overflow: hidden; }
+
+/* Stats */
+.stats { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.8rem 0; }
+.stat { background: var(--code-bg); padding: 0.4rem 0.65rem; border-radius: 6px; font-size: 0.8rem; }
+.stat .val { font-weight: 700; font-family: var(--mono); }
+.stat .lbl { color: var(--fg2); }
+
+/* Bar chart */
+.bar-chart { margin: 0.8rem 0; }
+.bar-row { display: flex; align-items: center; gap: 0.5rem; margin: 0.2rem 0; font-size: 0.82rem; }
+.bar-label { width: 5rem; text-align: right; font-weight: 500; flex-shrink: 0; font-size: 0.78rem; }
+.bar-track { flex: 1; height: 20px; background: var(--code-bg); border-radius: 10px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 10px; display: flex; align-items: center; padding: 0 6px; font-size: 0.7rem; font-weight: 600; color: #fff; }
+.bar-val { font-family: var(--mono); font-size: 0.78rem; width: 3rem; flex-shrink: 0; }
+
+/* Diagram */
+.diagram-row { display: flex; gap: 0.5rem; margin: 0.5rem 0; flex-wrap: wrap; }
+.diagram-box { flex: 1; min-width: 100px; background: var(--card-bg); border: 2px solid var(--card-border); border-radius: 10px; padding: 0.5rem 0.6rem; text-align: center; }
+.diagram-box.highlight { border-color: var(--accent); background: var(--accent-soft); }
+.diagram-box.missing { border-color: var(--red); border-style: dashed; opacity: 0.7; }
+.diagram-box .label { font-weight: 700; font-size: 0.85rem; }
+.diagram-box .sub { font-size: 0.72rem; color: var(--fg2); margin-top: 0.15rem; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+</style>
+
+<h1>How Our Feed Compares to Doomscrolling Platforms</h1>
+<p class="subtitle">TikTok, YouTube Shorts, Instagram Reels — they do show you things you're interested in, but they feel fundamentally different from our feed. This page explores why, what they know that we don't, and whether we're measuring the right things.</p>
+
+<h2>The big picture: what's the same and what's different</h2>
+
+<div class="cmp">
+  <div class="cmp-cell header">Our feed</div>
+  <div class="cmp-cell header">TikTok / Reels / Shorts</div>
+  <div class="cmp-cell">
+    <div class="label">Content source</div>
+    <div class="val">267K Wikipedia articles. Static text. No creators, no trending, no virality.</div>
+  </div>
+  <div class="cmp-cell">
+    <div class="label">Content source</div>
+    <div class="val">Millions of videos uploaded daily. Live creator ecosystem. Virality and trending signals.</div>
+  </div>
+  <div class="cmp-cell">
+    <div class="label">User signal</div>
+    <div class="val">Read/skip/save + completion % + word count. Single user, no social graph.</div>
+  </div>
+  <div class="cmp-cell">
+    <div class="label">User signal</div>
+    <div class="val">Watch time, replays, likes, shares, comments, follows, hesitation pauses, profile visits. Billions of users.</div>
+  </div>
+  <div class="cmp-cell">
+    <div class="label">Discovery bridge</div>
+    <div class="val">Category graph walks + random sampling. No collaborative filtering.</div>
+  </div>
+  <div class="cmp-cell">
+    <div class="label">Discovery bridge</div>
+    <div class="val">Collaborative filtering ("people like you also liked X"), content embeddings, creator graph, trending signals.</div>
+  </div>
+  <div class="cmp-cell">
+    <div class="label">Explore share</div>
+    <div class="val"><strong>20%</strong> for established readers. 75% for cold-start, tapering down.</div>
+  </div>
+  <div class="cmp-cell">
+    <div class="label">Explore share</div>
+    <div class="val"><strong>50–70%</strong> of all recommendations are exploration, even for established users. (<a href="https://arxiv.org/abs/2403.12410">Vombatkere et al., 2024</a>)</div>
+  </div>
+  <div class="cmp-cell">
+    <div class="label">What "explore" means</div>
+    <div class="val">Random Wikipedia articles, featured content, or 2-3 hop walks from your reads. <strong>Uninformed.</strong></div>
+  </div>
+  <div class="cmp-cell">
+    <div class="label">What "explore" means</div>
+    <div class="val">Videos that people with similar tastes engaged with, trending in your region, or testing new creator content. <strong>Informed.</strong></div>
+  </div>
+</div>
+
+<h2>The key insight: TikTok's exploration is informed</h2>
+
+<p>You said it perfectly: TikTok doesn't just show "90% cars, 5% car-adjacent, 5% random." It shows you things you'll find <em>fun, funny, emotionally impactful, surprising</em>. The reason it can do this is a capability we fundamentally lack:</p>
+
+<div class="card">
+  <div class="card-title">🧠 Collaborative Filtering</div>
+  <p><strong>What it is:</strong> "People who like the same things you like also liked X." If 10,000 users who watch car videos also watch cooking fails, TikTok knows to show you cooking fails — even though cars and cooking share zero content overlap.</p>
+  <p><strong>Why it matters:</strong> This is the bridge between "you like cars" and "you'd find this hilarious cooking disaster entertaining." No amount of category-graph walking from car articles leads to cooking. But human interest patterns do — people who like one thing often like another seemingly unrelated thing, and collaborative filtering captures that.</p>
+  <p><strong>What we have instead:</strong> Category graph walks (narrow — they follow Wikipedia's editorial links) and random corpus sampling (unbiased but uninformed). Our exploration doors are random lottery tickets. TikTok's exploration doors are educated guesses based on billions of data points.</p>
+</div>
+
+<h3>What this looks like in practice</h3>
+
+<p>Imagine a user who reads lots of car articles. Here's what each system shows for exploration:</p>
+
+<div style="margin: 1rem 0;">
+  <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.4rem;">TikTok's exploration (informed):</div>
+  <div class="feed-strip">
+    <div class="item" style="background: var(--green-soft); color: var(--green);">🚗 car</div>
+    <div class="item" style="background: var(--green-soft); color: var(--green);">🚗 car</div>
+    <div class="item" style="background: var(--purple-soft); color: var(--purple);">😂 comedy</div>
+    <div class="item" style="background: var(--green-soft); color: var(--green);">🚗 car</div>
+    <div class="item" style="background: var(--teal-soft); color: var(--teal);">🏍️ bikes</div>
+    <div class="item" style="background: var(--orange-soft); color: var(--orange);">🔧 DIY</div>
+    <div class="item" style="background: var(--green-soft); color: var(--green);">🚗 car</div>
+    <div class="item" style="background: var(--pink-soft); color: var(--pink);">🐕 pets</div>
+    <div class="item" style="background: var(--accent-soft); color: var(--accent);">🌍 travel</div>
+    <div class="item" style="background: var(--green-soft); color: var(--green);">🚗 car</div>
+  </div>
+  <div style="font-size: 0.78rem; color: var(--fg2); margin-top: 0.2rem;">50% cars, but the other 50% is things car-lovers tend to enjoy: comedy, bikes, DIY mechanics, pets, travel. Each exploration item was chosen because <em>other car enthusiasts engaged with it</em>.</div>
+</div>
+
+<div style="margin: 1rem 0;">
+  <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.4rem;">Our exploration (uninformed):</div>
+  <div class="feed-strip">
+    <div class="item" style="background: var(--green-soft); color: var(--green);">🚗 car</div>
+    <div class="item" style="background: var(--green-soft); color: var(--green);">🚗 car</div>
+    <div class="item" style="background: var(--green-soft); color: var(--green);">🚗 car</div>
+    <div class="item" style="background: var(--green-soft); color: var(--green);">🚗 car</div>
+    <div class="item" style="background: var(--green-soft); color: var(--green);">🚗 car</div>
+    <div class="item" style="background: var(--green-soft); color: var(--green);">🚗 car</div>
+    <div class="item" style="background: var(--green-soft); color: var(--green);">🚗 car</div>
+    <div class="item" style="background: var(--green-soft); color: var(--green);">🚗 car</div>
+    <div class="item" style="background: var(--code-bg); color: var(--fg3);">👤 Corbyn</div>
+    <div class="item" style="background: var(--code-bg); color: var(--fg3);">🪐 asteroid</div>
+  </div>
+  <div style="font-size: 0.78rem; color: var(--fg2); margin-top: 0.2rem;">80% cars, 20% random. The exploration doors (Jeremy Corbyn, an asteroid) have zero connection to the reader's interests or tastes. They're lottery tickets — occasionally one hits, usually they don't.</div>
+</div>
+
+<h2>What are we really optimizing for?</h2>
+
+<p>This is the heart of your question. Our benchmark measures <strong>appeal</strong> — "would this reader want to read this article?" But appeal is a narrow metric. It doesn't capture:</p>
+
+<div class="diagram-row">
+  <div class="diagram-box highlight">
+    <div class="label">Appeal ✓</div>
+    <div class="sub">We measure this</div>
+  </div>
+  <div class="diagram-box missing">
+    <div class="label">Surprise</div>
+    <div class="sub">"I didn't know I'd love this"</div>
+  </div>
+  <div class="diagram-box missing">
+    <div class="label">Emotional range</div>
+    <div class="sub">Funny → serious → awe</div>
+  </div>
+  <div class="diagram-box missing">
+    <div class="label">Tangential pull</div>
+    <div class="sub">"related but different"</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">📏 What "appeal" misses</div>
+  <p><strong>Surprise:</strong> Our picky reader gets 53–65% appeal. But if all 65% are "Lion," "Tiger," "Elephant" — it's boring even at 65%. A feed with 50% appeal but including "The biomechanics of how cheetahs run" and "Why zoos are redesigning enclosures" would <em>feel</em> better. The surprise makes the difference. Research calls this <a href="https://arxiv.org/abs/2504.06633">serendipity</a> — "content that feels fortuitous, refreshing, and enriching."</p>
+  <p><strong>Emotional range:</strong> TikTok deliberately varies emotional tone — a funny video, then something awe-inspiring, then something heartwarming. <a href="https://link.springer.com/article/10.1007/s10844-026-01056-5">Research shows</a> that emotional homogeneity ("the same mood, repeated") is a key driver of feed fatigue, even when the content is topically relevant. Our benchmark can't distinguish between 10 dry car specification articles and a mix of "the engineering genius of the Porsche 911" + "a road trip across Route 66" + "the history of Le Mans."</p>
+  <p><strong>Tangential pull:</strong> The YouTube Shorts experience isn't "here's cars." It's "here's a satisfying engine restoration → here's someone racing go-karts → here's a road trip timelapse → here's a cool gadget review." Each video is <em>adjacent to</em> but <em>different from</em> the previous one. Our feed serves "Lamborghini Gallardo → Lamborghini Urraco → Lamborghini Diablo" — topically correct but experientially flat.</p>
+</div>
+
+<h2>The architecture gap</h2>
+
+<p>Here's what TikTok's recommendation stack has that we don't:</p>
+
+<div style="margin: 1rem 0;">
+  <div style="display: grid; grid-template-columns: auto 1fr 1fr; gap: 1px; background: var(--card-border); border-radius: 10px; overflow: hidden; font-size: 0.82rem;">
+    <div style="background: var(--code-bg); padding: 0.5rem; font-weight: 700;">Layer</div>
+    <div style="background: var(--code-bg); padding: 0.5rem; font-weight: 700;">TikTok</div>
+    <div style="background: var(--code-bg); padding: 0.5rem; font-weight: 700;">Us</div>
+
+    <div style="background: var(--card-bg); padding: 0.5rem; font-weight: 500;">Content signals</div>
+    <div style="background: var(--card-bg); padding: 0.5rem;">Audio, visual, text, creator, hashtags, sounds, duration</div>
+    <div style="background: var(--card-bg); padding: 0.5rem;">Categories, links, word count</div>
+
+    <div style="background: var(--card-bg); padding: 0.5rem; font-weight: 500;">User signals</div>
+    <div style="background: var(--card-bg); padding: 0.5rem;">Watch time, replays, shares, comments, follows, pauses, saves, profile views</div>
+    <div style="background: var(--card-bg); padding: 0.5rem;">Read/skip/save, completion %, word count</div>
+
+    <div style="background: var(--card-bg); padding: 0.5rem; font-weight: 500;">Social graph</div>
+    <div style="background: var(--green-soft); padding: 0.5rem; color: var(--green); font-weight: 600;">✓ Billions of users</div>
+    <div style="background: var(--red-soft); padding: 0.5rem; color: var(--red); font-weight: 600;">✗ Single user, local</div>
+
+    <div style="background: var(--card-bg); padding: 0.5rem; font-weight: 500;">Collaborative filtering</div>
+    <div style="background: var(--green-soft); padding: 0.5rem; color: var(--green); font-weight: 600;">✓ "Users like you liked X"</div>
+    <div style="background: var(--red-soft); padding: 0.5rem; color: var(--red); font-weight: 600;">✗ No other users</div>
+
+    <div style="background: var(--card-bg); padding: 0.5rem; font-weight: 500;">Content embeddings</div>
+    <div style="background: var(--green-soft); padding: 0.5rem; color: var(--green); font-weight: 600;">✓ Deep semantic similarity</div>
+    <div style="background: var(--red-soft); padding: 0.5rem; color: var(--red); font-weight: 600;">✗ Category overlap only</div>
+
+    <div style="background: var(--card-bg); padding: 0.5rem; font-weight: 500;">Trending/viral</div>
+    <div style="background: var(--green-soft); padding: 0.5rem; color: var(--green); font-weight: 600;">✓ Real-time popularity</div>
+    <div style="background: var(--orange-soft); padding: 0.5rem; color: var(--orange); font-weight: 600;">~ Featured articles (static)</div>
+
+    <div style="background: var(--card-bg); padding: 0.5rem; font-weight: 500;">Emotional modeling</div>
+    <div style="background: var(--green-soft); padding: 0.5rem; color: var(--green); font-weight: 600;">✓ Engagement predicts affect</div>
+    <div style="background: var(--red-soft); padding: 0.5rem; color: var(--red); font-weight: 600;">✗ No emotional signal</div>
+  </div>
+</div>
+
+<p>The critical gap is <strong>collaborative filtering</strong>. Everything else — content embeddings, emotional modeling, trending — is nice to have. But collaborative filtering is the mechanism that bridges "you like cars" → "you'd enjoy this cooking disaster video." Without it, our exploration is structurally uninformed.</p>
+
+<h2>What the research says about exploration ratios</h2>
+
+<div class="card">
+  <div class="card-title">📊 TikTok: 50–70% exploration</div>
+  <p>A <a href="https://homes.cs.washington.edu/~franzi/pdf/vombatkere-tiktok-webconf24.pdf">2024 WWW paper</a> by Vombatkere et al. (Boston University / University of Washington) analyzed 220 real TikTok users' recommendation data and found that TikTok's algorithm only "exploits" (shows personalized content matching known interests) in <strong>30–50% of recommendations</strong>. The rest is exploration.</p>
+  <p>But here's the crucial difference: TikTok's exploration is <em>informed</em> by collaborative filtering. A "random" video on your TikTok FYP isn't actually random — it's something the algorithm is <em>testing</em> on you, based on what people with similar taste profiles engaged with. When it works, the user thinks: "wow, how did it know I'd like this?" When our random exploration works, the user thinks: "huh, weird, an asteroid article — but okay, that was interesting."</p>
+</div>
+
+<div class="card">
+  <div class="card-title">🎵 Spotify: familiarity is winning</div>
+  <p>Spotify's Discover Weekly launched as a novelty-focused playlist (30 songs you've never heard). But over the past two years, <a href="https://beatstorapon.com/blog/ultimate-guide-to-spotify-music-algorithm/">Spotify found that listeners stay longer when they hear music they already have a relationship with</a>. The algorithm now weights familiarity and proven engagement more heavily than raw novelty.</p>
+  <p>This is interesting because it suggests the <strong>optimal ratio isn't fixed</strong> — it depends on the medium. Short video (TikTok) benefits from high exploration because each item costs 15 seconds to evaluate. Long-form reading (our app) costs minutes per article. The cost of a bad exploration recommendation is higher for us.</p>
+</div>
+
+<div class="card">
+  <div class="card-title">🔬 Serendipity research</div>
+  <p><a href="https://arxiv.org/abs/2504.06633">A 2025 paper on serendipitous recommendation</a> proposes estimating "user curiosity" — long-term and short-term interest signals — to balance usefulness vs. unexpectedness. The key insight: surprise alone isn't valuable. Serendipity is surprise <em>that the user values</em>. An asteroid article for a car reader is surprising but not serendipitous. A "road trip across Route 66" article for a car reader is both surprising and serendipitous — it connects to their interest from an unexpected angle.</p>
+  <p>A <a href="https://ieeeaccess.ieee.org/featured-article/beyond-relevance-enhancing-serendipity-in-content-based-recommendations-with-knowledge-graphs/">2025 IEEE paper</a> uses knowledge graphs to find items that are "semantically related yet sufficiently distant" — a two-hop distance approach. This is conceptually similar to our random walks, but with deeper semantic understanding of what "related but different" means.</p>
+</div>
+
+<h2>What this means for our test suite</h2>
+
+<p>Our 14-persona benchmark measures appeal, repeats, quits, boring streaks, and explore domains. These are <em>necessary but not sufficient</em>. Here's what we're missing and what we might add:</p>
+
+<div class="card">
+  <div class="card-title">🔍 What we measure well</div>
+  <p><strong>Appeal:</strong> "Would this reader want to read this?" — our core metric. Measures basic feed quality.</p>
+  <p><strong>Quits:</strong> "Was there a feed with zero hits?" — measures the worst moments.</p>
+  <p><strong>Boring streaks:</strong> "How many misses in a row?" — measures the longest pain.</p>
+  <p><strong>Explore domains:</strong> "How many different Wikipedia categories did exploration touch?" — a rough breadth measure.</p>
+</div>
+
+<div class="card">
+  <div class="card-title">🚫 What we can't easily measure</div>
+  <p><strong>Serendipity:</strong> "Was the reader surprised and delighted by something unexpected?" Our sim can't model delight — it either matches the interest or it doesn't. A real reader might love "History of Le Mans" even though it's categorized as sports/history, not cars.</p>
+  <p><strong>Emotional variety:</strong> We'd need some kind of article-level emotional tagging (fascinating vs. dry vs. narrative vs. listicle). Wikipedia's category system doesn't encode this.</p>
+  <p><strong>Tangential discovery:</strong> "Did the reader find something adjacent to their interest that opened a new thread?" We could measure this with the adopter persona (latent discovery), but only for the specific latent interests we hardcode.</p>
+</div>
+
+<div class="card">
+  <div class="card-title">💡 What we could add</div>
+  <p><strong>Category diversity within hits:</strong> Right now "cars 480" means 480 car articles, but we don't track whether those were 480 sedan specs or a mix of racing history, engineering, culture, road trips, and design. We could measure the number of distinct sub-categories within the hit set. A wider spread = more tangential pulls within the interest.</p>
+  <p><strong>Exploration conversion rate:</strong> Of the ~120 exploration doors over 600 articles, how many did the reader actually finish? A high conversion means exploration is finding things the reader likes. A low conversion means random noise. Right now we report explore share but not explore quality.</p>
+  <p><strong>Interest width:</strong> How many distinct interest clusters does the reader end up with? A cars reader who ends with 1 cluster is narrowing. One who ends with 3 (cars + engineering + travel) discovered tangential interests through the feed.</p>
+  <p><strong>Time-to-discovery for latent interests:</strong> The adopter persona already tracks "adopted latent at feed N." We could add more latent interests to other personas (e.g., give the cars reader a latent love of engineering-adjacent things) and measure how quickly the feed finds them.</p>
+</div>
+
+<h2>The honest comparison</h2>
+
+<p>Here's the uncomfortable truth:</p>
+
+<div class="note warn">
+  <strong>Our feed is a Wikipedia-powered topic matcher, not a recommendation engine.</strong> We find articles related to what you've read, enforce some diversity, and throw in random exploration doors. TikTok is a multi-signal recommendation engine with billions of users, deep content understanding, collaborative filtering, and emotional modeling. They're playing different games.
+</div>
+
+<p>But that's not necessarily bad. The product isn't trying to be TikTok. It's trying to be a <strong>doomscrolling replacement for curious people</strong> — the key word being "replacement." The value proposition is:</p>
+
+<div style="margin: 1rem 0; padding: 0.8rem 1rem; background: var(--card-bg); border: 2px solid var(--accent); border-radius: 10px;">
+  <p style="font-size: 1.05rem; font-weight: 600; color: var(--accent); margin: 0 0 0.3rem;">"Instead of scrolling TikTok for 45 minutes and feeling empty, scroll this for 45 minutes and learn something."</p>
+  <p style="font-size: 0.88rem; color: var(--fg2); margin: 0;">The feed doesn't need to be as addictive as TikTok. It needs to be addictive <em>enough</em> to compete for attention, while delivering on the "learn something" promise.</p>
+</div>
+
+<h2>Where to go from here</h2>
+
+<p>Given these constraints (single user, no social graph, Wikipedia content), what could move the needle?</p>
+
+<div class="card">
+  <div class="card-title">1. Smarter exploration (feasible)</div>
+  <p><strong>What:</strong> Instead of random corpus samples, use article embeddings (precomputed from article text via a sentence-transformer) to find articles that are <em>semantically related but categorically different</em>. A car reader would get "the engineering of highway interchanges" or "how Formula 1 aerodynamics work" instead of "Jeremy Corbyn."</p>
+  <p><strong>Why it helps:</strong> This is the closest we can get to TikTok's informed exploration without collaborative filtering. The exploration doors would be tangential-by-design rather than random-and-hoping.</p>
+  <p><strong>Cost:</strong> Requires precomputing embeddings for 267K articles and a nearest-neighbor index. Non-trivial but doable.</p>
+</div>
+
+<div class="card">
+  <div class="card-title">2. Article quality signal (feasible)</div>
+  <p><strong>What:</strong> Not all Wikipedia articles are equally engaging. A 200-word stub about a minor car model is far less compelling than a 5000-word featured article about the history of Porsche. Use article length, featured/good article status, and link density as a quality prior in scoring.</p>
+  <p><strong>Why it helps:</strong> Better articles → higher completion → stronger signal → faster interest learning. Also improves the subjective experience: the reader gets fewer "huh, a 3-sentence article about a car I've never heard of" moments.</p>
+  <p><strong>Cost:</strong> Low. The data already exists (word count, featured status). Just needs to be factored into scoring.</p>
+</div>
+
+<div class="card">
+  <div class="card-title">3. Sub-interest diversity (feasible)</div>
+  <p><strong>What:</strong> Within a single interest cluster (cars), track sub-topics (racing, engineering, culture, manufacturers) and rotate across them. A car feed that's 30% racing history + 30% engineering + 20% culture + 20% model specs would feel more varied than 80% model specs.</p>
+  <p><strong>Why it helps:</strong> This is the "tangential pull" that TikTok does well. You don't just like "cars" — you like car engineering, car culture, car history, and car racing. Diversifying within the interest mimics the variety that doomscroll feeds provide within a topic.</p>
+  <p><strong>Cost:</strong> Medium. Would need a sub-clustering step within each interest cluster. Wikipedia's category hierarchy provides the structure.</p>
+</div>
+
+<div class="card" style="opacity: 0.7; border-style: dashed;">
+  <div class="card-title">4. Collaborative filtering (hard, requires users)</div>
+  <p><strong>What:</strong> Track what articles readers finish, build a co-engagement matrix, use it to bridge between unrelated interests.</p>
+  <p><strong>Why it helps:</strong> This is the missing piece. It's what makes TikTok's exploration feel magical.</p>
+  <p><strong>Cost:</strong> Requires many users. Not feasible at current scale. But worth building the infrastructure for (event collection, anonymous similarity) so it's ready when user numbers grow.</p>
+</div>
+
+<h2>So: what should we optimize for?</h2>
+
+<p>The honest answer: <strong>appeal is the right primary metric, but it's not enough alone.</strong></p>
+
+<p>A feed with 80% appeal and zero surprise is a search engine in feed clothing. A feed with 50% appeal and 30% surprise is TikTok for learning. The sweet spot is probably somewhere around <strong>65% appeal + meaningful tangential discovery</strong> — most articles hit your interest, but every 4th or 5th one is a pleasant surprise that either deepens your understanding or opens a new thread.</p>
+
+<p>Our current system optimizes purely for appeal. The test suite's definition of "good" is binary: either the article matches the persona's predefined interests or it doesn't. There's no credit for "this wasn't about cars, but a car lover would find it fascinating." There's no credit for variety within an interest. There's no penalty for 10 identical Lamborghini specs in a row if the reader "likes cars."</p>
+
+<div class="note idea">
+  <strong>The meta-insight:</strong> The benchmark optimizes for what it can measure. It can measure topical match. It can't measure delight, surprise, or tangential fascination. So every optimization we do pushes toward more topical match and less surprise — the opposite of what makes a feed feel alive. We might be Goodharting ourselves: the metric improves but the experience flatlines.
+</div>
+
+<p>The next step isn't a code change. It's expanding what we measure — so we can optimize for a feed that's not just accurate, but interesting.</p>
+
+<div style="margin: 2rem 0; padding: 1rem; background: var(--code-bg); border-radius: 10px; font-size: 0.85rem; color: var(--fg2);">
+  <strong>Sources:</strong><br>
+  <a href="https://arxiv.org/abs/2403.12410">Vombatkere et al. — TikTok and the Art of Personalization (WWW '24)</a><br>
+  <a href="https://arxiv.org/abs/2504.06633">Maccatrozzo — Serendipitous Recommendation Considering User Curiosity (2025)</a><br>
+  <a href="https://ieeeaccess.ieee.org/featured-article/beyond-relevance-enhancing-serendipity-in-content-based-recommendations-with-knowledge-graphs/">IEEE — Serendipity in Content-Based Recommendations with Knowledge Graphs (2025)</a><br>
+  <a href="https://link.springer.com/article/10.1007/s10844-026-01056-5">Springer — Advancing Diversity in Recommender Systems (2026)</a><br>
+  <a href="https://beatstorapon.com/blog/ultimate-guide-to-spotify-music-algorithm/">Spotify's Music Recommendation Algorithm — Complete Guide</a><br>
+  <a href="https://journals.sagepub.com/doi/10.1177/14614448251385086">Salles — Affect and Prediction in Short-Video Recommendation (2025)</a>
+</div>
+</content>
+</invoke>

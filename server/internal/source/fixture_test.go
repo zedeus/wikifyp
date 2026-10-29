@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -31,6 +32,41 @@ func TestFixtureRoundTrip(t *testing.T) {
 	}
 	if !reflect.DeepEqual(*got, want) {
 		t.Errorf("round trip changed the article:\n got %+v\nwant %+v", got, want)
+	}
+}
+
+// TestFixtureImageAndDescription: the metadata fields round-trip through a
+// fixture when present, and their keys are absent from the JSON when not —
+// older fixtures without them keep loading unchanged.
+func TestFixtureImageAndDescription(t *testing.T) {
+	dir := t.TempDir()
+	want := validArticle()
+	want.Description = "Branch of science"
+	want.Image = &Image{URL: "https://upload.wikimedia.org/x.jpg", Width: 960, Height: 540}
+	if _, err := WriteFixture(dir, &want); err != nil {
+		t.Fatal(err)
+	}
+	got, err := (&Fixtures{Dir: dir}).Fetch(context.Background(), "Chemistry")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(*got, want) {
+		t.Errorf("round trip changed the article:\n got %+v\nwant %+v", got, want)
+	}
+
+	bare := validArticle()
+	bare.Title = "Alchemy"
+	if _, err := WriteFixture(dir, &bare); err != nil {
+		t.Fatal(err)
+	}
+	meta, err := os.ReadFile(filepath.Join(dir, "alchemy.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{`"image"`, `"description"`} {
+		if strings.Contains(string(meta), key) {
+			t.Errorf("fixture without metadata still carries %s key:\n%s", key, meta)
+		}
 	}
 }
 

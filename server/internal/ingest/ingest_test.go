@@ -162,6 +162,90 @@ func TestIngestSameRevisionChangesNothing(t *testing.T) {
 	}
 }
 
+// readMeta returns the stored metadata columns for one article row,
+// empty/zero for NULL.
+func readMeta(t *testing.T, db *sql.DB, id int64) (imgURL string, imgW, imgH int, desc string) {
+	t.Helper()
+	var u, d sql.NullString
+	var w, h sql.NullInt32
+	if err := db.QueryRow(
+		"SELECT image_url, image_width, image_height, description FROM articles WHERE id = $1", id).
+		Scan(&u, &w, &h, &d); err != nil {
+		t.Fatal(err)
+	}
+	return u.String, int(w.Int32), int(h.Int32), d.String
+}
+
+func TestIngestStoresImageAndDescription(t *testing.T) {
+	db := newDB(t)
+	a := testArticle()
+	a.Description = "A test subject"
+	a.Image = &source.Image{URL: "https://upload.wikimedia.org/t.jpg", Width: 960, Height: 720}
+	res, err := Article(context.Background(), db, &a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	u, w, h, d := readMeta(t, db, res.ArticleID)
+	if u != a.Image.URL || w != 960 || h != 720 || d != "A test subject" {
+		t.Errorf("stored metadata = (%q, %d, %d, %q), want the ingested values", u, w, h, d)
+	}
+
+	// An article without metadata stores NULLs.
+	b := testArticle()
+	b.Title, b.RevisionID, b.PageID = "Bare Article", 1001, 43
+	resB, err := Article(context.Background(), db, &b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if u, w, h, d := readMeta(t, db, resB.ArticleID); u != "" || w != 0 || h != 0 || d != "" {
+		t.Errorf("bare article stored metadata (%q, %d, %d, %q), want none", u, w, h, d)
+	}
+}
+
+// TestIngestSameRevisionRefreshesMetadata: re-ingesting a stored revision
+// stays a no-op for sentences, but incoming image/description metadata
+// refreshes the row — and an incoming article WITHOUT metadata (a dump
+// record or an old fixture) leaves stored metadata alone.
+func TestIngestSameRevisionRefreshesMetadata(t *testing.T) {
+	db := newDB(t)
+	a := testArticle()
+	a.Description = "Old description"
+	a.Image = &source.Image{URL: "https://upload.wikimedia.org/old.jpg", Width: 320, Height: 240}
+	first, err := Article(context.Background(), db, &a)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Same revision, fresh metadata: the row refreshes, sentences do not.
+	again := testArticle()
+	again.Description = "New description"
+	again.Image = &source.Image{URL: "https://upload.wikimedia.org/new.jpg", Width: 960, Height: 540}
+	second, err := Article(context.Background(), db, &again)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if second.Created || second.ArticleID != first.ArticleID {
+		t.Fatalf("re-ingest = %+v, want the existing row", second)
+	}
+	u, w, h, d := readMeta(t, db, first.ArticleID)
+	if u != again.Image.URL || w != 960 || h != 540 || d != "New description" {
+		t.Errorf("metadata after refresh = (%q, %d, %d, %q), want the new values", u, w, h, d)
+	}
+	if n := count(t, db, "SELECT count(*) FROM sentences WHERE article_id = $1", first.ArticleID); n != 4 {
+		t.Errorf("sentences = %d after metadata refresh, want 4", n)
+	}
+
+	// Same revision, no metadata: the stored values survive.
+	bare := testArticle()
+	if _, err := Article(context.Background(), db, &bare); err != nil {
+		t.Fatal(err)
+	}
+	u, w, h, d = readMeta(t, db, first.ArticleID)
+	if u != again.Image.URL || w != 960 || h != 540 || d != "New description" {
+		t.Errorf("metadata wiped by a bare re-ingest: (%q, %d, %d, %q)", u, w, h, d)
+	}
+}
+
 func TestIngestNewRevisionIsANewVersion(t *testing.T) {
 	db := newDB(t)
 	a := testArticle()
