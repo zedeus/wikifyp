@@ -1,0 +1,71 @@
+android/app/src/main/java/com/wikifyp/ui/reader/UpNextCard.kt
+  s_93a39d8e580894::t_f201f3c6118995 90
+  s_93a39d8e580894::t_532e54cd3a7545 1-89,91-104
+android/app/src/main/java/com/wikifyp/ui/WikifypApp.kt
+  s_93a39d8e580894::t_132abeae1c2f01 109
+  s_93a39d8e580894::t_3669fbe7db8b8a 106-108,110-127
+  s_93a39d8e580894::t_5fd7f1b3d5d7a6 7
+  s_93a39d8e580894::t_0f74764297ac5a 148
+  s_93a39d8e580894::t_2959ed84e1ee8a 59-63
+  s_93a39d8e580894::t_9872d54db8d3e8 55-58
+  s_93a39d8e580894::t_f04acbaf9ed5c2 98-105,139,142-147,149-151
+  s_93a39d8e580894::t_c6522eb50a8140 3,23-24
+android/app/src/main/java/com/wikifyp/ui/reader/ReaderScreen.kt
+  s_93a39d8e580894::t_caa7f06fb02433 34
+  s_93a39d8e580894::t_3c84be9ea5699c 130-131,138-140,144,532-533
+  s_93a39d8e580894::t_91d544ee0b356d 471,473-474
+  s_93a39d8e580894::t_a976d4505affb3 438
+  s_93a39d8e580894::t_f244d72e3c75d6 6,28,31-32,35,43,55,61-62,71,75,83,101-105,109-112,124-127,137,182-185,187,191-194,198-203,233,243-248,257-267,269-331,336-340,348,350-357,361,367-371,377,380-396,435-437,439-470,472,475-480,483,485,487,520-531,534-568,576,578-579,581-586,617-640
+  s_93a39d8e580894::t_b271e5537e1799 159-162
+  s_93a39d8e580894::t_73044437492a68 141
+  s_93a39d8e580894::t_67460ebcbc04ed 484
+android/app/src/androidTest/java/com/wikifyp/ReaderTest.kt
+  s_93a39d8e580894::t_074637ea7f658b 120-121,125
+  s_93a39d8e580894::t_168a6c69a8f740 113-119,122-124,126-150
+  s_93a39d8e580894::t_bf3fbb3c0550fb 158-160,164-165,178,180-185
+android/app/src/androidTest/java/com/wikifyp/MainActivityTest.kt
+  s_93a39d8e580894::t_1ea0b22beea81c 28-29,31-36
+  s_93a39d8e580894::t_22b6b947e8d661 4,7
+  s_93a39d8e580894::t_b50e335323ff8c 26-27,30,37-39
+android/app/src/test/java/com/wikifyp/ui/reader/ReaderScreenFeaturesTest.kt
+  s_93a39d8e580894::t_0d1eae1e4ad3d3 1-7,9-95,97-101,103-202,204-226
+  s_93a39d8e580894::t_31473373c35f2a 96,102
+  s_93a39d8e580894::t_9daf750734da63 8
+  s_93a39d8e580894::t_265bb3bf6b42ae 203
+android/app/src/test/java/com/wikifyp/ui/reader/ReaderScreenScreenshotTest.kt
+  s_93a39d8e580894::t_1a9b52c39784a4 130-190
+  s_93a39d8e580894::t_394698a618697b 13
+  s_93a39d8e580894::t_6967390642aa80 191
+android/app/src/main/java/com/wikifyp/ui/reader/ReaderPill.kt
+  s_93a39d8e580894::t_6f9896e16b5029 1-33
+android/app/src/test/java/com/wikifyp/ui/WikifypAppTest.kt
+  s_93a39d8e580894::t_2639813b4d5352 189-229
+android/app/src/main/java/com/wikifyp/ui/reader/BrowseOverlay.kt
+  s_93a39d8e580894::t_25a315965e30f2 130-132
+  s_93a39d8e580894::t_ca9896cfaada4a 149,151,155
+  s_93a39d8e580894::t_9c43ff2190725e 65-68
+  s_93a39d8e580894::t_8a375eb5f6682e 126-129,133
+  s_93a39d8e580894::t_428e74a4f98e0b 38
+android/app/src/test/java/com/wikifyp/ui/reader/SectionsTest.kt
+  s_93a39d8e580894::t_cc3cb281414fba 1-76
+android/app/src/main/java/com/wikifyp/ui/reader/Section.kt
+  s_93a39d8e580894::t_3efcf9f473d050 1-45
+android/app/src/main/java/com/wikifyp/ui/reader/TocSheet.kt
+  s_93a39d8e580894::t_dbae725ea0e5f6 1-102
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b5580a98f78af400c83dcb6f0e7e5b5b7a508a9e",
+  "prompts": {},
+  "sessions": {
+    "s_93a39d8e580894": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b9316065-a025-4991-8866-5f0d6e55ccc6",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
