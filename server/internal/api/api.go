@@ -248,13 +248,18 @@ func handleEvents(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			// finish/skip/save → update feed state. reader_article_state
-			// keeps one state per page and the latest write wins, so a
-			// finish after a save overwrites "saved" — the save's history
-			// survives only as the stored event.
+			// finish/skip → update feed state; save/unsave → the saved
+			// flag. The two are orthogonal columns on the same row, so a
+			// finish after a save leaves the page both finished and saved —
+			// the bookmark survives finishing.
 			if state, ok := e.FeedState(); ok {
 				if err := feed.SetState(r.Context(), db, readerID, meta.Source, meta.PageID, state); err != nil {
 					log.Printf("api: events feed state: %v", err)
+				}
+			}
+			if saved, ok := e.SavedChange(); ok {
+				if err := feed.SetSaved(r.Context(), db, readerID, meta.Source, meta.PageID, saved); err != nil {
+					log.Printf("api: events saved flag: %v", err)
 				}
 			}
 

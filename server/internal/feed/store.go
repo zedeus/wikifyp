@@ -8,7 +8,6 @@ import (
 	"math/rand/v2"
 	"slices"
 	"strconv"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -114,9 +113,13 @@ func NullImage(url sql.NullString, w, h sql.NullInt32) *Image {
 	return &Image{URL: url.String, Width: int(w.Int32), Height: int(h.Int32)}
 }
 
-// SetState records what a reader did with a page, replacing any earlier
-// state for the same page: saving then finishing leaves finished.
+// SetState records what a reader did with a page — finished or skipped —
+// replacing any earlier state for the same page. It never touches the saved
+// flag: a bookmark survives finishing (SetSaved owns the flag).
 func SetState(ctx context.Context, db *sql.DB, readerID, source string, pageID int64, state string) error {
+	if state != StateFinished && state != StateSkipped {
+		return fmt.Errorf("feed: set state: %q is not a state (saved is a flag, see SetSaved)", state)
+	}
 	_, err := db.ExecContext(ctx, `
 		INSERT INTO reader_article_state (reader_id, source, page_id, state)
 		VALUES ($1, $2, $3, $4)
@@ -125,6 +128,27 @@ func SetState(ctx context.Context, db *sql.DB, readerID, source string, pageID i
 		readerID, source, pageID, state)
 	if err != nil {
 		return fmt.Errorf("feed: set state: %w", err)
+	}
+	return nil
+}
+
+// SetSaved sets or clears a reader's bookmark on a page without touching
+// its finished/skipped state: the two are orthogonal, and a page can be
+// both finished and saved. Only a save refreshes updated_at — it signals
+// interest, like every state write. An unsave is cleanup: bumping it would
+// promote a long-finished page back to the top of the recency-ordered
+// interest window just because its bookmark came off.
+func SetSaved(ctx context.Context, db *sql.DB, readerID, source string, pageID int64, saved bool) error {
+	_, err := db.ExecContext(ctx, `
+		INSERT INTO reader_article_state (reader_id, source, page_id, saved)
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (reader_id, source, page_id)
+		DO UPDATE SET saved = excluded.saved,
+			updated_at = CASE WHEN excluded.saved THEN now()
+			                  ELSE reader_article_state.updated_at END`,
+		readerID, source, pageID, saved)
+	if err != nil {
+		return fmt.Errorf("feed: set saved: %w", err)
 	}
 	return nil
 }
@@ -420,6 +444,28 @@ func interestWeights(ctx context.Context, db *sql.DB, state []StateArticle) (Wei
 	return CategoryWeights(df), nil
 }
 
+// actedOn is the predicate for a reader_article_state row (alias r) that
+// counts as something the reader did: a finished/skipped state, or a live
+// bookmark. A row with neither — a bookmark set and then cleared — is
+// inert: it never suppresses a page and never feeds the interest profile.
+const actedOn = "(r.state IS NOT NULL OR r.saved)"
+
+// effectiveState is the scoring view of an acted-on row: saved only speaks
+// for a row with no finished/skipped state, so a page both finished and
+// saved acts exactly as a finished one — the same behaviour as when a
+// finish overwrote the save, before saved became its own flag.
+const effectiveState = "coalesce(r.state, 'saved')"
+
+// notSuppressed returns the guard every candidate-pool query carries: no
+// page the reader's whole history has acted on can occupy a pool slot.
+// param is the placeholder number bound to the reader id.
+func notSuppressed(param int) string {
+	return fmt.Sprintf(`NOT EXISTS (
+			SELECT 1 FROM reader_article_state r
+			WHERE r.reader_id = $%d AND r.source = a.source AND r.page_id = a.page_id
+			  AND %s)`, param, actedOn)
+}
+
 // randomArticles draws a seeded sample of readable articles from the whole
 // corpus: the breadth half of the exploration pool. Article IDs are dense
 // (one identity sequence), so guessing IDs and keeping the hits is a cheap
@@ -440,9 +486,7 @@ func randomArticles(ctx context.Context, db *sql.DB, readerID string, n int, see
 	rows, err := db.QueryContext(ctx, `
 		SELECT a.id, a.page_id, a.source, a.title
 		FROM latest_articles a
-		WHERE a.id = ANY($1) AND NOT EXISTS (
-			SELECT 1 FROM reader_article_state r
-			WHERE r.reader_id = $2 AND r.source = a.source AND r.page_id = a.page_id)`, ids, readerID)
+		WHERE a.id = ANY($1) AND `+notSuppressed(2), ids, readerID)
 	if err != nil {
 		return nil, fmt.Errorf("feed: random articles: %w", err)
 	}
@@ -535,9 +579,7 @@ func stratifiedArticles(ctx context.Context, db *sql.DB, readerID string, n int,
 			WHERE ad.domain = o.domain AND ad.article_id >= o.probe
 			ORDER BY ad.article_id LIMIT 1) pick
 		JOIN latest_articles a ON a.id = pick.article_id
-		WHERE NOT EXISTS (
-			SELECT 1 FROM reader_article_state r
-			WHERE r.reader_id = $3 AND r.source = a.source AND r.page_id = a.page_id)
+		WHERE `+notSuppressed(3)+`
 		ORDER BY o.ord`, domains, probes, readerID)
 	if err != nil {
 		return nil, fmt.Errorf("feed: stratified articles: %w", err)
@@ -577,10 +619,10 @@ func stratifiedArticles(ctx context.Context, db *sql.DB, readerID string, n int,
 // other from exploration.
 func suppressedPagesAll(ctx context.Context, db *sql.DB, readerID string) (map[pageKey]bool, map[string]bool, error) {
 	rows, err := db.QueryContext(ctx, `
-		SELECT s.source, s.page_id, s.state, a.title
-		FROM reader_article_state s
+		SELECT r.source, r.page_id, `+effectiveState+`, a.title
+		FROM reader_article_state r
 		JOIN latest_articles a USING (source, page_id)
-		WHERE s.reader_id = $1`,
+		WHERE r.reader_id = $1 AND `+actedOn,
 		readerID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("feed: suppressed pages: %w", err)
@@ -610,13 +652,13 @@ func suppressedPagesAll(ctx context.Context, db *sql.DB, readerID string) (map[p
 // the interest profile the ranking works from.
 func readerState(ctx context.Context, db *sql.DB, readerID string) ([]StateArticle, error) {
 	rows, err := db.QueryContext(ctx, `
-		SELECT a.id, a.page_id, a.source, a.title, s.state, s.completion,
+		SELECT a.id, a.page_id, a.source, a.title, `+effectiveState+`, r.completion,
 			(SELECT coalesce(sum(array_length(string_to_array(se.text, ' '), 1)), 0)
 			 FROM sentences se WHERE se.article_id = a.id) AS words
-		FROM reader_article_state s
+		FROM reader_article_state r
 		JOIN latest_articles a USING (source, page_id)
-		WHERE s.reader_id = $1
-		ORDER BY s.updated_at DESC, s.source, s.page_id
+		WHERE r.reader_id = $1 AND `+actedOn+`
+		ORDER BY r.updated_at DESC, r.source, r.page_id
 		LIMIT $2`, readerID, recentStateLimit)
 	if err != nil {
 		return nil, fmt.Errorf("feed: reader state: %w", err)
@@ -698,11 +740,9 @@ func candidates(ctx context.Context, db *sql.DB, readerID string, state []StateA
 		return rows.Err()
 	}
 
-	// Every pool query ends with the same guard: no page the reader's whole
-	// history has acted on can ever be served, so none may occupy pool slots.
-	const notSuppressed = ` AND NOT EXISTS (
-			SELECT 1 FROM reader_article_state r
-			WHERE r.reader_id = $4 AND r.source = a.source AND r.page_id = a.page_id)`
+	// Every pool query ends with the same guard; the reader id is $4 in the
+	// link queries and $3 in the category query.
+	guard := " AND " + notSuppressed(4)
 
 	// Articles the reader's finished and saved pages link to, best-connected
 	// first.
@@ -714,7 +754,7 @@ func candidates(ctx context.Context, db *sql.DB, readerID string, state []StateA
 			JOIN latest_articles s ON l.article_id = s.id
 			JOIN unnest($1::text[], $2::text[]) AS st (source, title)
 			  ON s.source = st.source AND s.title = st.title
-			WHERE a.source = s.source`+notSuppressed+`
+			WHERE a.source = s.source`+guard+`
 			GROUP BY a.id, a.page_id, a.source, a.title
 			ORDER BY count(*) DESC, a.page_id
 			LIMIT $3`, sources, titles, poolLimit, readerID); err != nil {
@@ -727,7 +767,7 @@ func candidates(ctx context.Context, db *sql.DB, readerID string, state []StateA
 			JOIN article_links l ON l.article_id = a.id
 			JOIN unnest($1::text[], $2::text[]) AS st (source, title)
 			  ON a.source = st.source AND l.target = st.title
-			WHERE true`+notSuppressed+`
+			WHERE true`+guard+`
 			GROUP BY a.id, a.page_id, a.source, a.title
 			ORDER BY count(*) DESC, a.page_id
 			LIMIT $3`, sources, titles, poolLimit, readerID); err != nil {
@@ -741,7 +781,7 @@ func candidates(ctx context.Context, db *sql.DB, readerID string, state []StateA
 			SELECT a.id, a.page_id, a.source, a.title
 			FROM latest_articles a
 			JOIN article_categories c ON c.article_id = a.id
-			WHERE c.category = ANY($1)`+strings.ReplaceAll(notSuppressed, "$4", "$3")+`
+			WHERE c.category = ANY($1) AND `+notSuppressed(3)+`
 			GROUP BY a.id, a.page_id, a.source, a.title
 			ORDER BY count(*) DESC, a.page_id
 			LIMIT $2`, interest, poolLimit, readerID); err != nil {
@@ -815,9 +855,7 @@ func featured(ctx context.Context, db *sql.DB, salt, readerID string) ([]Candida
 		JOIN article_categories c ON c.article_id = a.id
 		JOIN unnest($1::text[], $2::text[]) AS f (source, category)
 		  ON a.source = f.source AND c.category = f.category
-		WHERE NOT EXISTS (
-			SELECT 1 FROM reader_article_state r
-			WHERE r.reader_id = $5 AND r.source = a.source AND r.page_id = a.page_id)
+		WHERE `+notSuppressed(5)+`
 		GROUP BY a.id, a.page_id, a.source, a.title
 		ORDER BY md5($3 || a.id::text), a.id
 		LIMIT $4`, sources, categories, salt, featuredLimit, readerID)

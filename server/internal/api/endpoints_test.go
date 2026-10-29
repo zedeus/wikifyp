@@ -392,22 +392,22 @@ func TestEventsEndpoint(t *testing.T) {
 		}
 	})
 
-	t.Run("save sets saved state, finish overwrites it", func(t *testing.T) {
+	t.Run("save sets the flag, finish keeps it, unsave clears it", func(t *testing.T) {
 		// Resolve the article's page key for the state assertions.
 		var src string
 		var pageID int64
 		if err := db.QueryRow("SELECT source, page_id FROM articles WHERE id = $1", aid).Scan(&src, &pageID); err != nil {
 			t.Fatal(err)
 		}
-		state := func() string {
-			var s string
+		row := func() (state string, saved bool) {
+			var s sql.NullString
 			err := db.QueryRow(
-				"SELECT state FROM reader_article_state WHERE reader_id = 'r-save' AND source = $1 AND page_id = $2",
-				src, pageID).Scan(&s)
+				"SELECT state, saved FROM reader_article_state WHERE reader_id = 'r-save' AND source = $1 AND page_id = $2",
+				src, pageID).Scan(&s, &saved)
 			if err != nil {
 				t.Fatalf("no feed state row: %v", err)
 			}
-			return s
+			return s.String, saved
 		}
 
 		rec := post(t, h, "/v1/events?reader=r-save", fmt.Sprintf(`{"events":[%s]}`, validEvent("save-1", "save")))
@@ -419,8 +419,8 @@ func TestEventsEndpoint(t *testing.T) {
 		if resp.Results[0].Status != "ok" {
 			t.Fatalf("save status = %q: %s", resp.Results[0].Status, resp.Results[0].Error)
 		}
-		if got := state(); got != "saved" {
-			t.Errorf("state after save = %q, want saved", got)
+		if state, saved := row(); !saved || state != "" {
+			t.Errorf("after save: state=%q saved=%v, want stateless bookmark", state, saved)
 		}
 
 		// Re-uploading the same save is a duplicate and changes nothing.
@@ -430,17 +430,27 @@ func TestEventsEndpoint(t *testing.T) {
 		if resp.Results[0].Status != "duplicate" {
 			t.Errorf("replayed save status = %q, want duplicate", resp.Results[0].Status)
 		}
-		if got := state(); got != "saved" {
-			t.Errorf("state after duplicate save = %q, want saved", got)
+		if state, saved := row(); !saved || state != "" {
+			t.Errorf("after duplicate save: state=%q saved=%v, want stateless bookmark", state, saved)
 		}
 
-		// One state per page, latest wins: a later finish replaces saved.
+		// The flag is orthogonal to state: a later finish records finished
+		// without touching the bookmark.
 		rec = post(t, h, "/v1/events?reader=r-save", fmt.Sprintf(`{"events":[%s]}`, validEvent("fin-save-1", "finish")))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("POST = %d: %s", rec.Code, rec.Body)
 		}
-		if got := state(); got != "finished" {
-			t.Errorf("state after save then finish = %q, want finished", got)
+		if state, saved := row(); !saved || state != "finished" {
+			t.Errorf("after save then finish: state=%q saved=%v, want finished and saved", state, saved)
+		}
+
+		// Unsave clears only the flag; the finish stays.
+		rec = post(t, h, "/v1/events?reader=r-save", fmt.Sprintf(`{"events":[%s]}`, validEvent("unsave-1", "unsave")))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("POST = %d: %s", rec.Code, rec.Body)
+		}
+		if state, saved := row(); saved || state != "finished" {
+			t.Errorf("after unsave: state=%q saved=%v, want finished and not saved", state, saved)
 		}
 	})
 

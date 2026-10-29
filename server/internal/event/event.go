@@ -53,6 +53,7 @@ var validTypes = map[string]bool{
 	"finish":      true,
 	"skip":        true,
 	"save":        true,
+	"unsave":      true,
 }
 
 // Decode parses a single event from JSON, tolerating unknown fields but
@@ -129,19 +130,32 @@ func (e Event) validate() error {
 }
 
 // feedStates maps the event types that change a page's feed state to the
-// reader_article_state value they set.
+// reader_article_state value they set. Save and unsave are not here: saved
+// is an orthogonal flag (SavedChange), not a state.
 var feedStates = map[string]string{
 	"finish": "finished",
 	"skip":   "skipped",
-	"save":   "saved",
 }
 
 // FeedState returns the reader_article_state value this event sets and
-// whether it sets one at all: finish, skip and save do, the in-article
-// events (play, pause, scroll_back, ask) do not.
+// whether it sets one at all: finish and skip do; save, unsave and the
+// in-article events (play, pause, scroll_back, ask) do not.
 func (e Event) FeedState() (string, bool) {
 	s, ok := feedStates[e.Type]
 	return s, ok
+}
+
+// SavedChange returns the value this event sets the saved flag to and
+// whether it changes the flag at all: save → (true, true), unsave →
+// (false, true), everything else → (false, false).
+func (e Event) SavedChange() (saved bool, ok bool) {
+	switch e.Type {
+	case "save":
+		return true, true
+	case "unsave":
+		return false, true
+	}
+	return false, false
 }
 
 // TokenCount returns the number of tokens in a sentence by splitting

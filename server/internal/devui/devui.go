@@ -390,12 +390,25 @@ func (s *server) handleArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// State and the saved flag are orthogonal: a page can be finished AND
+	// saved, and the dev view shows both. An unsaved bookmark (neither) is
+	// an inert row and shows nothing.
+	var st sql.NullString
+	var saved bool
 	err = s.db.QueryRowContext(ctx,
-		"SELECT state FROM reader_article_state WHERE reader_id = $1 AND source = $2 AND page_id = $3",
-		page.Reader, a.Source, a.PageID).Scan(&page.State)
+		"SELECT state, saved FROM reader_article_state WHERE reader_id = $1 AND source = $2 AND page_id = $3",
+		page.Reader, a.Source, a.PageID).Scan(&st, &saved)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		s.fail(w, err)
 		return
+	}
+	page.State = st.String
+	if saved {
+		if page.State != "" {
+			page.State += ", saved"
+		} else {
+			page.State = "saved"
+		}
 	}
 	s.render(w, "article", page)
 }
@@ -570,12 +583,16 @@ func (s *server) handleState(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "state needs reader, source and page_id", http.StatusBadRequest)
 		return
 	}
-	if state == "clear" {
+	switch state {
+	case "clear":
 		// Dev-only escape hatch; the product never deletes state.
 		_, err = s.db.ExecContext(r.Context(),
 			"DELETE FROM reader_article_state WHERE reader_id = $1 AND source = $2 AND page_id = $3",
 			reader, src, pageID)
-	} else {
+	case "saved", "unsaved":
+		// Saved is a flag orthogonal to finished/skipped, not a state.
+		err = feed.SetSaved(r.Context(), s.db, reader, src, pageID, state == "saved")
+	default:
 		err = feed.SetState(r.Context(), s.db, reader, src, pageID, state)
 	}
 	if err != nil {

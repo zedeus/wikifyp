@@ -19,8 +19,11 @@ import (
 	"slices"
 )
 
-// Reader states. Set when the reader acts on an article (directly in tests
-// today; the event pipeline writes them once uploads land).
+// Reader states as scoring sees them. Finished and skipped are stored in
+// reader_article_state.state; saved is stored as an orthogonal flag, and a
+// StateArticle carries StateSaved only when the flag is set on a row with no
+// finished/skipped state — a page both finished and saved scores as
+// finished, exactly as it did when a finish overwrote the save.
 const (
 	StateFinished = "finished"
 	StateSaved    = "saved"

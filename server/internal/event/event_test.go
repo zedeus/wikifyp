@@ -35,6 +35,7 @@ func TestDecodeValidFixtures(t *testing.T) {
 		{"finish.json", "finish"},
 		{"skip.json", "skip"},
 		{"save.json", "save"},
+		{"unsave.json", "unsave"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.file, func(t *testing.T) {
@@ -149,7 +150,8 @@ func TestFeedState(t *testing.T) {
 	}{
 		{"finish.json", "finished", true},
 		{"skip.json", "skipped", true},
-		{"save.json", "saved", true},
+		{"save.json", "", false},
+		{"unsave.json", "", false},
 		{"play.json", "", false},
 		{"pause.json", "", false},
 		{"scroll_back.json", "", false},
@@ -164,6 +166,37 @@ func TestFeedState(t *testing.T) {
 			state, ok := e.FeedState()
 			if state != tc.wantState || ok != tc.wantOK {
 				t.Errorf("FeedState() = (%q, %v), want (%q, %v)", state, ok, tc.wantState, tc.wantOK)
+			}
+		})
+	}
+}
+
+// TestSavedChange: save and unsave drive the saved flag; nothing else
+// touches it.
+func TestSavedChange(t *testing.T) {
+	cases := []struct {
+		file      string
+		wantSaved bool
+		wantOK    bool
+	}{
+		{"save.json", true, true},
+		{"unsave.json", false, true},
+		{"finish.json", false, false},
+		{"skip.json", false, false},
+		{"play.json", false, false},
+		{"pause.json", false, false},
+		{"scroll_back.json", false, false},
+		{"ask.json", false, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.file, func(t *testing.T) {
+			e, err := Decode(readFixture(t, tc.file))
+			if err != nil {
+				t.Fatal(err)
+			}
+			saved, ok := e.SavedChange()
+			if saved != tc.wantSaved || ok != tc.wantOK {
+				t.Errorf("SavedChange() = (%v, %v), want (%v, %v)", saved, ok, tc.wantSaved, tc.wantOK)
 			}
 		})
 	}

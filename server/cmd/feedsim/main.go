@@ -1088,13 +1088,21 @@ func apply(ctx context.Context, db *sql.DB, reader string, actions []action) err
 		states[i] = a.state
 		completions[i] = a.completion
 	}
+	// Saved is a flag orthogonal to finished/skipped: a 'saved' action sets
+	// the flag on a stateless row, and a finish/skip never clears it. The
+	// simulator acts on each page at most once (suppression never repeats),
+	// so this reproduces the old single-state writes exactly.
 	_, err := db.ExecContext(ctx, `
-		INSERT INTO reader_article_state (reader_id, source, page_id, state, completion)
-		SELECT $1, a.source, a.page_id, act.state, act.completion
+		INSERT INTO reader_article_state (reader_id, source, page_id, state, saved, completion)
+		SELECT $1, a.source, a.page_id,
+			CASE WHEN act.state = 'saved' THEN NULL ELSE act.state END,
+			act.state = 'saved',
+			act.completion
 		FROM unnest($2::bigint[], $3::text[], $4::real[]) AS act (id, state, completion)
 		JOIN articles a ON a.id = act.id
 		ON CONFLICT (reader_id, source, page_id)
-		DO UPDATE SET state = excluded.state,
+		DO UPDATE SET state = coalesce(excluded.state, reader_article_state.state),
+			saved = reader_article_state.saved OR excluded.saved,
 			completion = GREATEST(reader_article_state.completion, excluded.completion),
 			updated_at = now()`, reader, ids, states, completions)
 	return err

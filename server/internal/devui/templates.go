@@ -69,6 +69,7 @@ const pages = `
 <input type="hidden" name="back" value="{{.Back}}">
 <button name="state" value="finished">finished</button>
 <button name="state" value="saved">saved</button>
+<button name="state" value="unsaved">unsaved</button>
 <button name="state" value="skipped">skipped</button>
 <button name="state" value="clear">clear</button>
 </form>

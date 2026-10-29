@@ -267,37 +267,110 @@ func TestForStubsNeverServed(t *testing.T) {
 	}
 }
 
-// TestSetStateReplaces: one state per page; saving then finishing leaves
-// finished. A saved page is already off the feed (shelved, not a
-// recommendation), and it stays off after finishing.
-func TestSetStateReplaces(t *testing.T) {
+// TestSavedFlagOrthogonalToState: saved is a flag beside finished/skipped,
+// not a state value. A bookmark shelves the page (off the feed, scored as
+// saved); a later finish records finished without clearing the bookmark;
+// unsaving a finished page keeps it finished and suppressed.
+func TestSavedFlagOrthogonalToState(t *testing.T) {
 	db := newDB(t)
 	ctx := context.Background()
 	rhcp := articleByTitle(t, db, "Red Hot Chili Peppers")
-	if err := SetState(ctx, db, "r4", "simplewiki", rhcp, StateSaved); err != nil {
+
+	// SetState owns finished/skipped only; "saved" goes through SetSaved.
+	if err := SetState(ctx, db, "r4", "simplewiki", rhcp, StateSaved); err == nil {
+		t.Error(`SetState accepted "saved"; want an error (saved is a flag)`)
+	}
+
+	offFeed := func(when string) {
+		t.Helper()
+		cards, err := For(ctx, db, "r4", 10)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if position(cards, "Red Hot Chili Peppers") != -1 {
+			t.Errorf("%s: article still served: %q", when, titles(cards))
+		}
+	}
+	scoredAs := func(when, want string) {
+		t.Helper()
+		state, err := readerState(ctx, db, "r4")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(state) != 1 || state[0].State != want {
+			t.Errorf("%s: scoring state = %+v, want one %s entry", when, state, want)
+		}
+	}
+
+	if err := SetSaved(ctx, db, "r4", "simplewiki", rhcp, true); err != nil {
 		t.Fatal(err)
 	}
-	cards, err := For(ctx, db, "r4", 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if position(cards, "Red Hot Chili Peppers") != -1 {
-		t.Errorf("saved article still served: %q", titles(cards))
-	}
+	offFeed("saved")
+	scoredAs("saved", StateSaved)
+
+	// Finishing records the state and leaves the bookmark; a page both
+	// finished and saved scores as finished, like before the flag existed.
 	if err := SetState(ctx, db, "r4", "simplewiki", rhcp, StateFinished); err != nil {
 		t.Fatal(err)
 	}
-	cards, err = For(ctx, db, "r4", 10)
+	offFeed("finished while saved")
+	scoredAs("finished while saved", StateFinished)
+	var state string
+	var saved bool
+	if err := db.QueryRowContext(ctx,
+		"SELECT state, saved FROM reader_article_state WHERE reader_id = 'r4'").Scan(&state, &saved); err != nil || state != StateFinished || !saved {
+		t.Errorf("row = (%q, %v), %v; want finished and saved", state, saved, err)
+	}
+
+	// Unsaving clears only the flag; the finish keeps the page suppressed,
+	// and the row's recency is untouched — removing a bookmark must not
+	// promote an old finished page back into the interest window.
+	var before time.Time
+	if err := db.QueryRowContext(ctx,
+		"SELECT updated_at FROM reader_article_state WHERE reader_id = 'r4'").Scan(&before); err != nil {
+		t.Fatal(err)
+	}
+	if err := SetSaved(ctx, db, "r4", "simplewiki", rhcp, false); err != nil {
+		t.Fatal(err)
+	}
+	offFeed("unsaved after finish")
+	scoredAs("unsaved after finish", StateFinished)
+	var after time.Time
+	if err := db.QueryRowContext(ctx,
+		"SELECT updated_at FROM reader_article_state WHERE reader_id = 'r4'").Scan(&after); err != nil {
+		t.Fatal(err)
+	}
+	if !after.Equal(before) {
+		t.Errorf("unsave bumped updated_at: %v -> %v", before, after)
+	}
+}
+
+// TestUnsavedBookmarkIsInert: a bookmark set and cleared with no other
+// action leaves a row with neither state nor flag, which must not suppress
+// the page or feed the interest profile — to the feed, it never happened.
+func TestUnsavedBookmarkIsInert(t *testing.T) {
+	db := newDB(t)
+	ctx := context.Background()
+	rhcp := articleByTitle(t, db, "Red Hot Chili Peppers")
+	if err := SetSaved(ctx, db, "r5", "simplewiki", rhcp, true); err != nil {
+		t.Fatal(err)
+	}
+	if err := SetSaved(ctx, db, "r5", "simplewiki", rhcp, false); err != nil {
+		t.Fatal(err)
+	}
+	cards, err := For(ctx, db, "r5", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if position(cards, "Red Hot Chili Peppers") != -1 {
-		t.Errorf("finished article still served: %q", titles(cards))
+	if position(cards, "Red Hot Chili Peppers") == -1 {
+		t.Errorf("unsaved article suppressed: %q", titles(cards))
 	}
-	var state string
-	if err := db.QueryRowContext(ctx,
-		"SELECT state FROM reader_article_state WHERE reader_id = 'r4'").Scan(&state); err != nil || state != StateFinished {
-		t.Errorf("state = %q, %v; want one finished row", state, err)
+	state, err := readerState(ctx, db, "r5")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(state) != 0 {
+		t.Errorf("scoring state = %+v, want none for an unsaved bookmark", state)
 	}
 }
 
