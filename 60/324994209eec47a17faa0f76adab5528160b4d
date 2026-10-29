@@ -1,0 +1,25 @@
+android/app/src/main/java/com/wikifyp/data/SavedStore.kt
+  s_93a39d8e580894::t_7866a95e826abc 1-30
+android/app/src/test/java/com/wikifyp/data/SavedStoreTest.kt
+  s_93a39d8e580894::t_a38b8f07c4e292 1-44
+android/app/src/main/java/com/wikifyp/data/Article.kt
+  s_93a39d8e580894::t_03068d048badfd 49-70
+android/app/src/main/java/com/wikifyp/data/FixtureFeedRepository.kt
+  s_93a39d8e580894::t_3575dc18d542ae 38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "60324994209eec47a17faa0f76adab5528160b4d",
+  "prompts": {},
+  "sessions": {
+    "s_93a39d8e580894": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b9316065-a025-4991-8866-5f0d6e55ccc6",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
