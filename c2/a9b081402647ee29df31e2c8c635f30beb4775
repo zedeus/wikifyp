@@ -1,0 +1,28 @@
+android/app/src/main/assets/articles/marie-curie.json
+  s_3411184136fb01::t_9676d970125673 5-10,1012
+android/app/src/main/assets/articles/philosophy.json
+  s_3411184136fb01::t_9676d970125673 5-10,1104
+android/app/src/main/assets/articles/photosynthesis.json
+  s_3411184136fb01::t_9676d970125673 5-10,1123
+android/app/src/main/assets/articles/roman-empire.json
+  s_3411184136fb01::t_9676d970125673 5-10,2440
+android/app/src/main/assets/articles/dna.json
+  s_3411184136fb01::t_e37182aed6ef0e 13
+  s_3411184136fb01::t_9676d970125673 5-10,1460
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c2a9b081402647ee29df31e2c8c635f30beb4775",
+  "prompts": {},
+  "sessions": {
+    "s_3411184136fb01": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e7cea63-3828-45cc-a64c-4f22704d3ed5",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
