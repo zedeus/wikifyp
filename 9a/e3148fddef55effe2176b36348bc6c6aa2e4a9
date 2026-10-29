@@ -1,0 +1,48 @@
+android/app/src/main/java/com/wikifyp/data/FixtureFeedRepository.kt
+  s_93a39d8e580894::t_ee51d3580f1d6b 54-55
+android/app/build.gradle.kts
+  s_93a39d8e580894::t_73cd27aeae3072 115-120
+  s_93a39d8e580894::t_f3bac6023fc79f 112-114
+  s_93a39d8e580894::t_f22122ee1b0424 130
+android/app/src/main/assets/images/NOTICE.md
+  s_93a39d8e580894::t_9ba7fd41778f65 1-11
+android/gradle/libs.versions.toml
+  s_93a39d8e580894::t_dfea6ef22b88c6 36-38
+  s_93a39d8e580894::t_0f1e53b230e68a 29
+  s_93a39d8e580894::t_2d52be9609d241 9
+android/app/src/test/java/com/wikifyp/data/HttpFeedRepositoryTest.kt
+  s_93a39d8e580894::t_bf1129707a93ab 70-79
+  s_93a39d8e580894::t_b603b2a190660a 29-30
+android/app/src/main/assets/articles/photosynthesis.json
+  s_93a39d8e580894::t_9ba7fd41778f65 792,1117-1124
+android/app/src/main/assets/articles/roman-empire.json
+  s_93a39d8e580894::t_9ba7fd41778f65 2434-2441
+android/app/src/main/assets/articles/marie-curie.json
+  s_93a39d8e580894::t_9ba7fd41778f65 902,1006-1013
+android/app/src/main/assets/articles/dna.json
+  s_93a39d8e580894::t_9ba7fd41778f65 1454-1461
+android/app/src/main/assets/articles/philosophy.json
+  s_93a39d8e580894::t_9ba7fd41778f65 1098-1105
+android/app/src/main/java/com/wikifyp/data/Article.kt
+  s_93a39d8e580894::t_1468372a19639b 19-25,30-35
+  s_93a39d8e580894::t_171731ec5ec538 26-29
+android/app/src/main/java/com/wikifyp/data/FeedRepository.kt
+  s_93a39d8e580894::t_27cad80b4c3f99 18-21
+  s_93a39d8e580894::t_58abf56d9bd48f 22-26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9ae3148fddef55effe2176b36348bc6c6aa2e4a9",
+  "prompts": {},
+  "sessions": {
+    "s_93a39d8e580894": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b9316065-a025-4991-8866-5f0d6e55ccc6",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
