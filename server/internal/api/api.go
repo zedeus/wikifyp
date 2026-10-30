@@ -15,6 +15,7 @@ import (
 
 	"github.com/zedeus/wikifyp/server/internal/event"
 	"github.com/zedeus/wikifyp/server/internal/feed"
+	"github.com/zedeus/wikifyp/server/internal/history"
 )
 
 // Feed sizes: the default fills a phone screen several times over; the cap
@@ -47,6 +48,10 @@ func New(db *sql.DB, checks ...func(context.Context) error) http.Handler {
 	mux.HandleFunc("GET /v1/feed", withDB(db, handleFeed))
 	mux.HandleFunc("GET /v1/articles/{id}", withDB(db, handleArticle))
 	mux.HandleFunc("POST /v1/events", withDB(db, handleEvents))
+	mux.HandleFunc("GET /v1/history", withDB(db, handleHistory))
+	mux.HandleFunc("DELETE /v1/history", withDB(db, handleDeleteHistory))
+	mux.HandleFunc("GET /v1/stats", withDB(db, handleStats))
+	mux.HandleFunc("GET /v1/interests", withDB(db, handleInterests))
 	return mux
 }
 
@@ -292,6 +297,97 @@ func handleEvents(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, map[string]any{"results": results})
+}
+
+// handleHistory serves GET /v1/history?reader=<id>&limit=&cursor=&search=&date=.
+func handleHistory(db *sql.DB, w http.ResponseWriter, r *http.Request) {
+	readerID := r.FormValue("reader")
+	if readerID == "" {
+		http.Error(w, "missing reader parameter", http.StatusBadRequest)
+		return
+	}
+	limit := 50
+	if s := r.FormValue("limit"); s != "" {
+		if n, err := strconv.Atoi(s); err == nil && n > 0 {
+			limit = min(n, 200)
+		}
+	}
+	page, err := history.List(r.Context(), db, readerID, limit,
+		r.FormValue("cursor"), r.FormValue("search"), r.FormValue("date"))
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	if err := history.FillResume(r.Context(), db, readerID, page.Entries); err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, page)
+}
+
+// handleDeleteHistory serves DELETE /v1/history?reader=<id>[&all=1].
+// Body is a JSON array of {source, page_id} refs, or all=1 deletes everything.
+func handleDeleteHistory(db *sql.DB, w http.ResponseWriter, r *http.Request) {
+	readerID := r.FormValue("reader")
+	if readerID == "" {
+		http.Error(w, "missing reader parameter", http.StatusBadRequest)
+		return
+	}
+	if r.FormValue("all") == "1" {
+		result, err := history.DeleteAll(r.Context(), db, readerID)
+		if err != nil {
+			serverError(w, err)
+			return
+		}
+		writeJSON(w, result)
+		return
+	}
+	body, err := io.ReadAll(io.LimitReader(r.Body, maxEventBody))
+	if err != nil {
+		http.Error(w, "reading body", http.StatusBadRequest)
+		return
+	}
+	var pages []history.PageRef
+	if err := json.Unmarshal(body, &pages); err != nil {
+		http.Error(w, "invalid JSON: expected [{source, page_id}, ...]", http.StatusBadRequest)
+		return
+	}
+	result, err := history.DeletePages(r.Context(), db, readerID, pages)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, result)
+}
+
+// handleStats serves GET /v1/stats?reader=<id>.
+func handleStats(db *sql.DB, w http.ResponseWriter, r *http.Request) {
+	readerID := r.FormValue("reader")
+	if readerID == "" {
+		http.Error(w, "missing reader parameter", http.StatusBadRequest)
+		return
+	}
+	stats, err := history.ReadingStats(r.Context(), db, readerID)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, stats)
+}
+
+// handleInterests serves GET /v1/interests?reader=<id>.
+func handleInterests(db *sql.DB, w http.ResponseWriter, r *http.Request) {
+	readerID := r.FormValue("reader")
+	if readerID == "" {
+		http.Error(w, "missing reader parameter", http.StatusBadRequest)
+		return
+	}
+	interests, err := history.ReaderInterests(r.Context(), db, readerID)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, interests)
 }
 
 // extractID pulls the "id" field from raw JSON without fully decoding
