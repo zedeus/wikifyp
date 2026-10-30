@@ -1,0 +1,28 @@
+android/app/src/main/java/com/wikifyp/theme/Theme.kt
+  s_c5a94b10885ac2::t_7ccf6bdb03a483 23-24,29,33-38
+android/app/src/main/java/com/wikifyp/theme/Color.kt
+  s_c5a94b10885ac2::t_bf6d1dfbf47b4b 107-116
+  s_c5a94b10885ac2::t_6b8b0e4c855777 76-81
+android/app/src/main/java/com/wikifyp/ui/feed/CardImage.kt
+  s_c5a94b10885ac2::t_1c58762f9b6ef3 22
+  s_c5a94b10885ac2::t_f88fa0c0e8bec6 60-62
+android/app/src/main/java/com/wikifyp/ui/WikifypApp.kt
+  s_c5a94b10885ac2::t_99eebb17e6a11f 37
+  s_c5a94b10885ac2::t_e02ac29be7fd96 198-200,203-206
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1b183a2be593eec566709d46d405d8562585ae7c",
+  "prompts": {},
+  "sessions": {
+    "s_c5a94b10885ac2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0881a2d6-0329-4520-8c04-c57ec6c904fb",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
