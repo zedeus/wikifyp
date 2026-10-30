@@ -1,0 +1,21 @@
+server/internal/source/parsoid_test.go
+  s_c5a94b10885ac2::t_79e11c1f834cd1 187-202
+server/internal/source/parsoid.go
+  s_c5a94b10885ac2::t_3bae690695b0b4 63-66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4e6281c61a986ab0cad5d1e9314b7b41aa26f50f",
+  "prompts": {},
+  "sessions": {
+    "s_c5a94b10885ac2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0881a2d6-0329-4520-8c04-c57ec6c904fb",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
