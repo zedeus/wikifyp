@@ -158,8 +158,12 @@ func SetSaved(ctx context.Context, db *sql.DB, readerID, source string, pageID i
 // jitter, a similarity penalty against monotone runs, and exploration slots
 // drawn from featured articles and the corpus at large. A reader with no
 // history gets featured articles interleaved with random corpus samples.
-func For(ctx context.Context, db *sql.DB, readerID string, limit int) ([]Card, error) {
-	cards, _, _, _, err := ForExplained(ctx, db, readerID, limit)
+//
+// exclude is the set of article IDs the client already has (from earlier
+// pages of the same session): they are suppressed from the result without
+// affecting scoring or the interest window.
+func For(ctx context.Context, db *sql.DB, readerID string, limit int, exclude []int64) ([]Card, error) {
+	cards, _, _, _, err := ForExplained(ctx, db, readerID, limit, exclude)
 	return cards, err
 }
 
@@ -167,7 +171,7 @@ func For(ctx context.Context, db *sql.DB, readerID string, limit int) ([]Card, e
 // wants to show next to the feed (the state window, interest weights and
 // scored pool) — in one pipeline run, because the pool build is the most
 // expensive computation in the system and the dev UI used to pay it twice.
-func ForExplained(ctx context.Context, db *sql.DB, readerID string, limit int) ([]Card, []StateArticle, Weights, []Scored, error) {
+func ForExplained(ctx context.Context, db *sql.DB, readerID string, limit int, exclude []int64) ([]Card, []StateArticle, Weights, []Scored, error) {
 	// One clock read per request: the day seed and the exploration hour
 	// must agree even when the request straddles midnight.
 	at := now().UTC()
@@ -181,6 +185,19 @@ func ForExplained(ctx context.Context, db *sql.DB, readerID string, limit int) (
 	suppressed, suppressedTitles, err := suppressedPagesAll(ctx, db, readerID)
 	if err != nil {
 		return nil, nil, nil, nil, err
+	}
+	// Client-side pagination: resolve already-served article IDs to page
+	// keys and add them to the suppression set so the next page of results
+	// never repeats an earlier one. This does not affect scoring or the
+	// interest window — the exclude list is purely visual deduplication.
+	if len(exclude) > 0 {
+		pages, err := articlePages(ctx, db, exclude)
+		if err != nil {
+			return nil, nil, nil, nil, err
+		}
+		for _, pk := range pages {
+			suppressed[pk] = true
+		}
 	}
 	// Exploration draws from its own seed, advanced by how much the reader
 	// has acted on AND by the hour: the day seed alone made the day's
@@ -561,8 +578,8 @@ func stratifiedArticles(ctx context.Context, db *sql.DB, readerID string, n int,
 
 	rng := rand.New(rand.NewPCG(uint64(seed), 0x646f6d73)) // "doms"
 	rng.Shuffle(len(spans), func(i, j int) { spans[i], spans[j] = spans[j], spans[i] })
-	// Oversample 3x: a probe can land on an old revision, a suppressed
-	// page, an unreadable stub, or a duplicate of an earlier probe.
+	// Oversample 3x: a probe can land on a suppressed page, an
+	// unreadable stub, or a duplicate of an earlier probe.
 	domains := make([]string, 3*n)
 	probes := make([]int64, 3*n)
 	for i := range domains {
@@ -571,6 +588,11 @@ func stratifiedArticles(ctx context.Context, db *sql.DB, readerID string, n int,
 		probes[i] = s.lo + rng.Int64N(s.hi-s.lo+1)
 	}
 
+	// The probe lands on an article_domains row whose article_id may be a
+	// non-latest revision (an old revision or a superseded ingest_seq row).
+	// Resolve through the articles table to (source, page_id), then join
+	// latest_articles so the feed always sees the current row — without
+	// this, a probe on a stale row silently returns no candidate.
 	picked, err := db.QueryContext(ctx, `
 		SELECT a.id, a.page_id, a.source, a.title
 		FROM unnest($1::text[], $2::bigint[]) WITH ORDINALITY AS o (domain, probe, ord)
@@ -578,7 +600,8 @@ func stratifiedArticles(ctx context.Context, db *sql.DB, readerID string, n int,
 			SELECT ad.article_id FROM article_domains ad
 			WHERE ad.domain = o.domain AND ad.article_id >= o.probe
 			ORDER BY ad.article_id LIMIT 1) pick
-		JOIN latest_articles a ON a.id = pick.article_id
+		JOIN articles raw ON raw.id = pick.article_id
+		JOIN latest_articles a ON a.source = raw.source AND a.page_id = raw.page_id
 		WHERE `+notSuppressed(3)+`
 		ORDER BY o.ord`, domains, probes, readerID)
 	if err != nil {
@@ -1008,4 +1031,24 @@ func cards(ctx context.Context, db *sql.DB, chosen []Candidate) ([]Card, error) 
 		})
 	}
 	return cards, nil
+}
+
+// articlePages resolves article row IDs to their (source, page_id) keys.
+// IDs that don't match a row (stale, pruned) are silently dropped.
+func articlePages(ctx context.Context, db *sql.DB, ids []int64) ([]pageKey, error) {
+	rows, err := db.QueryContext(ctx,
+		"SELECT DISTINCT source, page_id FROM articles WHERE id = ANY($1)", ids)
+	if err != nil {
+		return nil, fmt.Errorf("feed: article pages: %w", err)
+	}
+	defer rows.Close()
+	var pages []pageKey
+	for rows.Next() {
+		var pk pageKey
+		if err := rows.Scan(&pk.source, &pk.pageID); err != nil {
+			return nil, fmt.Errorf("feed: article pages: %w", err)
+		}
+		pages = append(pages, pk)
+	}
+	return pages, rows.Err()
 }

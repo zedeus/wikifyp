@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/zedeus/wikifyp/server/internal/event"
@@ -60,8 +61,10 @@ func withDB(db *sql.DB, h func(*sql.DB, http.ResponseWriter, *http.Request)) htt
 	}
 }
 
-// handleFeed serves GET /v1/feed?reader=<id>&limit=<n>: the reader's next
-// articles, best first.
+// handleFeed serves GET /v1/feed?reader=<id>&limit=<n>&exclude=<id,id,...>:
+// the reader's next articles, best first. exclude is a comma-separated list
+// of article IDs the client already has from earlier pages of the same
+// session; they are suppressed from the result without affecting scoring.
 func handleFeed(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	readerID := r.FormValue("reader")
 	if readerID == "" {
@@ -77,7 +80,17 @@ func handleFeed(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		}
 		limit = min(n, maxFeedLimit)
 	}
-	cards, err := feed.For(r.Context(), db, readerID, limit)
+	var exclude []int64
+	if s := r.FormValue("exclude"); s != "" {
+		for _, part := range strings.Split(s, ",") {
+			id, err := strconv.ParseInt(strings.TrimSpace(part), 10, 64)
+			if err != nil {
+				continue // skip malformed IDs silently
+			}
+			exclude = append(exclude, id)
+		}
+	}
+	cards, err := feed.For(r.Context(), db, readerID, limit, exclude)
 	if err != nil {
 		serverError(w, err)
 		return

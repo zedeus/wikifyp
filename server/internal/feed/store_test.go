@@ -153,7 +153,7 @@ func TestCardsCarryImageAndDescription(t *testing.T) {
 // (Category:Very good articles).
 func TestForNewReader(t *testing.T) {
 	db := newDB(t)
-	cards, err := For(context.Background(), db, "reader-new", 10)
+	cards, err := For(context.Background(), db, "reader-new", 10, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -184,7 +184,7 @@ func TestForRankedWithTopUp(t *testing.T) {
 	if err := SetState(ctx, db, "r1", philosophy.Source, philosophy.PageID, StateFinished); err != nil {
 		t.Fatal(err)
 	}
-	cards, err := For(ctx, db, "r1", 10)
+	cards, err := For(ctx, db, "r1", 10, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -223,7 +223,7 @@ func TestForSkipDemotes(t *testing.T) {
 	if err := SetState(ctx, db, "r2", chem.Source, chem.PageID, StateFinished); err != nil {
 		t.Fatal(err)
 	}
-	cards, err := For(ctx, db, "r2", 10)
+	cards, err := For(ctx, db, "r2", 10, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -255,7 +255,7 @@ func TestForStubsNeverServed(t *testing.T) {
 	if err := SetState(ctx, db, "r3", "simplewiki", fw, StateFinished); err != nil {
 		t.Fatal(err)
 	}
-	cards, err := For(ctx, db, "r3", 20)
+	cards, err := For(ctx, db, "r3", 20, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -283,7 +283,7 @@ func TestSavedFlagOrthogonalToState(t *testing.T) {
 
 	offFeed := func(when string) {
 		t.Helper()
-		cards, err := For(ctx, db, "r4", 10)
+		cards, err := For(ctx, db, "r4", 10, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -358,7 +358,7 @@ func TestUnsavedBookmarkIsInert(t *testing.T) {
 	if err := SetSaved(ctx, db, "r5", "simplewiki", rhcp, false); err != nil {
 		t.Fatal(err)
 	}
-	cards, err := For(ctx, db, "r5", 10)
+	cards, err := For(ctx, db, "r5", 10, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -396,7 +396,7 @@ func TestForNewRevisionStaysSuppressed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cards, err := For(ctx, db, "r5", 20)
+	cards, err := For(ctx, db, "r5", 20, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -414,7 +414,7 @@ func TestForNewRevisionStaysSuppressed(t *testing.T) {
 	if err := SetState(ctx, db, "r5", meta.Source, meta.PageID, StateFinished); err != nil {
 		t.Fatal(err)
 	}
-	cards, err = For(ctx, db, "r5", 20)
+	cards, err = For(ctx, db, "r5", 20, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -471,7 +471,7 @@ func TestForSkippedDisappears(t *testing.T) {
 	if err := SetState(ctx, db, "r7", philosophy.Source, philosophy.PageID, StateFinished); err != nil {
 		t.Fatal(err)
 	}
-	cards, err := For(ctx, db, "r7", 10)
+	cards, err := For(ctx, db, "r7", 10, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -490,7 +490,7 @@ func TestForSkippedDisappears(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	again, err := For(ctx, db, "r7", 10)
+	again, err := For(ctx, db, "r7", 10, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -532,7 +532,7 @@ func TestSuppressionOutlivesTheInterestWindow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cards, err := For(ctx, db, "r8", 10)
+	cards, err := For(ctx, db, "r8", 10, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -662,7 +662,7 @@ func TestExplorationSurvivesFeaturedExhaustion(t *testing.T) {
 	if err := SetState(ctx, db, "r9", philosophy.Source, philosophy.PageID, StateFinished); err != nil {
 		t.Fatal(err)
 	}
-	cards, err := For(ctx, db, "r9", 12)
+	cards, err := For(ctx, db, "r9", 12, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

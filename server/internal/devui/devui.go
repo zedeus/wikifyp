@@ -520,7 +520,7 @@ func (s *server) handleFeed(w http.ResponseWriter, r *http.Request) {
 	}{Reader: reader}
 	if reader != "" {
 		// One pipeline run serves both the feed and the working view.
-		cards, state, weights, ranked, err := feed.ForExplained(ctx, s.db, reader, 20)
+		cards, state, weights, ranked, err := feed.ForExplained(ctx, s.db, reader, 20, nil)
 		if err != nil {
 			s.fail(w, err)
 			return

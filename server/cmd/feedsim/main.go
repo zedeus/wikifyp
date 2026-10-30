@@ -847,7 +847,7 @@ func simulate(ctx context.Context, db *sql.DB, p persona, iterations, limit, dra
 				}
 			}
 		}
-		cards, err := feed.For(ctx, db, reader, limit)
+		cards, err := feed.For(ctx, db, reader, limit, nil)
 		if err != nil {
 			return stats, err
 		}
