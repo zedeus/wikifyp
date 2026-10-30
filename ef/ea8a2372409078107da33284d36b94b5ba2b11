@@ -1,0 +1,21 @@
+android/app/src/main/res/drawable/ic_launcher_foreground.xml
+  s_c5a94b10885ac2::t_6edd99196f7754 1-4,10,12-32
+android/app/src/main/res/drawable/ic_launcher_background.xml
+  s_c5a94b10885ac2::t_f1f2e9d63e44f6 2-3,10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "efea8a2372409078107da33284d36b94b5ba2b11",
+  "prompts": {},
+  "sessions": {
+    "s_c5a94b10885ac2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0881a2d6-0329-4520-8c04-c57ec6c904fb",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
