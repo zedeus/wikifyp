@@ -1,0 +1,54 @@
+android/app/src/main/java/com/wikifyp/ui/feed/FeedScreen.kt
+  s_890a5e0a682f30::t_abc38e509b2fb5 19,24-25,31,33-36,61,67-69,109-121,169-173,178-180,182-195,197,218-233,235
+  s_890a5e0a682f30::t_1464e3d7c18803 234
+android/app/src/test/java/com/wikifyp/data/HttpFeedRepositoryTest.kt
+  s_890a5e0a682f30::t_84ebf44b10c6ad 93-103
+  s_890a5e0a682f30::t_c8d6827bd83f6d 92
+android/app/src/test/java/com/wikifyp/ui/WikifypAppTest.kt
+  s_890a5e0a682f30::t_0cb808c1a4b7de 63,80,111,155,167,180,194,223,270,290,307
+android/app/src/test/java/com/wikifyp/ui/feed/FeedScreenTest.kt
+  s_890a5e0a682f30::t_5ebdb7a1a61d6a 27-29,33-41,96-124
+android/app/src/main/java/com/wikifyp/ui/feed/FeedState.kt
+  s_890a5e0a682f30::t_97a3f579267e42 14-17,29-32,34
+  s_890a5e0a682f30::t_677a976fc6e36b 36-37
+  s_890a5e0a682f30::t_cff8b9bbcb899d 38-42
+android/app/src/main/java/com/wikifyp/data/FeedRepository.kt
+  s_890a5e0a682f30::t_0e7c32da9d5cfe 41-46
+android/app/src/test/java/com/wikifyp/ui/feed/FeedStateTest.kt
+  s_890a5e0a682f30::t_0cb808c1a4b7de 17,24,31,37
+  s_890a5e0a682f30::t_77e278c5ea2c79 8-9,38-65,67
+  s_890a5e0a682f30::t_55088c0ee394a8 66
+  s_890a5e0a682f30::t_93e1be11f8ae12 68-70
+  s_890a5e0a682f30::t_4f5f432c3bde5a 71-72
+android/app/src/test/java/com/wikifyp/data/CachedFeedRepositoryTest.kt
+  s_890a5e0a682f30::t_0cb808c1a4b7de 22,29,38,112,116,119
+android/app/src/main/java/com/wikifyp/data/HttpFeedRepository.kt
+  s_890a5e0a682f30::t_b079db6f4b220e 26,28-34
+  s_890a5e0a682f30::t_4e5942bdf90eda 35-36
+android/app/src/main/java/com/wikifyp/data/FixtureFeedRepository.kt
+  s_890a5e0a682f30::t_8598404cf64829 38-39
+android/app/src/test/java/com/wikifyp/data/FakeFeedRepository.kt
+  s_890a5e0a682f30::t_94ce86fab005e7 7,10,19,28
+android/app/src/main/java/com/wikifyp/ui/WikifypApp.kt
+  s_890a5e0a682f30::t_a56f8332d34286 11,30,78-84,87-88,91-93,95-97,103-111,119,121,123-129,131-134,136-145,147-148,239-241
+  s_890a5e0a682f30::t_d6adb4c7b731a0 85-86,98-102,120,135,146
+  s_890a5e0a682f30::t_987eae9774870e 112-118,122,130
+android/app/src/main/java/com/wikifyp/data/CachedFeedRepository.kt
+  s_890a5e0a682f30::t_d5ed086fc71507 74,76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ffa279003f07e86e4af28e522295418f49ea0a45",
+  "prompts": {},
+  "sessions": {
+    "s_890a5e0a682f30": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97bb8f78-cd7a-4189-9869-6bcdfc36fbf5",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
