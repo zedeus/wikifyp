@@ -5,6 +5,7 @@ import androidx.compose.animation.BoundsTransform
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -14,6 +15,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
 import com.wikifyp.theme.Motion
@@ -63,6 +65,24 @@ val slideForward: ContentTransform =
 @OptIn(ExperimentalSharedTransitionApi::class)
 private val articleBoundsTransform =
     BoundsTransform { _, _ -> tween(Motion.SLOW_MS, easing = Motion.Settle) }
+
+/**
+ * 1 when no screen transition runs, easing to 0 while one does. Content
+ * that overlaps a shared element (the hero's scrim and title) fades away
+ * for the flight instead of flickering under the lifted image, and
+ * settles back once the morph lands.
+ */
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+fun transitionContentAlpha(): State<Float> {
+    val scopes = LocalNavScopes.current
+    val active = scopes?.shared?.isTransitionActive == true
+    return animateFloatAsState(
+        targetValue = if (active) 0f else 1f,
+        animationSpec = tween(Motion.QUICK_MS, easing = Motion.Leave),
+        label = "transitionContent",
+    )
+}
 
 /**
  * Marks this element as the article's lead image for cross-screen morphs:

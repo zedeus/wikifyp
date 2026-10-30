@@ -41,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -53,6 +54,7 @@ import com.wikifyp.theme.Reading
 import com.wikifyp.theme.Spacing
 import com.wikifyp.ui.components.PrimaryButton
 import com.wikifyp.ui.sharedArticleImage
+import com.wikifyp.ui.transitionContentAlpha
 
 /**
  * The feed: a hero card for the lead article, then a grouped list of the
@@ -288,6 +290,10 @@ private fun HeroCard(
                 .clickable(onClick = onClick)
                 .testTag("heroCard"),
     ) {
+        // The scrim and title overlap the shared image, which draws above
+        // everything while it flies — so they fade out for the flight and
+        // settle back once the morph lands, instead of flickering under it.
+        val overlayAlpha by transitionContentAlpha()
         Box {
             CardImage(
                 image = card.image,
@@ -302,12 +308,14 @@ private fun HeroCard(
             Box(
                 Modifier
                     .matchParentSize()
+                    .graphicsLayer { alpha = overlayAlpha }
                     .background(HeroScrim),
             )
             Column(
                 modifier =
                     Modifier
                         .align(Alignment.BottomStart)
+                        .graphicsLayer { alpha = overlayAlpha }
                         .padding(Spacing.md),
             ) {
                 // The scrim is dark in every theme, so the eyebrow keeps
