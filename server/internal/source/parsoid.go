@@ -60,6 +60,10 @@ var skipClasses = []string{"mw-ref", "hatnote", "mw-editsection", "metadata", "t
 	// Pronunciation audio widgets (the hAudio microformat): a speaker icon
 	// and a "listen" media link, no article text.
 	"haudio",
+	// MediaWiki's own "not article content" marker: inline cleanup
+	// templates ({{cn}} → "[source?]", "[citation needed]", "[when?]"…),
+	// navigation aids, anything the wiki itself excludes from print.
+	"noprint",
 }
 
 // skipTypeof are Parsoid extension outputs with no readable article text.

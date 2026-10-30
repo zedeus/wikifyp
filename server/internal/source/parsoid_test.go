@@ -184,6 +184,22 @@ func TestParsoidCitationComment(t *testing.T) {
 	}
 }
 
+// TestParsoidNoprint: inline cleanup templates ({{cn}} and family) render
+// as noprint superscripts — "[source?]", "[citation needed]", "[when?]" —
+// which are editor chrome, not article text. Trimmed verbatim from the
+// simplewiki "Kingsway tramway subway" record (the {{cn}} template).
+func TestParsoidNoprint(t *testing.T) {
+	page := parse(t, `<html><body><p>The London County Council had two tramway systems called the "North Side" and "South Side".<sup class="noprint Inline-Template Template-Fact" style="white-space:nowrap;" about="#mwt13" id="mwGw"><span typeof="mw:Entity">[</span><i><a rel="mw:WikiLink" href="./Wikipedia:Citing_sources" title="Wikipedia:Citing sources"><span title="This claim needs references to reliable sources. (December 2021)">source?</span></a></i><span typeof="mw:Entity">]</span></sup> For a long time, they had considered joining the two together.</p></body></html>`)
+	want := `The London County Council had two tramway systems called the "North Side" and "South Side". ` +
+		"For a long time, they had considered joining the two together."
+	if page.Text != want {
+		t.Errorf("text = %q, want %q", page.Text, want)
+	}
+	if len(page.Links) != 0 {
+		t.Errorf("links = %q, want none (the marker's project link is chrome)", page.Links)
+	}
+}
+
 // TestParsoidAudioWidget: the pronunciation "listen" button is chrome, and
 // the parens that wrapped it must not survive as an empty husk. Trimmed
 // verbatim from the simplewiki "Yokohama" record (revision 10120220).
