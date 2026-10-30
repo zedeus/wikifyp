@@ -8,6 +8,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.remember
 import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
+import coil3.ImageLoader
+import coil3.SingletonImageLoader
+import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import com.wikifyp.data.CachedFeedRepository
 import com.wikifyp.data.EventQueue
 import com.wikifyp.data.EventUploader
@@ -21,12 +24,44 @@ import com.wikifyp.ui.WikifypApp
 import com.wikifyp.ui.reader.HandlerClock
 import com.wikifyp.ui.reader.ReaderSettingsStore
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
 import java.io.File
 import java.util.UUID
+
+/** How the app introduces itself to Wikimedia's servers (their User-Agent
+ *  policy wants a name and a contact; anonymous agents get 403). */
+private const val USER_AGENT = "wikifyp/0.1 (https://github.com/zedeus/wikifyp)"
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Lead images come from Wikimedia's CDN, which rejects anonymous
+        // library user agents (HTTP 403, per their User-Agent policy):
+        // every image request identifies the app.
+        SingletonImageLoader.setSafe { context ->
+            ImageLoader
+                .Builder(context)
+                .components {
+                    add(
+                        OkHttpNetworkFetcherFactory(
+                            callFactory = {
+                                OkHttpClient
+                                    .Builder()
+                                    .addInterceptor { chain ->
+                                        chain.proceed(
+                                            chain
+                                                .request()
+                                                .newBuilder()
+                                                .header("User-Agent", USER_AGENT)
+                                                .build(),
+                                        )
+                                    }.build()
+                            },
+                        ),
+                    )
+                }.build()
+        }
 
         val repository = createRepository(this)
         val clock = HandlerClock()

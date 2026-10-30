@@ -68,6 +68,9 @@ fun CardImage(
             contentDescription = null,
             contentScale = ContentScale.Crop,
             onState = { state ->
+                if (state is AsyncImagePainter.State.Error) {
+                    android.util.Log.w("CardImage", "load failed: ${image.url}", state.result.throwable)
+                }
                 if (state is AsyncImagePainter.State.Success && isDark) {
                     val cached = dimCache.get(image.url)
                     if (cached != null) {
