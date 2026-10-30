@@ -98,6 +98,18 @@ func start() error {
 		"--label", "wikifyp-testdb=1",
 		"-e", "POSTGRES_USER=wikifyp",
 		"-e", "POSTGRES_PASSWORD=wikifyp",
+		// The image declares a VOLUME for the data dir, and --rm does not
+		// reliably remove those on teardown: each test-package run leaked
+		// a ~190MB anonymous volume until the disk filled. A tmpfs mount
+		// masks the declaration — no volume exists, and the throwaway
+		// database lives in RAM, which is also faster. The size cap keeps
+		// that honest on small machines: an unbounded tmpfs may grow to
+		// half the host's RAM, and test packages run in parallel. A fresh
+		// cluster is ~45MB and every test's CREATE DATABASE copies
+		// template1 (~10MB); the largest package makes two dozen, so 512m
+		// is comfortable headroom. Blowing the cap fails loudly ("No
+		// space left on device") instead of eating memory quietly.
+		"--mount", "type=tmpfs,destination=/var/lib/postgresql/data,tmpfs-size=512m",
 		"-p", "127.0.0.1:0:5432",
 		image,
 		// Durability off: the data dies with the container anyway.
