@@ -218,14 +218,16 @@ class ReaderTest {
         compose.onNodeWithTag("idleHint").assertIsDisplayed()
 
         // Toggle the bookmark off: back lands on the Saved screen, which
-        // no longer lists the article.
+        // no longer lists the article. Only this article's absence is
+        // asserted — the device may carry other bookmarks from earlier
+        // runs or manual use, and this test owns none of them (the empty
+        // state itself is covered by the JVM SavedScreen tests).
         compose.onNodeWithTag("saveButton").performClick()
         compose.waitForIdle()
         compose.activityRule.scenario.onActivity {
             it.onBackPressedDispatcher.onBackPressed()
         }
         compose.waitForIdle()
-        compose.onNodeWithText("Nothing saved yet").assertIsDisplayed()
         compose.onNodeWithText("DNA").assertDoesNotExist()
 
         // Back out to the feed so later tests start from it.
