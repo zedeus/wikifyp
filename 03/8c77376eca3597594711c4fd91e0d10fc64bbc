@@ -1,0 +1,41 @@
+server/internal/history/delete.go
+  s_fbd6a0fc774e16::t_4d45308fc1b12d 143,149
+  s_fbd6a0fc774e16::t_dbb4c6602fde2b 1-142,144-148,150-164
+server/internal/history/interests.go
+  s_fbd6a0fc774e16::t_784cd70e88a3e0 1-13,18-28,33-191
+  s_fbd6a0fc774e16::t_e6a4210d3798ef 14-17,29-32
+server/internal/history/history.go
+  s_fbd6a0fc774e16::t_cf53007a12f4ba 1-186
+server/internal/history/stats.go
+  s_fbd6a0fc774e16::t_998bf1be6102a9 72-73,82,87
+  s_fbd6a0fc774e16::t_e6a4210d3798ef 12-19
+  s_fbd6a0fc774e16::t_ad8306e8272aa4 1-11,20-71,74-81,83-86,88-206
+server/internal/history/history_test.go
+  s_fbd6a0fc774e16::t_6641a7abfda77f 239-240
+  s_fbd6a0fc774e16::t_3f6629df2ebed2 40,44
+  s_fbd6a0fc774e16::t_fa9fa84a122309 46
+  s_fbd6a0fc774e16::t_13c7f176505695 1-39,41-43,45,47-52,54-55,57-58,60-62,64-238,241-303,305-490
+  s_fbd6a0fc774e16::t_392d99f7bc247f 53,56,59,63
+  s_fbd6a0fc774e16::t_eac6ae589b2c08 304
+server/internal/api/api.go
+  s_fbd6a0fc774e16::t_2827d5226d2101 18
+  s_fbd6a0fc774e16::t_501b8c0522c695 302-391
+  s_fbd6a0fc774e16::t_5cb28fd4eed573 51-54
+  s_fbd6a0fc774e16::t_f064882a4dabce 392
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "038c77376eca3597594711c4fd91e0d10fc64bbc",
+  "prompts": {},
+  "sessions": {
+    "s_fbd6a0fc774e16": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "03eb4619-e408-4fa9-863e-cd0e3e2f2ec9",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
