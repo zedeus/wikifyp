@@ -3,7 +3,9 @@ package com.wikifyp.ui.reader
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -38,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
@@ -49,7 +52,10 @@ import com.wikifyp.theme.Motion
 import com.wikifyp.theme.Spacing
 import com.wikifyp.ui.feed.CardImage
 import com.wikifyp.ui.feed.HERO_IMAGE_ASPECT
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Browse mode: the article as flowing text over the reader, with the
@@ -125,6 +131,38 @@ internal fun BrowseOverlay(
         label = "browseContent",
     )
 
+    // The block holding the highlight reports the highlighted line's
+    // vertical centre within its item once laid out; centring reads it.
+    val highlightCenterInItem = remember { mutableStateOf<Float?>(null) }
+
+    /**
+     * Puts the highlighted word's line at the vertical centre of the
+     * viewport: a coarse jump to its block, then a fine scroll by the
+     * line's reported position. A block that never reports (the highlight
+     * sits on a heading) stays at the coarse position.
+     */
+    suspend fun centerOnHighlight(smooth: Boolean) {
+        val item = blockIndexFor(blocks, highlightFlat.intValue) + 1
+        highlightCenterInItem.value = null
+        val visible = listState.layoutInfo.visibleItemsInfo.any { it.index == item }
+        if (smooth && visible) {
+            // Already on screen: one smooth adjustment below suffices.
+        } else if (smooth) {
+            listState.animateScrollToItem(item)
+        } else {
+            listState.scrollToItem(item)
+        }
+        val center =
+            withTimeoutOrNull(250) {
+                snapshotFlow { highlightCenterInItem.value }.first { it != null }
+            } ?: return
+        val info = listState.layoutInfo
+        val laidOut = info.visibleItemsInfo.firstOrNull { it.index == item } ?: return
+        val viewportCenter = (info.viewportStartOffset + info.viewportEndOffset) / 2f
+        val delta = laidOut.offset + center - viewportCenter
+        if (smooth) listState.animateScrollBy(delta) else listState.scrollBy(delta)
+    }
+
     // Collapsible sections, official-app style: tapping a heading folds
     // its body blocks away. Keyed by the heading's block index; the lead
     // blocks before the first heading have no heading to fold under.
@@ -151,17 +189,25 @@ internal fun BrowseOverlay(
         if (heading in collapsed) collapsed = collapsed - heading
     }
 
-    // Centre the block holding the current word when the overlay opens;
-    // the viewport size is only known after the first layout. From the
-    // very start (nothing read yet) the masthead stays at the top.
+    // Centre the current word when the overlay opens; the exact position
+    // needs a first layout, and the content stays hidden until it is
+    // settled. From the very start (nothing read yet) the masthead stays
+    // at the top.
     LaunchedEffect(Unit) {
         if (currentFlat > 0) {
-            val viewport =
-                snapshotFlow { listState.layoutInfo.viewportSize.height }
-                    .first { it > 0 }
-            listState.scrollToItem(startBlock + 1, -viewport / 3)
+            snapshotFlow { listState.layoutInfo.viewportSize.height }.first { it > 0 }
+            centerOnHighlight(smooth = false)
         }
         positioned = true
+    }
+
+    // A jump while browsing (the table of contents) moves the highlight;
+    // follow it. The highlight is frozen while faded, so playback never
+    // scrolls the overlay behind the reader's back.
+    LaunchedEffect(Unit) {
+        snapshotFlow { highlightFlat.intValue }.drop(1).collectLatest {
+            centerOnHighlight(smooth = true)
+        }
     }
 
     Box(
@@ -225,6 +271,7 @@ internal fun BrowseOverlay(
                         onTapBackground = stableOnTapBackground,
                         onHold = stableOnHold,
                         onRelease = stableOnRelease,
+                        onHighlightLaidOut = { highlightCenterInItem.value = it },
                     )
                 }
             }
@@ -365,6 +412,10 @@ private fun BrowseBlockText(
     onTapBackground: () -> Unit,
     onHold: () -> Unit,
     onRelease: () -> Unit,
+    // Reports the highlighted line's vertical centre within this item,
+    // for the overlay's centring scroll; only the block holding the
+    // highlight ever calls it.
+    onHighlightLaidOut: (Float) -> Unit = {},
 ) {
     var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
 
@@ -380,6 +431,17 @@ private fun BrowseBlockText(
     // the current word rebuilds its string as playback advances (the
     // overlay keeps rendering, faded, during hold-to-resume).
     val current = block.tokens.find { it.flatIndex == currentFlat }
+
+    val density = LocalDensity.current
+    LaunchedEffect(current, layout) {
+        val laidOut = layout
+        if (current != null && laidOut != null) {
+            val line = laidOut.getLineForOffset(current.start)
+            val centerInText = (laidOut.getLineTop(line) + laidOut.getLineBottom(line)) / 2f
+            val topPad = if (block.isHeading) Spacing.lg else Spacing.sm
+            onHighlightLaidOut(centerInText + with(density) { topPad.toPx() })
+        }
+    }
     val text =
         remember(block, current, palette) {
             buildAnnotatedString {

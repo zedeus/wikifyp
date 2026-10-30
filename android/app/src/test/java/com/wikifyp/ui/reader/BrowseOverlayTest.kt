@@ -1,6 +1,11 @@
 package com.wikifyp.ui.reader
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -59,6 +64,47 @@ class BrowseOverlayTest {
 
         assertEquals("tapped=$tapped background=$background", listOf(0), tapped)
         assertEquals(0, background)
+    }
+
+    /**
+     * A jump while browsing (the table of contents) moves the highlight to
+     * a block far off screen; the list follows it instead of staying put.
+     */
+    @Test
+    fun highlightJumpScrollsTheListToTheTarget() {
+        // Sections force separate blocks (body runs merge into paragraph
+        // blocks); enough of them that the last starts far off screen.
+        val many =
+            browseBlocks(
+                (0 until 40).flatMap { i ->
+                    listOf(
+                        SentenceTokens(listOf("Section", "$i"), isHeading = true),
+                        SentenceTokens(listOf("Sentence", "number", "$i.")),
+                    )
+                },
+            )
+        val lastFlat = 40 * 5 - 1
+        var flat by mutableIntStateOf(0)
+        compose.setContent {
+            WikifypTheme {
+                BrowseOverlay(
+                    blocks = many,
+                    currentFlat = flat,
+                    palette = readerPalette(ReaderTheme.LIGHT, systemDark = false),
+                    settings = ReaderSettings(),
+                    faded = false,
+                    onTapWord = {},
+                    onTapBackground = {},
+                    onHold = {},
+                    onRelease = {},
+                )
+            }
+        }
+        compose.onAllNodesWithText("Sentence number 39.").assertCountEquals(0)
+
+        flat = lastFlat
+        compose.waitForIdle()
+        compose.onAllNodesWithText("Sentence number 39.").onFirst().assertIsDisplayed()
     }
 
     @Test
