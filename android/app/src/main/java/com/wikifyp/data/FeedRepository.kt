@@ -19,6 +19,8 @@ data class FeedCard(
     val description: String = "",
     /** Lead image thumbnail; null when the article has no free image. */
     val image: ArticleImage? = null,
+    /** Why this card was recommended; null for fixture/cached cards. */
+    val reason: RecommendReason? = null,
 ) {
     /** The card's one-line subtitle: the description, or failing that the
      *  start of the article itself. One rule for every card surface. */
