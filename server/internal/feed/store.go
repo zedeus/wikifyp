@@ -81,17 +81,18 @@ var recentStateLimit = 500
 // Card is one feed entry, ready to serve. Exploration marks a card that
 // filled an exploration slot rather than scoring in on relevance.
 type Card struct {
-	ArticleID   int64  `json:"id"`
-	PageID      int64  `json:"-"` // not serialized; used for impression tracking
-	Title       string `json:"title"`
-	Source      string `json:"source"`
-	Excerpt     string `json:"excerpt"`
-	Description string `json:"description,omitempty"`
-	Image       *Image `json:"image,omitempty"`
-	Sentences   int    `json:"sentences"`
-	Words       int    `json:"words"`
-	Attribution string `json:"attribution"`
-	Exploration bool   `json:"exploration,omitempty"`
+	ArticleID   int64   `json:"id"`
+	PageID      int64   `json:"-"` // not serialized; used for impression tracking
+	Title       string  `json:"title"`
+	Source      string  `json:"source"`
+	Excerpt     string  `json:"excerpt"`
+	Description string  `json:"description,omitempty"`
+	Image       *Image  `json:"image,omitempty"`
+	Sentences   int     `json:"sentences"`
+	Words       int     `json:"words"`
+	Attribution string  `json:"attribution"`
+	Exploration bool    `json:"exploration,omitempty"`
+	Reason      *Reason `json:"reason,omitempty"`
 }
 
 // Image is an article's lead image thumbnail, as stored at ingest. It
@@ -291,6 +292,8 @@ func ForExplained(ctx context.Context, db *sql.DB, readerID string, limit int, e
 		// their whole feed is a fresh start, and flagging all of it would
 		// drain the flag's meaning.
 		cards[i].Exploration = picks[i].Exploration && len(state) > 0
+		r := picks[i].Reason
+		cards[i].Reason = &r
 	}
 	return cards, state, weights, scored, nil
 }

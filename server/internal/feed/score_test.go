@@ -1139,3 +1139,102 @@ func TestSelectDiverseSubInterest(t *testing.T) {
 		t.Errorf("sub-diversity=0.5 alternations %d should be >= flat %d", diverse, flat)
 	}
 }
+
+// TestSelectDiverseReasons: every pick carries a recommendation reason
+// whose kind matches how it was selected: momentum picks reference the
+// newest read, relevance picks reference their rotation owner, and
+// exploration picks carry kind "exploration" with no seed.
+func TestSelectDiverseReasons(t *testing.T) {
+	state := []StateArticle{
+		{PageID: 1, Source: "simplewiki", Title: "Solar System", State: StateFinished,
+			Completion: 1.0, Words: 800, Categories: []string{"Astronomy", "Science"}},
+		{PageID: 2, Source: "simplewiki", Title: "Jupiter", State: StateFinished,
+			Completion: 0.6, Words: 600, Categories: []string{"Astronomy", "Planets"}},
+	}
+	scored := []Scored{
+		{testCandidateWithCats(10, "Saturn", "Astronomy", "Planets"), 2.0, []string{"Jupiter"}},
+		{testCandidateWithCats(11, "Mars", "Astronomy", "Planets"), 1.5, []string{"Solar System"}},
+		{testCandidateWithCats(12, "Telescope", "Astronomy", "Science"), 1.0, []string{"Solar System"}},
+	}
+	explore := []Candidate{
+		testCandidateWithCats(100, "Chess", "Board games"),
+		testCandidateWithCats(101, "Origami", "Paper crafts"),
+	}
+	picks := SelectDiverse(scored, explore, state, 5, 42)
+	if len(picks) == 0 {
+		t.Fatal("no picks")
+	}
+
+	// Every pick must have a reason.
+	for i, p := range picks {
+		if p.Reason.Kind == "" {
+			t.Errorf("pick %d (%s): missing reason kind", i, p.Title)
+		}
+	}
+
+	// Exploration picks must have kind "exploration" and no seed.
+	for _, p := range picks {
+		if p.Exploration {
+			if p.Reason.Kind != "exploration" {
+				t.Errorf("exploration pick %s: reason kind = %q, want exploration", p.Title, p.Reason.Kind)
+			}
+			if p.Reason.SeedTitle != "" {
+				t.Errorf("exploration pick %s: unexpected seed title %q", p.Title, p.Reason.SeedTitle)
+			}
+		}
+	}
+
+	// Relevance/momentum picks must reference a state article.
+	for _, p := range picks {
+		if !p.Exploration && p.Reason.Kind != "" {
+			if p.Reason.Kind != "relevance" && p.Reason.Kind != "momentum" {
+				t.Errorf("non-explore pick %s: unexpected kind %q", p.Title, p.Reason.Kind)
+			}
+			if p.Reason.SeedTitle == "" {
+				// A global fallback (no owner) may have an empty seed; that's
+				// fine. But if there IS a seed, it must be from state.
+				continue
+			}
+			found := false
+			for _, s := range state {
+				if s.Title == p.Reason.SeedTitle {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Errorf("pick %s: seed %q is not in reader state", p.Title, p.Reason.SeedTitle)
+			}
+		}
+	}
+}
+
+func testCandidateWithCats(id int64, title string, cats ...string) Candidate {
+	return Candidate{
+		ArticleID: id, PageID: id, Source: "simplewiki",
+		Title:      title,
+		Categories: cats,
+	}
+}
+
+// TestSharedCategories: sharedCategories returns the intersection sorted
+// by length, capped at n.
+func TestSharedCategories(t *testing.T) {
+	a := []string{"Astronomy", "Science", "Planets", "Solar System"}
+	b := []string{"Science", "Planets", "Mathematics"}
+	got := sharedCategories(a, b, 2)
+	if len(got) != 2 {
+		t.Fatalf("got %d shared, want 2", len(got))
+	}
+	// Shorter names first.
+	if got[0] != "Science" || got[1] != "Planets" {
+		t.Errorf("got %v, want [Science Planets]", got)
+	}
+	// Empty inputs.
+	if len(sharedCategories(nil, b, 3)) != 0 {
+		t.Error("nil a should give empty")
+	}
+	if len(sharedCategories(a, nil, 3)) != 0 {
+		t.Error("nil b should give empty")
+	}
+}

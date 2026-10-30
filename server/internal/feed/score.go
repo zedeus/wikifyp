@@ -951,12 +951,23 @@ func compareScored(a, b Scored) int {
 	return cmp.Compare(a.PageID, b.PageID)
 }
 
+// Reason explains why a card was recommended. Produced at pick time in
+// SelectDiverse, never reconstructed — the feed's ordering depends on the
+// day seed, hour and state window, so a reason computed later would disagree
+// with the actual selection.
+type Reason struct {
+	Kind           string   `json:"kind"`                      // "relevance", "exploration", "momentum"
+	SeedTitle      string   `json:"seed_title,omitempty"`      // state article whose rotation turn produced this pick
+	SeedCategories []string `json:"seed_categories,omitempty"` // top shared categories between seed and pick
+}
+
 // Picked is one chosen feed entry: its final score after noise and
 // similarity penalties, and whether it filled an exploration slot.
 type Picked struct {
 	Candidate
 	Score       float64
 	Exploration bool
+	Reason      Reason
 }
 
 // SelectDiverse fills k feed slots from the scored pool, keeping the feed
@@ -1178,7 +1189,7 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 	var exploredCats []map[string]bool
 	takeExplore := func(c Candidate) {
 		seen[pageKey{c.Source, c.PageID}] = true
-		picked = append(picked, Picked{Candidate: c, Exploration: true})
+		picked = append(picked, Picked{Candidate: c, Exploration: true, Reason: Reason{Kind: "exploration"}})
 		if len(c.Categories) > 0 {
 			cSet := make(map[string]bool, len(c.Categories))
 			for _, cat := range c.Categories {
@@ -1280,16 +1291,29 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 		}
 		return best
 	}
-	take := func(i int) {
+	take := func(i int, reason Reason) {
 		c := &remaining[i]
 		c.picked = true
 		seen[pageKey{c.Source, c.PageID}] = true
-		picked = append(picked, Picked{Candidate: c.Candidate, Score: c.Score - simPenalty*c.maxSim})
+		picked = append(picked, Picked{Candidate: c.Candidate, Score: c.Score - simPenalty*c.maxSim, Reason: reason})
 		for j := range remaining {
 			if !remaining[j].picked {
 				remaining[j].maxSim = max(remaining[j].maxSim, cosine(remaining[j].cats, c.Candidate.Categories))
 			}
 		}
+	}
+
+	// seedReason builds a Reason for a relevance or momentum pick,
+	// recording which state article's rotation turn produced it and the
+	// top shared categories between seed and candidate.
+	seedReason := func(kind, seedTitle string, seedCats []string, pickCats []string) Reason {
+		shared := sharedCategories(seedCats, pickCats, 3)
+		return Reason{Kind: kind, SeedTitle: seedTitle, SeedCategories: shared}
+	}
+	// stateByTitle indexes the state window for category lookups.
+	stateIdx := make(map[string][]string, len(state))
+	for _, s := range state {
+		stateIdx[s.Title] = s.Categories
 	}
 
 	for len(picked) < k {
@@ -1306,6 +1330,7 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 		}
 		best := -1
 		var pickedGroup *turnGroup // set when rotation produced the pick
+		var seedTitle string       // state article whose turn produced this pick
 		// Momentum slots: the first relevance slot and the one past
 		// mid-feed belong to the newest reads in order, so what the reader
 		// just finished visibly steers the next feed. Bounding momentum to
@@ -1321,6 +1346,7 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 					continue
 				}
 				if best = bestOf(ownerCandidates[o], true, RelevanceFloor, nil); best >= 0 {
+					seedTitle = o
 					break
 				}
 			}
@@ -1356,6 +1382,7 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 					}
 					if best = bestOf(ownerCandidates[o], fresh, RelevanceFloor, lastClusterCats[g]); best >= 0 {
 						pickedGroup = g
+						seedTitle = o
 						break
 					}
 				}
@@ -1378,7 +1405,12 @@ func SelectDiverse(scored []Scored, explore []Candidate, state []StateArticle, k
 		if pickedGroup != nil && SubInterestDiversity > 0 {
 			lastClusterCats[pickedGroup] = remaining[best].cats
 		}
-		take(best)
+		kind := "relevance"
+		if momentum && seedTitle != "" {
+			kind = "momentum"
+		}
+		reason := seedReason(kind, seedTitle, stateIdx[seedTitle], remaining[best].Candidate.Categories)
+		take(best, reason)
 	}
 	return picked
 }
@@ -1395,6 +1427,32 @@ func catSlice(cats map[string]bool) []string {
 		s = append(s, c)
 	}
 	return s
+}
+
+// sharedCategories returns up to n categories present in both slices,
+// preferring shorter (more specific) names. Used to build the "because
+// you read X — topics in common" part of a recommendation reason.
+func sharedCategories(a, b []string, n int) []string {
+	if len(a) == 0 || len(b) == 0 {
+		return nil
+	}
+	set := make(map[string]bool, len(a))
+	for _, c := range a {
+		set[c] = true
+	}
+	var shared []string
+	for _, c := range b {
+		if set[c] {
+			shared = append(shared, c)
+		}
+	}
+	slices.SortFunc(shared, func(a, b string) int {
+		return cmp.Compare(len(a), len(b))
+	})
+	if len(shared) > n {
+		shared = shared[:n]
+	}
+	return shared
 }
 
 func cosine(cats map[string]bool, picked []string) float64 {
