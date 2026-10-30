@@ -34,6 +34,7 @@ import com.wikifyp.ui.feed.loadFeed
 import com.wikifyp.ui.reader.ReaderScreen
 import com.wikifyp.ui.reader.ReaderSettings
 import com.wikifyp.ui.reader.ReaderSettingsSheet
+import com.wikifyp.ui.reader.ReaderTheme
 import com.wikifyp.ui.reader.readerPalette
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -194,11 +195,15 @@ fun WikifypApp(
         }
 
     // The reader theme is the app theme: paper and sepia read as light,
-    // ink and black as dark, system follows the device. One picker themes
-    // the whole app, so the feed never glares around a dark reader.
+    // ink and black as dark (black truly black), system follows the
+    // device. One picker themes the whole app, so the feed never glares
+    // around a dark reader.
     val appDark = readerPalette(readerSettings.theme, isSystemInDarkTheme()).isDark
 
-    WikifypTheme(darkTheme = appDark) {
+    WikifypTheme(
+        darkTheme = appDark,
+        black = readerSettings.theme == ReaderTheme.BLACK,
+    ) {
         // Status-bar icons must stay legible on the themed surface, which
         // can differ from the system theme. The app theme is the one owner
         // of the status bar; the reader surface follows the same setting.

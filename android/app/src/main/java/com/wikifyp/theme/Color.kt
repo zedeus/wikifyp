@@ -73,6 +73,12 @@ internal val LightColors =
         onErrorContainer = OnRedWash,
     )
 
+// True black ("OLED"): the black reader theme extended to the app chrome.
+// Same ink-on-dark text tokens, but the canvas is pure black and raised
+// surfaces barely lift off it (matching the reader's black palette).
+val BlackRaised = Color(0xFF17181A)
+val BlackSunken = Color(0xFF101113)
+
 internal val DarkColors =
     darkColorScheme(
         primary = BlueSoft,
@@ -97,4 +103,14 @@ internal val DarkColors =
         onError = RedNight,
         errorContainer = RedNight,
         onErrorContainer = OnRedNight,
+    )
+
+internal val BlackColors =
+    DarkColors.copy(
+        background = Color(0xFF000000),
+        surface = Color(0xFF000000),
+        surfaceContainer = BlackRaised,
+        surfaceContainerHigh = BlackRaised,
+        surfaceVariant = BlackSunken,
+        secondaryContainer = BlackSunken,
     )

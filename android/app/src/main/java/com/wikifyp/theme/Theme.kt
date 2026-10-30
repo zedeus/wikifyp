@@ -20,15 +20,22 @@ val Shapes =
 /**
  * App theme: paper in the light, ink at night, one serif voice. No dynamic
  * (Material You) color on purpose — the reading surface should look the same
- * on every device.
+ * on every device. [black] is the OLED variant for the black reader theme:
+ * the canvas goes pure black so the app chrome matches the reading surface.
  */
 @Composable
 fun WikifypTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    black: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     MaterialTheme(
-        colorScheme = if (darkTheme) DarkColors else LightColors,
+        colorScheme =
+            when {
+                black -> BlackColors
+                darkTheme -> DarkColors
+                else -> LightColors
+            },
         typography = Typography,
         shapes = Shapes,
         content = content,

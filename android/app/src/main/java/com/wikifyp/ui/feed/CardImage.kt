@@ -6,7 +6,6 @@ import android.graphics.RenderEffect
 import android.os.Build
 import android.util.LruCache
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import coil3.BitmapImage
@@ -57,7 +57,9 @@ fun CardImage(
     if (image == null) {
         InitialTile(title, cardId, modifier)
     } else {
-        val isDark = isSystemInDarkTheme()
+        // Dim decisions follow the app theme, not the system: the theme
+        // picker can put the app in dark mode on a light device.
+        val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
         var shouldDim by remember(image.url) { mutableStateOf(false) }
         val scope = rememberCoroutineScope()
 
