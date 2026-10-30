@@ -5,16 +5,19 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Icon
@@ -31,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -40,8 +44,11 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import com.wikifyp.data.FeedCard
 import com.wikifyp.theme.Motion
 import com.wikifyp.theme.Spacing
+import com.wikifyp.ui.feed.CardImage
+import com.wikifyp.ui.feed.HERO_IMAGE_ASPECT
 import kotlinx.coroutines.flow.first
 
 /**
@@ -66,6 +73,10 @@ internal fun BrowseOverlay(
     onHold: () -> Unit,
     onRelease: () -> Unit,
     modifier: Modifier = Modifier,
+    // The masthead at the top of the flowing text: the article's title
+    // and, when the card carries one, its lead image.
+    articleTitle: String = "",
+    card: FeedCard? = null,
     // The reader chrome stays pinned above the overlay; these keep the
     // flowing text clear of the top bar and the bottom controls.
     topPadding: Dp = Spacing.xl,
@@ -99,7 +110,20 @@ internal fun BrowseOverlay(
     val highlightFlat = remember { mutableIntStateOf(currentFlat) }
     if (!faded) highlightFlat.intValue = currentFlat
 
-    val listState = rememberLazyListState()
+    // Open on the block holding the current word: the list starts laid
+    // out there (+1 for the masthead item), and the exact centring scroll
+    // below runs before the content is shown — no visible repositioning.
+    val startBlock = remember { blockIndexFor(blocks, currentFlat) }
+    val listState =
+        rememberLazyListState(
+            initialFirstVisibleItemIndex = if (currentFlat > 0) startBlock + 1 else 0,
+        )
+    var positioned by remember { mutableStateOf(false) }
+    val contentAlpha by animateFloatAsState(
+        targetValue = if (positioned) 1f else 0f,
+        animationSpec = tween(Motion.QUICK_MS, easing = Motion.Settle),
+        label = "browseContent",
+    )
 
     // Collapsible sections, official-app style: tapping a heading folds
     // its body blocks away. Keyed by the heading's block index; the lead
@@ -128,12 +152,16 @@ internal fun BrowseOverlay(
     }
 
     // Centre the block holding the current word when the overlay opens;
-    // the viewport size is only known after the first layout.
+    // the viewport size is only known after the first layout. From the
+    // very start (nothing read yet) the masthead stays at the top.
     LaunchedEffect(Unit) {
-        val viewport =
-            snapshotFlow { listState.layoutInfo.viewportSize.height }
-                .first { it > 0 }
-        listState.scrollToItem(blockIndexFor(blocks, currentFlat), -viewport / 3)
+        if (currentFlat > 0) {
+            val viewport =
+                snapshotFlow { listState.layoutInfo.viewportSize.height }
+                    .first { it > 0 }
+            listState.scrollToItem(startBlock + 1, -viewport / 3)
+        }
+        positioned = true
     }
 
     Box(
@@ -151,7 +179,10 @@ internal fun BrowseOverlay(
     ) {
         LazyColumn(
             state = listState,
-            modifier = Modifier.fillMaxSize(),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { this.alpha = contentAlpha },
             contentPadding =
                 PaddingValues(
                     start = Spacing.lg,
@@ -162,6 +193,14 @@ internal fun BrowseOverlay(
                     bottom = bottomPadding + Spacing.xxl,
                 ),
         ) {
+            item(key = "__masthead__") {
+                BrowseMasthead(
+                    title = articleTitle,
+                    card = card,
+                    palette = palette,
+                    settings = settings,
+                )
+            }
             itemsIndexed(blocks) { index, block ->
                 if (block.isHeading) {
                     BrowseHeading(
@@ -199,6 +238,46 @@ internal fun BrowseOverlay(
                     .align(Alignment.BottomCenter)
                     .padding(bottom = bottomPadding + Spacing.xs),
         )
+    }
+}
+
+/**
+ * The article's masthead at the top of the flowing text: the title in
+ * display size, then the lead image when the card carries one (the
+ * initial-letter stand-in is a card treatment, not article content, so a
+ * missing image just means no image here). Taps fall through to the
+ * overlay background, closing browse like any other dead space.
+ */
+@Composable
+private fun BrowseMasthead(
+    title: String,
+    card: FeedCard?,
+    palette: ReaderPalette,
+    settings: ReaderSettings,
+) {
+    val base = MaterialTheme.typography.headlineLarge
+    val style = remember(base, settings) { settings.scaledStyle(base) }
+    Column(modifier = Modifier.testTag("browseMasthead")) {
+        Text(
+            text = title,
+            style = style,
+            color = palette.word,
+            modifier = Modifier.padding(top = Spacing.sm),
+        )
+        val image = card?.image
+        if (image != null) {
+            Spacer(Modifier.height(Spacing.md))
+            CardImage(
+                image = image,
+                title = title,
+                cardId = card.id,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(HERO_IMAGE_ASPECT)
+                        .clip(MaterialTheme.shapes.large),
+            )
+        }
     }
 }
 
@@ -305,8 +384,11 @@ private fun BrowseBlockText(
         remember(block, current, palette) {
             buildAnnotatedString {
                 append(block.text)
+                // Full-strength text: browse is a reading mode in its own
+                // right, not a dimmed periphery — the highlight still pops
+                // through its accent and background.
                 addStyle(
-                    SpanStyle(color = if (block.isHeading) palette.word else palette.ghost),
+                    SpanStyle(color = palette.word),
                     0,
                     block.text.length,
                 )

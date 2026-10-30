@@ -2,16 +2,25 @@ package com.wikifyp.ui.reader
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.hasAnyDescendant
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
+import coil3.SingletonImageLoader
+import coil3.annotation.DelicateCoilApi
+import com.wikifyp.data.ArticleImage
+import com.wikifyp.data.testCard
 import com.wikifyp.reader.FakeClock
 import com.wikifyp.reader.ReaderEngine
 import com.wikifyp.reader.SentenceTokens
 import com.wikifyp.theme.WikifypTheme
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,6 +33,14 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class ReaderScreenFocusBrowseTest {
     @get:Rule val compose = createComposeRule()
+
+    // The masthead test swaps the Coil singleton for a fake; put it back
+    // for other classes in this JVM.
+    @OptIn(DelicateCoilApi::class)
+    @After
+    fun resetImageLoader() {
+        SingletonImageLoader.reset()
+    }
 
     private val testSentences =
         listOf(
@@ -171,6 +188,43 @@ class ReaderScreenFocusBrowseTest {
         compose.waitForIdle()
         compose.onNodeWithTag("browseOverlay").assertDoesNotExist()
         compose.onNodeWithTag("idleHint").assertIsDisplayed()
+    }
+
+    /** Browse opens with the article's masthead: title, and the lead
+     *  image when the card carries one. */
+    @Test
+    fun browseShowsTheMasthead() {
+        // The masthead's lead image must resolve offline.
+        installFakeImageLoader()
+        val clock = FakeClock()
+        compose.setContent {
+            WikifypTheme {
+                ReaderScreen(
+                    articleTitle = "Test Article",
+                    sentences = testSentences,
+                    articleId = 7L,
+                    clock = clock,
+                    card =
+                        testCard(
+                            id = 7,
+                            title = "Test Article",
+                            image = ArticleImage("https://example.com/x.jpg", 400, 300),
+                        ),
+                )
+            }
+        }
+        compose.onNodeWithTag("readerSurface").performTouchInput {
+            down(center)
+            moveBy(Offset(0f, -200f))
+            up()
+        }
+        compose.waitForIdle()
+        // The title also lives in the pinned chrome and the cover behind
+        // the overlay, so assert it within the masthead subtree.
+        val masthead = compose.onNodeWithTag("browseMasthead")
+        masthead.assertIsDisplayed()
+        masthead.assert(hasAnyDescendant(hasText("Test Article")))
+        compose.onNodeWithTag("cardImage", useUnmergedTree = true).assertIsDisplayed()
     }
 
     @Test

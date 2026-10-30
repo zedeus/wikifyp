@@ -36,6 +36,7 @@ class ReaderSettingsStoreTest {
                 theme = ReaderTheme.BLACK,
                 bionic = true,
                 focusMode = false,
+                speedRamp = false,
                 sectionLabel = SectionLabelMode.ALWAYS,
                 autoUnsaveOnFinish = true,
             )

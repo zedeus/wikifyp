@@ -49,6 +49,9 @@ data class ReaderSettings(
     val bionic: Boolean = false,
     /** Hide the chrome (title, progress, WPM) while playing. */
     val focusMode: Boolean = true,
+    /** Ease into reading speed over the first words instead of starting
+     *  at full WPM. */
+    val speedRamp: Boolean = true,
     /** When the current section's heading shows above the focal line. */
     val sectionLabel: SectionLabelMode = SectionLabelMode.AUTO,
     /** Drop the bookmark automatically when an article is finished. */
@@ -112,6 +115,7 @@ class ReaderSettingsStore(
                 } ?: d.theme,
             bionic = prefs.getBoolean(KEY_BIONIC, d.bionic),
             focusMode = prefs.getBoolean(KEY_FOCUS_MODE, d.focusMode),
+            speedRamp = prefs.getBoolean(KEY_SPEED_RAMP, d.speedRamp),
             sectionLabel =
                 prefs.getString(KEY_SECTION_LABEL, null)?.let { stored ->
                     SectionLabelMode.entries.find { it.name == stored }
@@ -131,6 +135,7 @@ class ReaderSettingsStore(
             putString(KEY_THEME, settings.theme.name)
             putBoolean(KEY_BIONIC, settings.bionic)
             putBoolean(KEY_FOCUS_MODE, settings.focusMode)
+            putBoolean(KEY_SPEED_RAMP, settings.speedRamp)
             putString(KEY_SECTION_LABEL, settings.sectionLabel.name)
             putBoolean(KEY_AUTO_UNSAVE, settings.autoUnsaveOnFinish)
         }
@@ -147,6 +152,7 @@ class ReaderSettingsStore(
         const val KEY_THEME = "readerTheme"
         const val KEY_BIONIC = "readerBionic"
         const val KEY_FOCUS_MODE = "readerFocusMode"
+        const val KEY_SPEED_RAMP = "readerSpeedRamp"
         const val KEY_SECTION_LABEL = "readerSectionLabel"
         const val KEY_AUTO_UNSAVE = "readerAutoUnsave"
     }

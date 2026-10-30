@@ -145,6 +145,14 @@ internal fun ReaderSettingsSheetContent(
             onChange = { onSettingsChange(settings.copy(focusMode = it)) },
         )
         SettingToggle(
+            label = "Speed ramp",
+            description = "Ease up to full speed when starting to read",
+            checked = settings.speedRamp,
+            palette = palette,
+            testTag = "speedRampToggle",
+            onChange = { onSettingsChange(settings.copy(speedRamp = it)) },
+        )
+        SettingToggle(
             label = "Unsave on finish",
             description = "Drop the bookmark when you finish an article",
             checked = settings.autoUnsaveOnFinish,

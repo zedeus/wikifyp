@@ -167,6 +167,47 @@ class ReaderScreenTest {
         compose.onNodeWithTag("currentWord").assertIsDisplayed()
     }
 
+    /**
+     * Plays for 480ms at 250 wpm (240ms a word) from a cold start and
+     * reports the paused token index. With the speed ramp the first
+     * interval alone stretches to 400ms (60% speed), so one word passes;
+     * at full speed two do.
+     */
+    private fun pausedTokenAfterHalfASecond(settings: ReaderSettings): Int {
+        val clock = FakeClock()
+        val events = mutableListOf<ReadingEvent>()
+        compose.setContent {
+            WikifypTheme {
+                ReaderScreen(
+                    articleTitle = "Test",
+                    sentences = testSentences,
+                    articleId = 1L,
+                    clock = clock,
+                    onEvent = { events.add(it) },
+                    settings = settings,
+                )
+            }
+        }
+        compose.onNodeWithTag("readerSurface").performTouchInput { down(center) }
+        clock.advanceBy(151)
+        compose.waitForIdle()
+        clock.advanceBy(480)
+        compose.waitForIdle()
+        compose.onNodeWithTag("readerSurface").performTouchInput { up() }
+        compose.waitForIdle()
+        return events.last { it.type == EventType.PAUSE }.token.tokenIdx
+    }
+
+    @Test
+    fun speedRampEasesTheFirstWords() {
+        assertEquals(1, pausedTokenAfterHalfASecond(ReaderSettings()))
+    }
+
+    @Test
+    fun speedRampOffStartsAtFullSpeed() {
+        assertEquals(2, pausedTokenAfterHalfASecond(ReaderSettings(speedRamp = false)))
+    }
+
     /** Without a card the idle reader still shows the hint, nothing broken. */
     @Test
     fun idleCoverDegradesToTheHintWithoutACard() {

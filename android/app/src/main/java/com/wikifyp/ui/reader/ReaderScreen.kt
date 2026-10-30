@@ -147,6 +147,9 @@ fun ReaderScreen(
     var resumePressed by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
 
+    // Read through rememberUpdatedState so a settings change reaches the
+    // long-lived engine's policy without rebuilding the engine.
+    val currentSettings by rememberUpdatedState(settings)
     val engine =
         remember {
             val sync =
@@ -157,7 +160,9 @@ fun ReaderScreen(
                 clock,
                 onEvent,
                 onStateChanged = { sync.fn() },
-                speedScaleFor = ::rampScale,
+                speedScaleFor = { words, resuming ->
+                    if (currentSettings.speedRamp) rampScale(words, resuming) else 1.0
+                },
             ).also { eng ->
                 sync.fn = {
                     currentWord = eng.currentToken() ?: ""
@@ -320,6 +325,8 @@ fun ReaderScreen(
                 currentFlat = pos,
                 palette = palette,
                 settings = settings,
+                articleTitle = articleTitle,
+                card = card,
                 faded = readerState == ReaderState.PLAYING,
                 topPadding = topChromeHeight + Spacing.sm,
                 bottomPadding = bottomChromeHeight + Spacing.sm,
@@ -519,11 +526,13 @@ fun ReaderScreen(
 
 /**
  * The idle reader: the article's cover — its lead image (or initial tile)
- * and short description above the hold-to-read hint. The cover belongs to
- * IDLE only: a pause keeps the word line on screen (state PAUSED), so the
- * image never flashes back mid-read. The image shares its bounds with the
- * feed card's — same aspect as the hero so nothing changes shape in
- * flight — so opening an article is the card growing into its cover.
+ * and short description in the top third of the surface, with the
+ * hold-to-read hint resting at the centre where the focal word will
+ * appear. The cover belongs to IDLE only: a pause keeps the word line on
+ * screen (state PAUSED), so the image never flashes back mid-read. The
+ * image shares its bounds with the feed card's — same aspect as the hero
+ * so nothing changes shape in flight — so opening an article is the card
+ * growing into its cover.
  */
 @Composable
 private fun IdleCover(
@@ -534,16 +543,22 @@ private fun IdleCover(
     BoxWithConstraints(
         modifier =
             modifier
-                .fillMaxWidth()
+                .fillMaxSize()
                 .padding(horizontal = Spacing.xl),
-        contentAlignment = Alignment.Center,
     ) {
         // The image takes the full width unless that would crowd out the
         // description and hint beneath it (landscape, short screens):
-        // cap it at under half the surface height, keeping the aspect.
-        val imageWidth = min(maxWidth, maxHeight * 0.45f * HERO_IMAGE_ASPECT)
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            if (card != null) {
+        // cap it at under a third of the surface height, keeping the aspect.
+        val imageWidth = min(maxWidth, maxHeight * 0.34f * HERO_IMAGE_ASPECT)
+        if (card != null) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.TopCenter)
+                        .padding(top = Spacing.md),
+            ) {
                 CardImage(
                     image = card.image,
                     title = card.title,
@@ -567,8 +582,14 @@ private fun IdleCover(
                         modifier = Modifier.testTag("idleCoverDescription"),
                     )
                 }
-                Spacer(Modifier.height(Spacing.xl))
             }
+        }
+        // The hint stays at the centre — where the focal word appears the
+        // moment the hold lands, so the eye is already in place.
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.align(Alignment.Center),
+        ) {
             Text(
                 text = "Hold to read",
                 style = MaterialTheme.typography.bodyLarge,
