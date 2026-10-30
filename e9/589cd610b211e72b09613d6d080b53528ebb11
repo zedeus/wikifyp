@@ -1,0 +1,21 @@
+server/cmd/wikifyp/ingest.go
+  s_3411184136fb01::t_7c629efafa9ade 120-128
+server/cmd/wikifyp/importdump.go
+  s_3411184136fb01::t_7c629efafa9ade 25,57-60,64,86-93
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e9589cd610b211e72b09613d6d080b53528ebb11",
+  "prompts": {},
+  "sessions": {
+    "s_3411184136fb01": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e7cea63-3828-45cc-a64c-4f22704d3ed5",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
