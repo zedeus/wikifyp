@@ -1,0 +1,33 @@
+server/internal/feed/store_test.go
+  s_890a5e0a682f30::t_ed7d07b486dbf8 156,187,226,258,286,361,399,417,474,493,535,665
+server/cmd/feedsim/main.go
+  s_890a5e0a682f30::t_796b1579c8de81 850
+server/internal/feed/store.go
+  s_890a5e0a682f30::t_ab0c131cefd5d8 161-166,174
+  s_890a5e0a682f30::t_8d0cc1d62110c0 189-201
+  s_890a5e0a682f30::t_9d3acf84aaf7ec 604
+  s_890a5e0a682f30::t_314f291af668c6 1035-1054
+  s_890a5e0a682f30::t_a4631d3d6d6553 581-582
+  s_890a5e0a682f30::t_bb6b67e9357425 591-595,603
+server/internal/api/api.go
+  s_890a5e0a682f30::t_3e9338c5f3bdb5 64-67,83-93
+  s_890a5e0a682f30::t_e8106ccd2add22 13
+server/internal/devui/devui.go
+  s_890a5e0a682f30::t_0c3f1bc30d320c 523
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "fa8e6e5d218ffc4259c143c4d3f40719715bed52",
+  "prompts": {},
+  "sessions": {
+    "s_890a5e0a682f30": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97bb8f78-cd7a-4189-9869-6bcdfc36fbf5",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
