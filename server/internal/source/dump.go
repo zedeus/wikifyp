@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"path"
 	"strings"
 	"time"
 )
@@ -37,6 +38,11 @@ type dumpRecord struct {
 	ArticleBody struct {
 		HTML string `json:"html"`
 	} `json:"article_body"`
+	Image struct {
+		ContentURL string `json:"content_url"` // the original upload, often tens of megapixels
+		Width      int    `json:"width"`
+		Height     int    `json:"height"`
+	} `json:"image"`
 }
 
 // ErrSkip, returned by a ReadDump callback, skips the current article
@@ -147,5 +153,71 @@ func (rec *dumpRecord) article(fetched time.Time) (*Article, error) {
 	for _, c := range rec.Categories {
 		a.Categories = append(a.Categories, strings.TrimPrefix(c.Name, "Category:"))
 	}
+	a.Image = thumbImage(rec.Image.ContentURL, rec.Image.Width, rec.Image.Height)
 	return a, nil
+}
+
+// thumbWidth is the widest image the feed needs; the same limit the API
+// source stores (pageimages' pithumbsize).
+const thumbWidth = 960
+
+// Formats MediaWiki derives thumbnails for by this URL scheme. Others
+// (tiff, pdf, video posters…) use format-specific thumb names; their rare
+// originals are kept as they are rather than guessed at.
+var thumbExts = map[string]bool{
+	".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true, ".svg": true,
+}
+
+// thumbImage converts a dump record's original upload into the same ≤960px
+// thumbnail the API source stores: the original can be tens of megapixels,
+// far too heavy for a feed card. MediaWiki thumbnail URLs are derived from
+// the upload path:
+//
+//	…/wikipedia/commons/6/64/Name.jpg
+//	→ …/wikipedia/commons/thumb/6/64/Name.jpg/960px-Name.jpg
+//
+// with .png appended for an SVG's raster thumb (SVGs render at any size,
+// so they always take the thumb; the app can't draw raw SVG). Bitmaps
+// already within the limit can't be upscaled and keep the original URL;
+// so does anything whose thumb name this scheme can't derive.
+func thumbImage(contentURL string, w, h int) *Image {
+	if contentURL == "" {
+		return nil
+	}
+	original := &Image{URL: contentURL, Width: w, Height: h}
+	ext := strings.ToLower(path.Ext(contentURL))
+	if !thumbExts[ext] {
+		return original
+	}
+	svg := ext == ".svg"
+	if !svg && (w <= thumbWidth || w <= 0 || h <= 0) {
+		return original
+	}
+	slash := strings.LastIndex(contentURL, "/")
+	name := contentURL[slash+1:]
+	dir := contentURL[:slash]
+	// The hashed shard lives two segments up: …/<proj>/<h1>/<h2>/<name>.
+	// "thumb" goes before the shard; a URL too shallow for that shape
+	// (scheme + host + a project segment + the two shard segments) can't
+	// be derived — an odd mirror, or a direct thumb already.
+	parts := strings.Split(dir, "/")
+	if len(parts) < 6 {
+		return original
+	}
+	proj := strings.Join(parts[:len(parts)-2], "/")
+	shard := strings.Join(parts[len(parts)-2:], "/")
+	thumbName := name
+	if svg {
+		thumbName += ".png"
+	}
+	scaledW := thumbWidth
+	scaledH := 0
+	if w > 0 && h > 0 {
+		scaledH = int(float64(h)*float64(thumbWidth)/float64(w) + 0.5)
+	}
+	return &Image{
+		URL:    fmt.Sprintf("%s/thumb/%s/%s/%dpx-%s", proj, shard, name, thumbWidth, thumbName),
+		Width:  scaledW,
+		Height: scaledH,
+	}
 }

@@ -131,14 +131,16 @@ func TestCardsCarryImageAndDescription(t *testing.T) {
 		t.Errorf("image = %+v, want the stored one", c.Image)
 	}
 
-	// An article stored without metadata serves none.
+	// An article stored without metadata serves none. Fossil word is the
+	// sample-dump article with no lead image (RHCP carries one now that
+	// dump imports store them).
 	var plainID int64
 	var plainPage int64
 	if err := db.QueryRow(
-		"SELECT id, page_id FROM articles WHERE title = 'Red Hot Chili Peppers'").Scan(&plainID, &plainPage); err != nil {
+		"SELECT id, page_id FROM articles WHERE title = 'Fossil word'").Scan(&plainID, &plainPage); err != nil {
 		t.Fatal(err)
 	}
-	got, err = cards(ctx, db, []Candidate{{ArticleID: plainID, PageID: plainPage, Source: "simplewiki", Title: "Red Hot Chili Peppers"}})
+	got, err = cards(ctx, db, []Candidate{{ArticleID: plainID, PageID: plainPage, Source: "simplewiki", Title: "Fossil word"}})
 	if err != nil {
 		t.Fatal(err)
 	}

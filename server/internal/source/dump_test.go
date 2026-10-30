@@ -122,6 +122,118 @@ func TestReadDumpMetadata(t *testing.T) {
 	if got := articles["History of Canada"].Text; got != "Far" {
 		t.Errorf("History of Canada text = %q", got)
 	}
+
+	// The one sample record with a lead image: 640px wide is already
+	// within the thumb limit, so the original upload URL is stored as-is.
+	img := rhcp.Image
+	if img == nil ||
+		img.URL != "https://upload.wikimedia.org/wikipedia/commons/1/16/Rhcp-live-pinkpop05.jpg" ||
+		img.Width != 640 || img.Height != 474 {
+		t.Errorf("RHCP image = %+v, want the original 640x474 upload", img)
+	}
+	if articles["Fossil word"].Image != nil {
+		t.Errorf("Fossil word image = %+v, want none", articles["Fossil word"].Image)
+	}
+}
+
+// TestThumbImage pins the thumbnail derivation against the URL scheme the
+// API source stores (see fixtures/articles/*.json image URLs — the same
+// /thumb/<shard>/<name>/960px-<name> shape, hand-checked, with .png
+// appended for SVG rasters). Heights are hand-computed from the ratios.
+func TestThumbImage(t *testing.T) {
+	tests := []struct {
+		name string
+		url  string
+		w, h int
+		want *Image
+	}{
+		{
+			// barack-obama.json stores this file's 960px thumb at 960x1199;
+			// the original upload is 2687x3356.
+			name: "large jpg scales to the 960px thumb",
+			url:  "https://upload.wikimedia.org/wikipedia/commons/8/8d/President_Barack_Obama.jpg",
+			w:    2687,
+			h:    3356,
+			want: &Image{
+				URL:    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/President_Barack_Obama.jpg/960px-President_Barack_Obama.jpg",
+				Width:  960,
+				Height: 1199,
+			},
+		},
+		{
+			// antarctica.json: an SVG's raster thumb appends .png; the
+			// URL-encoded parentheses ride through untouched.
+			name: "svg thumbs to png even when nominally small",
+			url:  "https://upload.wikimedia.org/wikipedia/commons/f/f2/Antarctica_%28orthographic_projection%29.svg",
+			w:    531,
+			h:    530,
+			want: &Image{
+				URL:    "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Antarctica_%28orthographic_projection%29.svg/960px-Antarctica_%28orthographic_projection%29.svg.png",
+				Width:  960,
+				Height: 958,
+			},
+		},
+		{
+			name: "bitmap within the limit keeps the original",
+			url:  "https://upload.wikimedia.org/wikipedia/commons/1/16/Rhcp-live-pinkpop05.jpg",
+			w:    640,
+			h:    474,
+			want: &Image{
+				URL:    "https://upload.wikimedia.org/wikipedia/commons/1/16/Rhcp-live-pinkpop05.jpg",
+				Width:  640,
+				Height: 474,
+			},
+		},
+		{
+			name: "format without this thumb scheme keeps the original",
+			url:  "https://upload.wikimedia.org/wikipedia/commons/a/ab/Scan.tiff",
+			w:    4000,
+			h:    3000,
+			want: &Image{
+				URL:    "https://upload.wikimedia.org/wikipedia/commons/a/ab/Scan.tiff",
+				Width:  4000,
+				Height: 3000,
+			},
+		},
+		{
+			name: "bitmap without known dimensions keeps the original",
+			url:  "https://upload.wikimedia.org/wikipedia/commons/8/8d/Huge.jpg",
+			w:    0,
+			h:    0,
+			want: &Image{
+				URL:   "https://upload.wikimedia.org/wikipedia/commons/8/8d/Huge.jpg",
+				Width: 0, Height: 0,
+			},
+		},
+		{
+			name: "url too shallow to carry the shard keeps the original",
+			url:  "https://example.com/Photo.jpg",
+			w:    4000,
+			h:    3000,
+			want: &Image{URL: "https://example.com/Photo.jpg", Width: 4000, Height: 3000},
+		},
+		{
+			name: "no image",
+			url:  "",
+			w:    0,
+			h:    0,
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := thumbImage(tt.url, tt.w, tt.h)
+			if tt.want == nil {
+				if got != nil {
+					t.Fatalf("thumbImage = %+v, want nil", got)
+				}
+				return
+			}
+			if got == nil || *got != *tt.want {
+				t.Errorf("thumbImage = %+v, want %+v", got, tt.want)
+			}
+		})
+	}
 }
 
 func TestReadDumpSkipAndError(t *testing.T) {
