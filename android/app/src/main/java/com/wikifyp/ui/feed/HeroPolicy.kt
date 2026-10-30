@@ -1,6 +1,7 @@
 package com.wikifyp.ui.feed
 
 import android.graphics.Bitmap
+import android.os.Build
 import com.wikifyp.data.ArticleImage
 
 // Hero image policy: whether an image is hero-worthy (suitable for a
@@ -81,6 +82,18 @@ internal fun countBrightCorners(bitmap: Bitmap): Int {
     val h = bitmap.height
     if (w < CORNER_INSET + PATCH_SIZE || h < CORNER_INSET + PATCH_SIZE) return -1
 
+    // Coil delivers Config.HARDWARE bitmaps on device (API 26+), and those
+    // forbid getPixels(); sample a software copy instead. -1 (don't dim)
+    // if the copy fails — a wrongly bright card beats a crash.
+    val readable =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            bitmap.config == Bitmap.Config.HARDWARE
+        ) {
+            bitmap.copy(Bitmap.Config.ARGB_8888, false) ?: return -1
+        } else {
+            bitmap
+        }
+
     val corners =
         listOf(
             CORNER_INSET to CORNER_INSET,
@@ -91,7 +104,7 @@ internal fun countBrightCorners(bitmap: Bitmap): Int {
 
     var bright = 0
     for ((cx, cy) in corners) {
-        if (patchLuminance(bitmap, cx, cy, PATCH_SIZE) > BRIGHT_CORNER_THRESHOLD) {
+        if (patchLuminance(readable, cx, cy, PATCH_SIZE) > BRIGHT_CORNER_THRESHOLD) {
             bright++
         }
     }

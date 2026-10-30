@@ -117,6 +117,19 @@ class HeroPolicyTest {
 
     // -- needsDarkModeDimming --
 
+    /**
+     * Coil delivers Config.HARDWARE bitmaps on device, and those forbid
+     * getPixels(): sampling must work on a hardware bitmap instead of
+     * crashing (the dark-mode feed died on every loaded image).
+     */
+    @Test
+    fun hardwareBitmapIsSampledWithoutCrashing() {
+        val soft = solidBitmap(200, 150, 0xFFFFFFFF.toInt())
+        val hard = soft.copy(Bitmap.Config.HARDWARE, false)
+        assertTrue("hardware copy unsupported in this environment", hard != null)
+        assertTrue(needsDarkModeDimming(hard))
+    }
+
     @Test
     fun whiteBackgroundNeedsDimming() {
         val bmp = solidBitmap(200, 150, 0xFFFFFFFF.toInt())
