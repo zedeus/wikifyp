@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasAnyDescendant
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -220,11 +221,12 @@ class ReaderScreenFocusBrowseTest {
         }
         compose.waitForIdle()
         // The title also lives in the pinned chrome and the cover behind
-        // the overlay, so assert it within the masthead subtree.
-        val masthead = compose.onNodeWithTag("browseMasthead")
+        // the overlay (which has its own card image), so assert within
+        // the masthead subtree.
+        val masthead = compose.onNodeWithTag("browseMasthead", useUnmergedTree = true)
         masthead.assertIsDisplayed()
         masthead.assert(hasAnyDescendant(hasText("Test Article")))
-        compose.onNodeWithTag("cardImage", useUnmergedTree = true).assertIsDisplayed()
+        masthead.assert(hasAnyDescendant(hasTestTag("cardImage")))
     }
 
     @Test

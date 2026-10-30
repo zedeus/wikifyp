@@ -211,13 +211,20 @@ fun ReaderScreen(
         }
     }
 
+    // Leaving mid-read: skip() resets the engine to IDLE, and without this
+    // flag the idle cover would flash up under the exit transition. The
+    // screen freezes what it was showing instead and leaves as-is.
+    var exiting by remember { mutableStateOf(false) }
+
     val exitArticle = {
+        exiting = readerState != ReaderState.IDLE
         skipIfAbandoned()
         onBack()
     }
 
     /** Moves on to the next article, counting an unfinished read as a skip. */
     val goNext = {
+        exiting = readerState != ReaderState.IDLE
         skipIfAbandoned()
         onNext()
     }
@@ -274,17 +281,8 @@ fun ReaderScreen(
                     ),
             contentAlignment = Alignment.Center,
         ) {
-            if (readerState == ReaderState.IDLE || allTokens.isEmpty()) {
-                IdleCover(
-                    card = card,
-                    palette = palette,
-                    // Centered between the chrome bars, not under them.
-                    modifier =
-                        Modifier.padding(
-                            top = topChromeHeight,
-                            bottom = bottomChromeHeight,
-                        ),
-                )
+            if ((readerState == ReaderState.IDLE && !exiting) || allTokens.isEmpty()) {
+                IdleHints(palette = palette)
             } else if (currentWord.isNotEmpty()) {
                 // While playing the ghosts recede so the focal word
                 // carries the eye; on pause the surroundings fade in.
@@ -311,6 +309,34 @@ fun ReaderScreen(
                         ghostAlpha = ghostAlpha,
                     )
                 }
+            }
+        }
+
+        // The article's cover in the top third: resting while idle or
+        // paused, away while playing so nothing competes with the focal
+        // line. Frozen while exiting so the leave transition carries the
+        // screen out exactly as it was.
+        val coverVisibleNow = card != null && readerState != ReaderState.PLAYING
+        var frozenCoverVisible by remember { mutableStateOf(coverVisibleNow) }
+        if (!exiting) frozenCoverVisible = coverVisibleNow
+        val coverCard = card
+        if (coverCard != null) {
+            AnimatedVisibility(
+                visible = frozenCoverVisible,
+                enter = fadeIn(tween(Motion.STANDARD_MS, easing = Motion.Settle)),
+                exit = fadeOut(tween(Motion.QUICK_MS, easing = Motion.Leave)),
+                modifier =
+                    Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = topChromeHeight + Spacing.md),
+            ) {
+                CoverBlock(
+                    card = coverCard,
+                    // The description belongs to the idle cover; a pause
+                    // keeps just the image so the word line stays the focus.
+                    showDescription = readerState == ReaderState.IDLE && !exiting,
+                    palette = palette,
+                )
             }
         }
 
@@ -525,52 +551,50 @@ fun ReaderScreen(
 }
 
 /**
- * The idle reader: the article's cover — its lead image (or initial tile)
- * and short description in the top third of the surface, with the
- * hold-to-read hint resting at the centre where the focal word will
- * appear. The cover belongs to IDLE only: a pause keeps the word line on
- * screen (state PAUSED), so the image never flashes back mid-read. The
- * image shares its bounds with the feed card's — same aspect as the hero
- * so nothing changes shape in flight — so opening an article is the card
+ * The article's cover: the lead image (or initial tile), with the short
+ * description joining it before the first play. It rests in the top third
+ * while the reader is idle or paused and leaves while playing. The image
+ * shares its bounds with the feed card's — same aspect as the hero so
+ * nothing changes shape in flight — so opening an article is the card
  * growing into its cover.
  */
 @Composable
-private fun IdleCover(
-    card: FeedCard?,
+private fun CoverBlock(
+    card: FeedCard,
+    showDescription: Boolean,
     palette: ReaderPalette,
-    modifier: Modifier = Modifier,
 ) {
     BoxWithConstraints(
         modifier =
-            modifier
-                .fillMaxSize()
+            Modifier
+                .fillMaxWidth()
                 .padding(horizontal = Spacing.xl),
     ) {
         // The image takes the full width unless that would crowd out the
-        // description and hint beneath it (landscape, short screens):
-        // cap it at under a third of the surface height, keeping the aspect.
+        // word line beneath it (landscape, short screens): cap it at under
+        // a third of the surface height, keeping the aspect.
         val imageWidth = min(maxWidth, maxHeight * 0.34f * HERO_IMAGE_ASPECT)
-        if (card != null) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            CardImage(
+                image = card.image,
+                title = card.title,
+                cardId = card.id,
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.TopCenter)
-                        .padding(top = Spacing.md),
+                        .width(imageWidth)
+                        .aspectRatio(HERO_IMAGE_ASPECT)
+                        .sharedArticleImage(card.id)
+                        .clip(MaterialTheme.shapes.large),
+            )
+            AnimatedVisibility(
+                visible = showDescription && card.subtitle.isNotEmpty(),
+                enter = fadeIn(tween(Motion.STANDARD_MS, easing = Motion.Settle)),
+                exit = fadeOut(tween(Motion.QUICK_MS, easing = Motion.Leave)),
             ) {
-                CardImage(
-                    image = card.image,
-                    title = card.title,
-                    cardId = card.id,
-                    modifier =
-                        Modifier
-                            .width(imageWidth)
-                            .aspectRatio(HERO_IMAGE_ASPECT)
-                            .sharedArticleImage(card.id)
-                            .clip(MaterialTheme.shapes.large),
-                )
-                if (card.subtitle.isNotEmpty()) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Spacer(Modifier.height(Spacing.md))
                     Text(
                         text = card.subtitle,
@@ -584,25 +608,26 @@ private fun IdleCover(
                 }
             }
         }
-        // The hint stays at the centre — where the focal word appears the
-        // moment the hold lands, so the eye is already in place.
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.align(Alignment.Center),
-        ) {
-            Text(
-                text = "Hold to read",
-                style = MaterialTheme.typography.bodyLarge,
-                color = palette.word.copy(alpha = 0.6f),
-                modifier = Modifier.testTag("idleHint"),
-            )
-            Spacer(Modifier.height(Spacing.xs))
-            Text(
-                text = "Swipe up to browse",
-                style = MaterialTheme.typography.bodySmall,
-                color = palette.chrome.copy(alpha = 0.6f),
-            )
-        }
+    }
+}
+
+/** The idle reader's affordances, centred where the focal word appears
+ *  the moment the hold lands, so the eye is already in place. */
+@Composable
+private fun IdleHints(palette: ReaderPalette) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = "Hold to read",
+            style = MaterialTheme.typography.bodyLarge,
+            color = palette.word.copy(alpha = 0.6f),
+            modifier = Modifier.testTag("idleHint"),
+        )
+        Spacer(Modifier.height(Spacing.xs))
+        Text(
+            text = "Swipe up to browse",
+            style = MaterialTheme.typography.bodySmall,
+            color = palette.chrome.copy(alpha = 0.6f),
+        )
     }
 }
 

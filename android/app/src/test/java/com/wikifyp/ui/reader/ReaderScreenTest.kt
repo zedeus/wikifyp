@@ -1,10 +1,12 @@
 package com.wikifyp.ui.reader
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import coil3.SingletonImageLoader
 import coil3.annotation.DelicateCoilApi
@@ -153,17 +155,59 @@ class ReaderScreenTest {
 
         compose.onNodeWithTag("idleCoverDescription").assertIsDisplayed()
         compose.onNodeWithTag("idleHint").assertIsDisplayed()
+        compose.onNodeWithTag("cardImage", useUnmergedTree = true).assertExists()
 
-        // Hold to play: the cover leaves with the rest of the idle state.
+        // Hold to play: the cover leaves so nothing competes with the
+        // focal line.
         compose.onNodeWithTag("readerSurface").performTouchInput { down(center) }
         clock.advanceBy(151)
         compose.waitForIdle()
-        compose.onNodeWithTag("idleCoverDescription").assertDoesNotExist()
+        compose.onNodeWithTag("idleCoverDescription").assertIsNotDisplayed()
 
-        // Lift to pause: the word line stays, the cover stays away.
+        // Lift to pause: the word line stays, the image rests back in the
+        // top third — without its idle-only description.
         compose.onNodeWithTag("readerSurface").performTouchInput { up() }
         compose.waitForIdle()
-        compose.onNodeWithTag("idleCoverDescription").assertDoesNotExist()
+        compose.onNodeWithTag("idleCoverDescription").assertIsNotDisplayed()
+        compose.onNodeWithTag("cardImage", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("currentWord").assertIsDisplayed()
+    }
+
+    /**
+     * Leaving mid-read emits a skip that resets the engine to IDLE; the
+     * screen must keep showing the word line while it animates out, not
+     * flash back to the hold-to-read cover.
+     */
+    @Test
+    fun leavingMidReadDoesNotFlashTheIdleScreen() {
+        val clock = FakeClock()
+        var backed = false
+        compose.setContent {
+            WikifypTheme {
+                ReaderScreen(
+                    articleTitle = "Test",
+                    sentences = testSentences,
+                    articleId = 1L,
+                    clock = clock,
+                    onBack = { backed = true },
+                )
+            }
+        }
+
+        // Play a few words, pause.
+        compose.onNodeWithTag("readerSurface").performTouchInput { down(center) }
+        clock.advanceBy(151)
+        compose.waitForIdle()
+        clock.advanceBy(600)
+        compose.waitForIdle()
+        compose.onNodeWithTag("readerSurface").performTouchInput { up() }
+        compose.waitForIdle()
+
+        // Leave: the screen keeps the word line, not the idle hints.
+        compose.onNodeWithTag("backButton").performClick()
+        compose.waitForIdle()
+        assertTrue(backed)
+        compose.onNodeWithTag("idleHint").assertDoesNotExist()
         compose.onNodeWithTag("currentWord").assertIsDisplayed()
     }
 
