@@ -38,8 +38,12 @@ data class FeedResult(
  * what tests fake).
  */
 interface FeedRepository {
-    /** The reader's next articles, best first. */
-    suspend fun feed(): FeedResult
+    /**
+     * The reader's next articles, best first. [exclude] is the set of
+     * article IDs already shown from earlier pages; the server suppresses
+     * them from the result without affecting scoring.
+     */
+    suspend fun feed(exclude: Set<Long> = emptySet()): FeedResult
 
     /** One article's text, ready for the reader. */
     suspend fun article(id: Long): Article

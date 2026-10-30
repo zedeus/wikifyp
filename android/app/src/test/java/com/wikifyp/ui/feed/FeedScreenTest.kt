@@ -24,10 +24,21 @@ class FeedScreenTest {
         notice: String? = null,
         onCardClick: (FeedCard) -> Unit = {},
         onRetry: () -> Unit = {},
+        onLoadMore: () -> Unit = {},
+        onRefresh: () -> Unit = {},
+        isRefreshing: Boolean = false,
     ) {
         compose.setContent {
             WikifypTheme {
-                FeedScreen(state = state, onCardClick = onCardClick, onRetry = onRetry, notice = notice)
+                FeedScreen(
+                    state = state,
+                    onCardClick = onCardClick,
+                    onRetry = onRetry,
+                    onLoadMore = onLoadMore,
+                    onRefresh = onRefresh,
+                    isRefreshing = isRefreshing,
+                    notice = notice,
+                )
             }
         }
     }
@@ -81,5 +92,34 @@ class FeedScreenTest {
     fun noticeIsShown() {
         show(FeedState.Content(listOf(testCard()), offline = false), notice = "Couldn't open \"Japan\"")
         compose.onNodeWithTag("feedNotice").assertIsDisplayed()
+    }
+
+    @Test
+    fun loadingMoreShowsSpinner() {
+        show(FeedState.Content(listOf(testCard()), offline = false, loadingMore = true))
+        compose.onNodeWithTag("loadingMore").assertIsDisplayed()
+    }
+
+    @Test
+    fun loadMoreTriggersNearEnd() {
+        // With only 1 card, the end is immediately visible, so onLoadMore fires.
+        var loadMoreCalled = false
+        show(
+            FeedState.Content(listOf(testCard()), offline = false, canLoadMore = true),
+            onLoadMore = { loadMoreCalled = true },
+        )
+        compose.waitForIdle()
+        assertTrue("expected onLoadMore to be called", loadMoreCalled)
+    }
+
+    @Test
+    fun loadMoreDoesNotTriggerWhenCanLoadMoreIsFalse() {
+        var loadMoreCalled = false
+        show(
+            FeedState.Content(listOf(testCard()), offline = false, canLoadMore = false),
+            onLoadMore = { loadMoreCalled = true },
+        )
+        compose.waitForIdle()
+        assertTrue("onLoadMore should not fire when canLoadMore=false", !loadMoreCalled)
     }
 }

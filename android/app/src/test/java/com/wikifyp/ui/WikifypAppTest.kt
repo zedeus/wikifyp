@@ -60,7 +60,7 @@ class WikifypAppTest {
     fun systemBackReturnsFromTheReaderToTheFeed() {
         show(
             FakeFeedRepository(
-                onFeed = { FeedResult(listOf(testCard())) },
+                onFeed = { _ -> FeedResult(listOf(testCard())) },
                 onArticle = { testArticle(it) },
             ),
         )
@@ -77,7 +77,7 @@ class WikifypAppTest {
     fun wpmCarriesOverBetweenArticles() {
         show(
             FakeFeedRepository(
-                onFeed = {
+                onFeed = { _ ->
                     FeedResult(
                         listOf(
                             testCard(id = 1, title = "Chemistry"),
@@ -108,7 +108,7 @@ class WikifypAppTest {
         var lastSaved: com.wikifyp.ui.reader.ReaderSettings? = null
         val repository =
             FakeFeedRepository(
-                onFeed = {
+                onFeed = { _ ->
                     FeedResult(
                         listOf(
                             testCard(id = 1, title = "Chemistry"),
@@ -152,7 +152,7 @@ class WikifypAppTest {
     fun tappingACardOpensTheReader() {
         show(
             FakeFeedRepository(
-                onFeed = { FeedResult(listOf(testCard())) },
+                onFeed = { _ -> FeedResult(listOf(testCard())) },
                 onArticle = { testArticle(it) },
             ),
         )
@@ -164,7 +164,7 @@ class WikifypAppTest {
     fun failedArticleLoadKeepsTheFeedAndExplains() {
         show(
             FakeFeedRepository(
-                onFeed = { FeedResult(listOf(testCard())) },
+                onFeed = { _ -> FeedResult(listOf(testCard())) },
                 onArticle = { throw IOException("offline, nothing cached") },
             ),
         )
@@ -177,7 +177,7 @@ class WikifypAppTest {
     fun backFromTheReaderReturnsToTheFeed() {
         show(
             FakeFeedRepository(
-                onFeed = { FeedResult(listOf(testCard())) },
+                onFeed = { _ -> FeedResult(listOf(testCard())) },
                 onArticle = { testArticle(it) },
             ),
         )
@@ -191,7 +191,7 @@ class WikifypAppTest {
     fun nextButtonOpensTheFollowingFeedArticle() {
         show(
             FakeFeedRepository(
-                onFeed = {
+                onFeed = { _ ->
                     FeedResult(
                         listOf(
                             testCard(id = 1, title = "Chemistry"),
@@ -220,7 +220,7 @@ class WikifypAppTest {
         var stored: List<com.wikifyp.data.FeedCard>? = null
         val repository =
             FakeFeedRepository(
-                onFeed = {
+                onFeed = { _ ->
                     FeedResult(
                         listOf(
                             testCard(id = 1, title = "Chemistry"),
@@ -267,7 +267,7 @@ class WikifypAppTest {
     fun savedScreenShowsAnEmptyStateAndGoesBack() {
         show(
             FakeFeedRepository(
-                onFeed = { FeedResult(listOf(testCard())) },
+                onFeed = { _ -> FeedResult(listOf(testCard())) },
                 onArticle = { testArticle(it) },
             ),
         )
@@ -287,7 +287,7 @@ class WikifypAppTest {
                 WikifypApp(
                     repository =
                         FakeFeedRepository(
-                            onFeed = { FeedResult(emptyList()) },
+                            onFeed = { _ -> FeedResult(emptyList()) },
                             onArticle = { testArticle(it) },
                         ),
                     clock = clock,
@@ -304,7 +304,7 @@ class WikifypAppTest {
     fun feedPageOpensReaderSettings() {
         show(
             FakeFeedRepository(
-                onFeed = { FeedResult(listOf(testCard())) },
+                onFeed = { _ -> FeedResult(listOf(testCard())) },
                 onArticle = { testArticle(it) },
             ),
         )

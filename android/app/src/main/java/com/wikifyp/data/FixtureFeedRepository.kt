@@ -35,7 +35,8 @@ class FixtureFeedRepository(
             }.also { loaded = it }
         }
 
-    override suspend fun feed(): FeedResult = FeedResult(articles().map { it.toFeedCard("fixture") })
+    override suspend fun feed(exclude: Set<Long>): FeedResult =
+        FeedResult(articles().map { it.toFeedCard("fixture") }.filter { it.id !in exclude })
 
     override suspend fun article(id: Long): Article =
         articles().firstOrNull { it.id == id }

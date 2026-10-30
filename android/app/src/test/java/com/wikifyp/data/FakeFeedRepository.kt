@@ -4,10 +4,10 @@ import java.io.IOException
 
 /** Test double: each call runs the currently assigned block. */
 class FakeFeedRepository(
-    var onFeed: suspend () -> FeedResult = { FeedResult(emptyList()) },
+    var onFeed: suspend (Set<Long>) -> FeedResult = { FeedResult(emptyList()) },
     var onArticle: suspend (Long) -> Article = { throw IOException("no network") },
 ) : FeedRepository {
-    override suspend fun feed(): FeedResult = onFeed()
+    override suspend fun feed(exclude: Set<Long>): FeedResult = onFeed(exclude)
 
     override suspend fun article(id: Long): Article = onArticle(id)
 }
@@ -16,6 +16,7 @@ fun testCard(
     id: Long = 1,
     title: String = "Chemistry",
     words: Int = 1200,
+    image: ArticleImage? = null,
 ) = FeedCard(
     id = id,
     title = title,
@@ -24,6 +25,7 @@ fun testCard(
     sentences = 40,
     words = words,
     attribution = "Text from the Simple English Wikipedia article \"$title\"",
+    image = image,
 )
 
 fun testArticle(

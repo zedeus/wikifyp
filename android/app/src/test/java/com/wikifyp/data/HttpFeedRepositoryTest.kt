@@ -90,6 +90,18 @@ class HttpFeedRepositoryTest {
         }
 
     @Test
+    fun feedSendsExcludeParameter() =
+        runTest {
+            repo.feed(exclude = setOf(10L, 20L))
+            // The query string should contain the exclude parameter.
+            val query = lastFeedQuery!!
+            assert(query.contains("exclude=")) { "expected exclude in query: $query" }
+            val excludePart = query.substringAfter("exclude=").substringBefore("&")
+            val ids = excludePart.split(",").map { it.toLong() }.toSet()
+            assertEquals(setOf(10L, 20L), ids)
+        }
+
+    @Test
     fun httpErrorsBecomeExceptions() =
         runTest {
             try {

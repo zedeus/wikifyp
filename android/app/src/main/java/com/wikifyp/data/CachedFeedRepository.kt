@@ -71,9 +71,9 @@ class CachedFeedRepository(
     private val remote: FeedRepository,
     private val cache: FeedCache,
 ) : FeedRepository {
-    override suspend fun feed(): FeedResult =
+    override suspend fun feed(exclude: Set<Long>): FeedResult =
         try {
-            val result = remote.feed()
+            val result = remote.feed(exclude)
             // An empty feed is an anomaly (a fresh or misconfigured server),
             // not something worth losing the last good feed over.
             if (result.cards.isNotEmpty()) {

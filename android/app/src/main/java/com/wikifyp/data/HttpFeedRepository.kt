@@ -23,9 +23,17 @@ class HttpFeedRepository(
         val articles: List<FeedCard>,
     )
 
-    override suspend fun feed(): FeedResult {
+    override suspend fun feed(exclude: Set<Long>): FeedResult {
         val encoded = URLEncoder.encode(readerId, Charsets.UTF_8.name())
-        val body = get("$baseUrl/v1/feed?reader=$encoded")
+        val url =
+            buildString {
+                append("$baseUrl/v1/feed?reader=$encoded")
+                if (exclude.isNotEmpty()) {
+                    append("&exclude=")
+                    append(exclude.joinToString(","))
+                }
+            }
+        val body = get(url)
         return FeedResult(json.decodeFromString<FeedResponse>(body).articles)
     }
 

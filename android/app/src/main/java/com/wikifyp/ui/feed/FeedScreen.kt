@@ -16,16 +16,24 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,11 +58,15 @@ import com.wikifyp.ui.components.PrimaryButton
  * Tapping a card opens the reader; [notice] is a transient banner (e.g. an
  * article that failed to open).
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedScreen(
     state: FeedState,
     onCardClick: (FeedCard) -> Unit,
     onRetry: () -> Unit,
+    onLoadMore: () -> Unit = {},
+    onRefresh: () -> Unit = {},
+    isRefreshing: Boolean = false,
     onOpenSettings: () -> Unit = {},
     onOpenSaved: () -> Unit = {},
     notice: String? = null,
@@ -94,7 +106,19 @@ fun FeedScreen(
                 }
 
                 is FeedState.Content -> {
-                    FeedList(state.cards, onCardClick)
+                    PullToRefreshBox(
+                        isRefreshing = isRefreshing,
+                        onRefresh = onRefresh,
+                        modifier = Modifier.fillMaxSize().testTag("feedPullRefresh"),
+                    ) {
+                        FeedList(
+                            cards = state.cards,
+                            onCardClick = onCardClick,
+                            onLoadMore = onLoadMore,
+                            loadingMore = state.loadingMore,
+                            canLoadMore = state.canLoadMore,
+                        )
+                    }
                 }
             }
         }
@@ -142,12 +166,35 @@ private fun TopBar(
     }
 }
 
+/** How close to the end of the list (in items) the user must scroll before
+ *  the next page loads. Three items of lead time hides latency on a typical
+ *  connection without eager-loading pages the reader will never see. */
+private const val LOAD_MORE_THRESHOLD = 3
+
 @Composable
 private fun FeedList(
     cards: List<FeedCard>,
     onCardClick: (FeedCard) -> Unit,
+    onLoadMore: () -> Unit,
+    loadingMore: Boolean,
+    canLoadMore: Boolean,
 ) {
+    val listState = rememberLazyListState()
+
+    // Trigger load-more when the user scrolls near the end.
+    val shouldLoadMore by remember {
+        derivedStateOf {
+            val info = listState.layoutInfo
+            val lastVisible = info.visibleItemsInfo.lastOrNull()?.index ?: 0
+            canLoadMore && !loadingMore && lastVisible >= info.totalItemsCount - LOAD_MORE_THRESHOLD
+        }
+    }
+    LaunchedEffect(shouldLoadMore) {
+        if (shouldLoadMore) onLoadMore()
+    }
+
     LazyColumn(
+        state = listState,
         modifier =
             Modifier
                 .fillMaxSize()
@@ -166,6 +213,24 @@ private fun FeedList(
                     onClick = { onCardClick(card) },
                 )
                 if (index < cards.lastIndex) Spacer(Modifier.height(2.dp))
+            }
+        }
+        if (loadingMore) {
+            item(key = "__loading_more__") {
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = Spacing.md)
+                            .testTag("loadingMore"),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }

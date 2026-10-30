@@ -8,6 +8,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.wikifyp.data.Article
@@ -26,6 +27,7 @@ import com.wikifyp.ui.reader.ReaderSettings
 import com.wikifyp.ui.reader.ReaderSettingsSheet
 import com.wikifyp.ui.reader.readerPalette
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 
 /**
  * The app: the feed, and the reader over whichever article was tapped.
@@ -73,14 +75,77 @@ fun WikifypApp(
     }
     var showSaved by rememberSaveable { mutableStateOf(false) }
 
+    // Pagination: the accumulated cards across pages, and the IDs already
+    // served (sent as the exclude list to the server so it never repeats).
+    var allCards by remember { mutableStateOf<List<FeedCard>>(emptyList()) }
+    var canLoadMore by remember { mutableStateOf(true) }
+    var isRefreshing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    // Shared: reset the feed state and load the first page from scratch.
+    suspend fun resetAndLoad() {
+        allCards = emptyList()
+        canLoadMore = true
+        val loaded = loadFeed(repository)
+        if (loaded is FeedState.Content) {
+            allCards = loaded.cards
+            canLoadMore = loaded.canLoadMore
+            feedState = FeedState.Content(loaded.cards, loaded.offline, canLoadMore = loaded.canLoadMore)
+            repository.prefetch(loaded.cards)
+        } else {
+            feedState = loaded
+        }
+    }
+
     LaunchedEffect(retry) {
         feedState = FeedState.Loading
-        val loaded = loadFeed(repository)
-        feedState = loaded
-        // With the feed on screen, quietly fill the offline cache so the
-        // listed articles stay readable without network.
-        if (loaded is FeedState.Content) {
-            repository.prefetch(loaded.cards)
+        resetAndLoad()
+    }
+
+    // Load more: appends the next page to the accumulated cards.
+    val onLoadMore: () -> Unit = {
+        val current = feedState
+        if (current is FeedState.Content && !current.loadingMore && canLoadMore) {
+            feedState = current.copy(loadingMore = true)
+            scope.launch {
+                try {
+                    val existingIds = allCards.map { it.id }.toSet()
+                    val result = repository.feed(existingIds)
+                    // Deduplicate: in case the server returns an already-shown
+                    // article despite the exclude list (or the repository
+                    // ignores it, like fixtures).
+                    val newCards = result.cards.filter { it.id !in existingIds }
+                    if (newCards.isEmpty()) {
+                        canLoadMore = false
+                        feedState = current.copy(loadingMore = false, canLoadMore = false)
+                    } else {
+                        val merged = allCards + newCards
+                        allCards = merged
+                        feedState =
+                            FeedState.Content(
+                                cards = merged,
+                                offline = result.offline,
+                                canLoadMore = true,
+                            )
+                        repository.prefetch(newCards)
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    feedState = current.copy(loadingMore = false)
+                }
+            }
+        }
+    }
+
+    // Pull-to-refresh: reloads from scratch, keeping the user on the feed.
+    val onRefresh: () -> Unit = {
+        if (!isRefreshing) {
+            isRefreshing = true
+            scope.launch {
+                resetAndLoad()
+                isRefreshing = false
+            }
         }
     }
 
@@ -171,6 +236,9 @@ fun WikifypApp(
                 notice = null
                 retry++
             },
+            onLoadMore = onLoadMore,
+            onRefresh = onRefresh,
+            isRefreshing = isRefreshing,
             onOpenSettings = { showFeedSettings = true },
             onOpenSaved = { showSaved = true },
             notice = notice,

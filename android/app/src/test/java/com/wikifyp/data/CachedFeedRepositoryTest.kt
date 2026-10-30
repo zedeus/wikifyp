@@ -19,14 +19,14 @@ class CachedFeedRepositoryTest {
     @Test
     fun feedIsCachedAndServedWhenTheNetworkFails() =
         runTest {
-            val remote = FakeFeedRepository(onFeed = { FeedResult(listOf(testCard())) })
+            val remote = FakeFeedRepository(onFeed = { _ -> FeedResult(listOf(testCard())) })
             val repo = repo(remote)
 
             val fresh = repo.feed()
             assertFalse(fresh.offline)
             assertEquals(listOf(testCard()), fresh.cards)
 
-            remote.onFeed = { throw IOException("airplane mode") }
+            remote.onFeed = { _ -> throw IOException("airplane mode") }
             val cached = repo.feed()
             assertTrue(cached.offline)
             assertEquals(fresh.cards, cached.cards)
@@ -35,7 +35,7 @@ class CachedFeedRepositoryTest {
     @Test
     fun feedFailureWithoutCachePropagates() =
         runTest {
-            val repo = repo(FakeFeedRepository(onFeed = { throw IOException("airplane mode") }))
+            val repo = repo(FakeFeedRepository(onFeed = { _ -> throw IOException("airplane mode") }))
             try {
                 repo.feed()
                 fail("feed() succeeded with no network and no cache")
@@ -109,14 +109,14 @@ class CachedFeedRepositoryTest {
     @Test
     fun emptyRemoteFeedDoesNotClobberTheCache() =
         runTest {
-            val remote = FakeFeedRepository(onFeed = { FeedResult(listOf(testCard())) })
+            val remote = FakeFeedRepository(onFeed = { _ -> FeedResult(listOf(testCard())) })
             val repo = repo(remote)
             repo.feed()
 
-            remote.onFeed = { FeedResult(emptyList()) }
+            remote.onFeed = { _ -> FeedResult(emptyList()) }
             assertTrue(repo.feed().cards.isEmpty())
 
-            remote.onFeed = { throw IOException("airplane mode") }
+            remote.onFeed = { _ -> throw IOException("airplane mode") }
             assertEquals(listOf(testCard()), repo.feed().cards)
         }
 }

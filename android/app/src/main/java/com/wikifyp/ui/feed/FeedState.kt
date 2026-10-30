@@ -11,6 +11,10 @@ sealed interface FeedState {
     data class Content(
         val cards: List<FeedCard>,
         val offline: Boolean,
+        /** True while the next page is being fetched. */
+        val loadingMore: Boolean = false,
+        /** False once a page comes back empty (nothing left to load). */
+        val canLoadMore: Boolean = true,
     ) : FeedState
 
     data object Empty : FeedState
@@ -22,11 +26,20 @@ sealed interface FeedState {
  * Loads the feed into a screen state. The repository already falls back to
  * its cache, so an exception here means there is nothing to show at all.
  */
-suspend fun loadFeed(repository: FeedRepository): FeedState =
+suspend fun loadFeed(
+    repository: FeedRepository,
+    exclude: Set<Long> = emptySet(),
+): FeedState =
     try {
-        val result = repository.feed()
+        val result = repository.feed(exclude)
         if (result.cards.isEmpty()) {
-            FeedState.Empty
+            // First page empty = nothing to read; subsequent page empty =
+            // end of pagination, not an empty feed.
+            if (exclude.isEmpty()) {
+                FeedState.Empty
+            } else {
+                FeedState.Content(emptyList(), offline = false, canLoadMore = false)
+            }
         } else {
             FeedState.Content(result.cards, result.offline)
         }
