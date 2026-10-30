@@ -1,0 +1,30 @@
+android/app/src/main/java/com/wikifyp/ui/feed/HeroPolicy.kt
+  s_890a5e0a682f30::t_3ae91b41ac7935 1-5,16-60,80-81,83,91,93-94,96-97,99-104,111-123
+  s_890a5e0a682f30::t_f4e480e5cf7bb4 6-15
+  s_890a5e0a682f30::t_3140320890887f 61-79,82,86-89,92,95,98
+  s_890a5e0a682f30::t_f375dc09f2a181 84-85,90,105-110
+android/app/src/main/java/com/wikifyp/ui/feed/CardImage.kt
+  s_890a5e0a682f30::t_3b4b9e326e53d9 6,23,57-59,66
+  s_890a5e0a682f30::t_c3e00907707861 67-72,74-77
+  s_890a5e0a682f30::t_ffc654d70a2166 3-5,8,13-16,19-20,25,35-37,49-51,56,60-61,65,73,78-81
+android/app/src/test/java/com/wikifyp/ui/feed/HeroPolicyTest.kt
+  s_890a5e0a682f30::t_6c5f6a4aa198fb 1-148
+  s_890a5e0a682f30::t_d9841af2126c1b 149-151
+  s_890a5e0a682f30::t_df7eff2f2bd7a5 152
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9e35fbae87c58ea7f43e06742f092df78223b75d",
+  "prompts": {},
+  "sessions": {
+    "s_890a5e0a682f30": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97bb8f78-cd7a-4189-9869-6bcdfc36fbf5",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
