@@ -1,0 +1,35 @@
+android/app/src/test/java/com/wikifyp/ui/reader/BrowseOverlayTest.kt
+  s_c5a94b10885ac2::t_1413184567d026 87
+  s_c5a94b10885ac2::t_92f8ad6af6d04d 69-74,77-78,84-85,88-102,104-106
+  s_c5a94b10885ac2::t_3ddd8b87b83b96 3-5
+  s_c5a94b10885ac2::t_1d3d9949387e6c 103,107
+  s_c5a94b10885ac2::t_5bc9d5d35224de 75-76,79-83,86
+  s_c5a94b10885ac2::t_93922f0203308a 7-8
+  s_c5a94b10885ac2::t_db813c445c622b 108-109
+android/app/src/main/java/com/wikifyp/ui/reader/BrowseOverlay.kt
+  s_c5a94b10885ac2::t_badfde983a6928 415-418
+  s_c5a94b10885ac2::t_2a0cd709367366 134-165
+  s_c5a94b10885ac2::t_a6bbabb2569c2c 55-56,58
+  s_c5a94b10885ac2::t_6d10548b9392dc 274
+  s_c5a94b10885ac2::t_a5832fedfe3f0e 43
+  s_c5a94b10885ac2::t_caf6fe0ad32d7f 211,434-444
+  s_c5a94b10885ac2::t_e423d029b6425a 6,8
+  s_c5a94b10885ac2::t_ab1e90e42297f3 192-195,198-199,204-210
+  s_c5a94b10885ac2::t_a63f918357c393 212
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7d4582d45c5e78082f1721abcf8b4a5bc86c0a11",
+  "prompts": {},
+  "sessions": {
+    "s_c5a94b10885ac2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0881a2d6-0329-4520-8c04-c57ec6c904fb",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
