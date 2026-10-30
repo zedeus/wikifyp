@@ -1,5 +1,6 @@
 package com.wikifyp.ui
 
+import android.app.Activity
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
@@ -7,6 +8,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -15,6 +17,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 import com.wikifyp.data.Article
 import com.wikifyp.data.FeedCard
 import com.wikifyp.data.FeedRepository
@@ -22,6 +26,7 @@ import com.wikifyp.data.toFeedCard
 import com.wikifyp.data.toSentenceTokens
 import com.wikifyp.reader.EventListener
 import com.wikifyp.reader.ReaderClock
+import com.wikifyp.theme.WikifypTheme
 import com.wikifyp.ui.feed.FeedScreen
 import com.wikifyp.ui.feed.FeedState
 import com.wikifyp.ui.feed.SavedScreen
@@ -188,113 +193,135 @@ fun WikifypApp(
             else -> Screen.Feed
         }
 
-    SharedTransitionLayout {
-        AnimatedContent(
-            targetState = screen,
-            transitionSpec = { fadeThrough },
-            // Key the reader by article id (matching Screen.Reader's own
-            // id-based equality).
-            contentKey = { if (it is Screen.Reader) it.article.id else it },
-            label = "screens",
-        ) { target ->
-            // Remembered: a fresh NavScopes per recomposition would change
-            // the local's value and invalidate every shared-element reader
-            // below on each app-level state change. Both scopes are stable
-            // for this content's lifetime.
-            val navScopes = remember { NavScopes(this@SharedTransitionLayout, this) }
-            CompositionLocalProvider(LocalNavScopes provides navScopes) {
-                when (target) {
-                    is Screen.Reader -> {
-                        val current = target.article
-                        val sentences = remember(current) { current.toSentenceTokens() }
-                        // The article after this one in the feed order, for the reader's
-                        // next-article flow (the up-next card and the skip-forward button).
-                        val upNext =
-                            remember(feedState, current.id) {
-                                val cards = (feedState as? FeedState.Content)?.cards.orEmpty()
-                                val index = cards.indexOfFirst { it.id == current.id }
-                                if (index >= 0) cards.getOrNull(index + 1) else null
-                            }
-                        // Remembered: the fallback derives a card from the
-                        // whole article, too heavy to redo per recomposition.
-                        val card =
-                            remember(feedState, current.id) {
-                                cardFor(current, feedState)
-                            }
-                        ReaderScreen(
-                            articleTitle = current.title,
-                            sentences = sentences,
-                            articleId = current.id,
-                            clock = clock,
-                            onEvent = eventListener,
-                            onBack = { openArticleId = null },
-                            settings = readerSettings,
-                            onSettingsChange = updateReaderSettings,
-                            card = card,
-                            upNext = upNext,
-                            onNext = {
-                                notice = null
-                                openArticleId = upNext?.id
-                            },
-                            saved = savedCards.any { it.id == current.id },
-                            onSavedChange = { nowSaved ->
-                                // A save normally means the article is not in the list
-                                // yet, but filter its id anyway: the Saved list is
-                                // keyed by id, and a doubled entry would crash it.
-                                val others = savedCards.filter { it.id != current.id }
-                                updateSaved(
-                                    if (nowSaved) {
-                                        listOf(card) + others
-                                    } else {
-                                        others
-                                    },
-                                )
-                            },
-                        )
-                    }
+    // The reader theme is the app theme: paper and sepia read as light,
+    // ink and black as dark, system follows the device. One picker themes
+    // the whole app, so the feed never glares around a dark reader.
+    val appDark = readerPalette(readerSettings.theme, isSystemInDarkTheme()).isDark
 
-                    Screen.Saved -> {
-                        SavedScreen(
-                            cards = savedCards,
-                            onCardClick = { card ->
-                                notice = null
-                                openArticleId = card.id
-                            },
-                            onBack = { showSaved = false },
-                            // A failed open bounces back here, so the error banner must
-                            // show here too — not only on the feed behind it.
-                            notice = notice,
-                        )
-                    }
-
-                    Screen.Feed -> {
-                        FeedScreen(
-                            state = feedState,
-                            onCardClick = { card ->
-                                notice = null
-                                openArticleId = card.id
-                            },
-                            onRetry = {
-                                notice = null
-                                retry++
-                            },
-                            onLoadMore = onLoadMore,
-                            onRefresh = onRefresh,
-                            isRefreshing = isRefreshing,
-                            onOpenSettings = { showFeedSettings = true },
-                            onOpenSaved = { showSaved = true },
-                            notice = notice,
-                            listState = feedListState,
-                        )
-                        if (showFeedSettings) {
-                            // The same reader settings, reachable before opening an
-                            // article; drawn on the reader palette the theme setting picks.
-                            ReaderSettingsSheet(
+    WikifypTheme(darkTheme = appDark) {
+        // Status-bar icons must stay legible on the themed surface, which
+        // can differ from the system theme. The app theme is the one owner
+        // of the status bar; the reader surface follows the same setting.
+        val view = LocalView.current
+        DisposableEffect(appDark) {
+            val window = (view.context as? Activity)?.window
+            val controller = window?.let { WindowCompat.getInsetsController(it, view) }
+            val wasLight = controller?.isAppearanceLightStatusBars
+            controller?.isAppearanceLightStatusBars = !appDark
+            onDispose {
+                if (controller != null && wasLight != null) {
+                    controller.isAppearanceLightStatusBars = wasLight
+                }
+            }
+        }
+        SharedTransitionLayout {
+            AnimatedContent(
+                targetState = screen,
+                transitionSpec = { fadeThrough },
+                // Key the reader by article id (matching Screen.Reader's own
+                // id-based equality).
+                contentKey = { if (it is Screen.Reader) it.article.id else it },
+                label = "screens",
+            ) { target ->
+                // Remembered: a fresh NavScopes per recomposition would change
+                // the local's value and invalidate every shared-element reader
+                // below on each app-level state change. Both scopes are stable
+                // for this content's lifetime.
+                val navScopes = remember { NavScopes(this@SharedTransitionLayout, this) }
+                CompositionLocalProvider(LocalNavScopes provides navScopes) {
+                    when (target) {
+                        is Screen.Reader -> {
+                            val current = target.article
+                            val sentences = remember(current) { current.toSentenceTokens() }
+                            // The article after this one in the feed order, for the reader's
+                            // next-article flow (the up-next card and the skip-forward button).
+                            val upNext =
+                                remember(feedState, current.id) {
+                                    val cards = (feedState as? FeedState.Content)?.cards.orEmpty()
+                                    val index = cards.indexOfFirst { it.id == current.id }
+                                    if (index >= 0) cards.getOrNull(index + 1) else null
+                                }
+                            // Remembered: the fallback derives a card from the
+                            // whole article, too heavy to redo per recomposition.
+                            val card =
+                                remember(feedState, current.id) {
+                                    cardFor(current, feedState)
+                                }
+                            ReaderScreen(
+                                articleTitle = current.title,
+                                sentences = sentences,
+                                articleId = current.id,
+                                clock = clock,
+                                onEvent = eventListener,
+                                onBack = { openArticleId = null },
                                 settings = readerSettings,
-                                palette = readerPalette(readerSettings.theme, isSystemInDarkTheme()),
                                 onSettingsChange = updateReaderSettings,
-                                onDismiss = { showFeedSettings = false },
+                                card = card,
+                                upNext = upNext,
+                                onNext = {
+                                    notice = null
+                                    openArticleId = upNext?.id
+                                },
+                                saved = savedCards.any { it.id == current.id },
+                                onSavedChange = { nowSaved ->
+                                    // A save normally means the article is not in the list
+                                    // yet, but filter its id anyway: the Saved list is
+                                    // keyed by id, and a doubled entry would crash it.
+                                    val others = savedCards.filter { it.id != current.id }
+                                    updateSaved(
+                                        if (nowSaved) {
+                                            listOf(card) + others
+                                        } else {
+                                            others
+                                        },
+                                    )
+                                },
                             )
+                        }
+
+                        Screen.Saved -> {
+                            SavedScreen(
+                                cards = savedCards,
+                                onCardClick = { card ->
+                                    notice = null
+                                    openArticleId = card.id
+                                },
+                                onBack = { showSaved = false },
+                                // A failed open bounces back here, so the error banner must
+                                // show here too — not only on the feed behind it.
+                                notice = notice,
+                            )
+                        }
+
+                        Screen.Feed -> {
+                            FeedScreen(
+                                state = feedState,
+                                onCardClick = { card ->
+                                    notice = null
+                                    openArticleId = card.id
+                                },
+                                onRetry = {
+                                    notice = null
+                                    retry++
+                                },
+                                onLoadMore = onLoadMore,
+                                onRefresh = onRefresh,
+                                isRefreshing = isRefreshing,
+                                onOpenSettings = { showFeedSettings = true },
+                                onOpenSaved = { showSaved = true },
+                                notice = notice,
+                                listState = feedListState,
+                            )
+                            if (showFeedSettings) {
+                                // The same reader settings, reachable before opening an
+                                // article; drawn on the reader palette the theme setting picks.
+                                ReaderSettingsSheet(
+                                    settings = readerSettings,
+                                    palette = readerPalette(readerSettings.theme, isSystemInDarkTheme()),
+                                    onSettingsChange = updateReaderSettings,
+                                    onDismiss = { showFeedSettings = false },
+                                )
+                            }
                         }
                     }
                 }

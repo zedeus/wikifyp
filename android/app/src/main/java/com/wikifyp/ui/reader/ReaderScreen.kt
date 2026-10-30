@@ -1,6 +1,5 @@
 package com.wikifyp.ui.reader
 
-import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -63,7 +62,6 @@ import androidx.compose.ui.layout.LastBaseline
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -76,7 +74,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.window.Popup
-import androidx.core.view.WindowCompat
 import com.wikifyp.data.FeedCard
 import com.wikifyp.reader.EventListener
 import com.wikifyp.reader.ReaderClock
@@ -89,13 +86,6 @@ import com.wikifyp.ui.feed.CardImage
 import com.wikifyp.ui.feed.HERO_IMAGE_ASPECT
 import com.wikifyp.ui.sharedArticleImage
 import kotlinx.coroutines.delay
-
-// The one status bar, shared by every reader instance that is alive at
-// once (AnimatedContent overlaps an incoming and an outgoing reader):
-// how many readers currently own its appearance, and the appearance to
-// restore when the last one leaves.
-private var statusBarOwners = 0
-private var statusBarBaselineLight = true
 
 // Chrome enter/exit: settle in from the nearest edge, leave quickly.
 private val chromeEnterFromTop =
@@ -237,35 +227,9 @@ fun ReaderScreen(
         }
     }
 
+    // The reader theme drives the whole app theme (WikifypApp), which also
+    // owns the status-bar appearance — nothing to manage per reader.
     val palette = readerPalette(settings.theme, isSystemInDarkTheme())
-
-    // Status-bar icons must stay legible on whatever surface the reader
-    // theme picked, which can differ from the system theme. During an
-    // AnimatedContent transition two readers overlap — the incoming one
-    // composes before the outgoing one disposes — so a per-reader
-    // save/restore would restore a stale value over the incoming reader's.
-    // The status bar is one shared resource: reference-count it, the first
-    // reader in saves the baseline and the last one out restores it.
-    val view = LocalView.current
-    DisposableEffect(palette.isDark) {
-        val window = (view.context as? Activity)?.window
-        val controller = window?.let { WindowCompat.getInsetsController(it, view) }
-        if (controller != null) {
-            if (statusBarOwners == 0) {
-                statusBarBaselineLight = controller.isAppearanceLightStatusBars
-            }
-            statusBarOwners++
-            controller.isAppearanceLightStatusBars = !palette.isDark
-        }
-        onDispose {
-            if (controller != null) {
-                statusBarOwners--
-                if (statusBarOwners == 0) {
-                    controller.isAppearanceLightStatusBars = statusBarBaselineLight
-                }
-            }
-        }
-    }
 
     val totalTokens = remember(sentences) { sentences.sumOf { it.tokens.size } }
     val allTokens = remember(sentences) { sentences.flatMap { it.tokens } }
