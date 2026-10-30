@@ -804,3 +804,84 @@ func TestReingestCarriesStoredMetadataForward(t *testing.T) {
 		t.Errorf("superseding row lost stored metadata: image %q %dx%d, description %q", imgURL, imgW, imgH, desc)
 	}
 }
+
+func TestPruneSupersededRemovesUnreferencedRows(t *testing.T) {
+	db := newDB(t)
+	ctx := context.Background()
+	a := testArticle()
+	first, err := Article(ctx, db, &a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	repaired := testArticle()
+	repaired.Text = "Sentence one, repaired. Sentence two.\n\n== History ==\n\nBody sentence."
+	second, err := Reingest(ctx, db, &repaired)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	n, err := PruneSuperseded(ctx, db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != 1 {
+		t.Fatalf("pruned %d rows, want 1", n)
+	}
+	if got := count(t, db, "SELECT count(*) FROM articles WHERE id = $1", first.ArticleID); got != 0 {
+		t.Error("unreferenced superseded row survived the prune")
+	}
+	if got := count(t, db, "SELECT count(*) FROM sentences WHERE article_id = $1", first.ArticleID); got != 0 {
+		t.Error("pruned row's sentences survived")
+	}
+	if got := count(t, db, "SELECT count(*) FROM articles WHERE id = $1", second.ArticleID); got != 1 {
+		t.Error("latest row was pruned")
+	}
+	// Idempotent: nothing left to remove.
+	if n, err := PruneSuperseded(ctx, db); err != nil || n != 0 {
+		t.Errorf("second prune = %d, %v; want 0, nil", n, err)
+	}
+}
+
+func TestPruneSupersededKeepsEventReferencedRows(t *testing.T) {
+	db := newDB(t)
+	ctx := context.Background()
+	a := testArticle()
+	first, err := Article(ctx, db, &a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// An old revision row referenced only as a rewind landing site, and a
+	// superseded row referenced as the event's article: both carry recorded
+	// addresses and must survive, whatever their age.
+	newer := testArticle()
+	newer.RevisionID = 1001
+	newer.Text = "A newer revision."
+	if _, err := Article(ctx, db, &newer); err != nil {
+		t.Fatal(err)
+	}
+	repairedNewer := testArticle()
+	repairedNewer.RevisionID = 1001
+	repairedNewer.Text = "A newer revision, repaired."
+	if _, err := Reingest(ctx, db, &repairedNewer); err != nil {
+		t.Fatal(err)
+	}
+	var supersededID int64
+	if err := db.QueryRow(
+		"SELECT id FROM articles WHERE revision_id = 1001 AND ingest_seq = 0").Scan(&supersededID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`
+		INSERT INTO reading_events (id, reader_id, schema_version, session_id, type, timestamp,
+			article_id, sentence_idx, token_idx, wpm, landed_article_id)
+		VALUES ('e1', 'r', 1, 's', 'pause', 1, $1, 0, 0, 300, $2)`,
+		supersededID, first.ArticleID); err != nil {
+		t.Fatal(err)
+	}
+
+	if n, err := PruneSuperseded(ctx, db); err != nil || n != 0 {
+		t.Fatalf("prune = %d, %v; want 0, nil (both old rows are referenced)", n, err)
+	}
+	if got := count(t, db, "SELECT count(*) FROM articles"); got != 3 {
+		t.Errorf("articles = %d, want 3", got)
+	}
+}

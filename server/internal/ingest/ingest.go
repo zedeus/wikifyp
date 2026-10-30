@@ -427,6 +427,52 @@ func dropEmptySections(rows []SentenceRow) []SentenceRow {
 	return keep
 }
 
+// PruneSuperseded deletes article rows that nothing needs anymore: rows that
+// are not the latest for their page (an older revision, or a lower
+// ingest_seq) and that no stored reading event addresses. Old rows exist
+// only to keep recorded token addresses resolvable, so a non-latest row no
+// event references is dead weight — at dump scale, keeping every superseded
+// copy of 7M articles would double storage per pipeline fix for nothing.
+// Rows a reading event points at (as the event's article or its rewind
+// landing site) are never touched, whatever their age. Returns how many
+// article rows were removed; their sentences, links and categories cascade.
+func PruneSuperseded(ctx context.Context, db *sql.DB) (int64, error) {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, fmt.Errorf("ingest: prune superseded: %w", err)
+	}
+	defer tx.Rollback()
+
+	// One definition of "stale", used by both deletes in this transaction:
+	// not the latest (revision_id, ingest_seq) for its page, and unreferenced
+	// by any event.
+	const stale = `
+		SELECT a.id FROM articles a
+		WHERE EXISTS (
+		    SELECT 1 FROM articles newer
+		    WHERE newer.source = a.source
+		      AND newer.page_id = a.page_id
+		      AND (newer.revision_id, newer.ingest_seq) > (a.revision_id, a.ingest_seq))
+		  AND NOT EXISTS (
+		    SELECT 1 FROM reading_events e
+		    WHERE e.article_id = a.id OR e.landed_article_id = a.id)`
+
+	// article_domains references articles without a cascade; clear it first.
+	if _, err := tx.ExecContext(ctx,
+		"DELETE FROM article_domains WHERE article_id IN ("+stale+")"); err != nil {
+		return 0, fmt.Errorf("ingest: prune superseded domains: %w", err)
+	}
+	res, err := tx.ExecContext(ctx, "DELETE FROM articles WHERE id IN ("+stale+")")
+	if err != nil {
+		return 0, fmt.Errorf("ingest: prune superseded: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("ingest: prune superseded: %w", err)
+	}
+	return n, tx.Commit()
+}
+
 // PruneCategories drops stored article categories that one source's fresh
 // category metadata (category_pages) excludes, so articles ingested under
 // older metadata — or from dumps, which carry every hidden maintenance
