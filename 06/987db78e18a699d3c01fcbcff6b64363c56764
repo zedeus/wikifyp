@@ -1,0 +1,29 @@
+android/app/src/main/java/com/wikifyp/ui/WikifypApp.kt
+  s_c5a94b10885ac2::t_8ef91f2f5792cc 3,11
+  s_c5a94b10885ac2::t_11f7452a3b6980 20-21
+  s_c5a94b10885ac2::t_89665b82e9b33a 29,218-256,259-278,281-325
+  s_c5a94b10885ac2::t_8c7a9111dd4e45 217
+  s_c5a94b10885ac2::t_d1bcde28cfd39f 196-199,201-216
+android/app/src/main/java/com/wikifyp/MainActivity.kt
+  s_c5a94b10885ac2::t_f2c48c22a5ed13 44-59
+android/app/src/main/java/com/wikifyp/ui/reader/ReaderScreen.kt
+  s_c5a94b10885ac2::t_f253a4bb425dd7 230-231
+android/app/src/test/java/com/wikifyp/ui/WikifypAppScreenshotTest.kt
+  s_c5a94b10885ac2::t_97aa24ec9c18fb 1-78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "06987db78e18a699d3c01fcbcff6b64363c56764",
+  "prompts": {},
+  "sessions": {
+    "s_c5a94b10885ac2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0881a2d6-0329-4520-8c04-c57ec6c904fb",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
