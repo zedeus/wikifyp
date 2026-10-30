@@ -1,0 +1,21 @@
+server/internal/testdb/testdb.go
+  s_c5a94b10885ac2::t_670ee1aa7c2cc5 108-112
+  s_c5a94b10885ac2::t_5d7bfdc887d545 101-104
+  s_c5a94b10885ac2::t_e4b6a608282c47 105-107
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "84a4dff4e34cb9384d7cd1054cb82e569359091e",
+  "prompts": {},
+  "sessions": {
+    "s_c5a94b10885ac2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0881a2d6-0329-4520-8c04-c57ec6c904fb",
+        "model": "metr-model"
+      },
+      "human_author": null
+    }
+  }
+}
