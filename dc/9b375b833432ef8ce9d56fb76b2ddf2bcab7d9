@@ -1,0 +1,99 @@
+android/app/src/main/java/com/wikifyp/ui/reader/ReaderScreen.kt
+  s_c5a94b10885ac2::t_56ddf7d38c6b95 594-605
+  s_c5a94b10885ac2::t_0ac63848b12f38 71
+  s_c5a94b10885ac2::t_c1dcb5c02c13d1 30
+  s_c5a94b10885ac2::t_b1073ab91786db 89
+  s_c5a94b10885ac2::t_bd28cda40babfc 23
+  s_c5a94b10885ac2::t_cb5f5558fa660b 93-99
+  s_c5a94b10885ac2::t_f3fe5223712478 19,77
+  s_c5a94b10885ac2::t_c64c9c6a9f0a9a 139
+  s_c5a94b10885ac2::t_f0dd469d617bb0 561-562
+  s_c5a94b10885ac2::t_b2dc3152f2d650 568,572
+  s_c5a94b10885ac2::t_7b81e7f13bbd05 243-248,253-259,261-265
+  s_c5a94b10885ac2::t_9dfd7281b70ba3 146-148
+  s_c5a94b10885ac2::t_e53baa9619bba0 309-318
+  s_c5a94b10885ac2::t_47fa8019d950b7 570,575,577-593
+  s_c5a94b10885ac2::t_cb9fba07253c63 606-619
+  s_c5a94b10885ac2::t_c4847c726adbac 88,90
+  s_c5a94b10885ac2::t_9c8b23f5c1935a 54
+  s_c5a94b10885ac2::t_34bd9acb4e73e3 556-560,563,565-567,569,571,573-574,576,620
+android/app/src/main/java/com/wikifyp/ui/reader/UpNextCard.kt
+  s_c5a94b10885ac2::t_9728e3c50e572f 74
+  s_c5a94b10885ac2::t_a78a9869492c92 25
+android/app/src/test/java/com/wikifyp/ui/reader/ReaderScreenTest.kt
+  s_c5a94b10885ac2::t_d26316e6154c4c 124-132,134-138,142-188
+  s_c5a94b10885ac2::t_4f9b0497298a10 32-39
+  s_c5a94b10885ac2::t_b38bee038b5709 11
+  s_c5a94b10885ac2::t_2dbdc34b6b6fb8 139-140
+  s_c5a94b10885ac2::t_029b9aed6a3486 133
+  s_c5a94b10885ac2::t_6afe30b8229526 9-10
+  s_c5a94b10885ac2::t_36a58d80107770 20
+  s_c5a94b10885ac2::t_30495a64a5b947 141
+  s_c5a94b10885ac2::t_32a2e929cd25f3 12
+  s_c5a94b10885ac2::t_170ebbccf16191 189
+android/app/src/main/java/com/wikifyp/ui/feed/FeedScreen.kt
+  s_c5a94b10885ac2::t_946b7468a4aede 187-191
+  s_c5a94b10885ac2::t_3ea51e417bceb8 75
+  s_c5a94b10885ac2::t_8b558fc04a9895 299-300
+  s_c5a94b10885ac2::t_249973e669a116 123
+  s_c5a94b10885ac2::t_7efe686dec45e5 185
+  s_c5a94b10885ac2::t_f28a057ad9aa8a 55
+  s_c5a94b10885ac2::t_c11ce63e82977f 411
+  s_c5a94b10885ac2::t_220f2c38b359a7 18
+android/app/src/test/java/com/wikifyp/ui/reader/ReaderScreenScreenshotTest.kt
+  s_c5a94b10885ac2::t_158867967b8b88 11-12
+  s_c5a94b10885ac2::t_6ecf521639f9c6 17
+  s_c5a94b10885ac2::t_29215092c75c1a 111-136,138-142,145-158
+  s_c5a94b10885ac2::t_76d8967768e0eb 41-49
+  s_c5a94b10885ac2::t_219b0717731c19 21
+  s_c5a94b10885ac2::t_d6ef7bef501f21 143-144
+  s_c5a94b10885ac2::t_f1f8471dff0cd7 15
+  s_c5a94b10885ac2::t_859abc4486ff0d 137
+  s_c5a94b10885ac2::t_0d80d3173aa3e8 159
+android/app/src/androidTest/java/com/wikifyp/ReaderTest.kt
+  s_c5a94b10885ac2::t_cbc49cd871a5a9 39-40,42
+  s_c5a94b10885ac2::t_088bada5ad3af5 37-38,43
+android/app/src/test/java/com/wikifyp/ui/WikifypAppTest.kt
+  s_c5a94b10885ac2::t_856028aa1c63df 164-177
+  s_c5a94b10885ac2::t_39500488d80362 8
+  s_c5a94b10885ac2::t_a5590abe9169a5 178-179
+android/app/src/main/java/com/wikifyp/ui/Transitions.kt
+  s_c5a94b10885ac2::t_a98016d51204c8 1-12,14-37,39-67,71-73
+  s_c5a94b10885ac2::t_9c6ac0ccdf18ea 68-70
+  s_c5a94b10885ac2::t_c4326726ce942a 38
+  s_c5a94b10885ac2::t_403e55bb01e493 13
+android/app/src/test/java/com/wikifyp/data/FakeFeedRepository.kt
+  s_c5a94b10885ac2::t_65f7646b0a0e94 20,29
+android/app/src/test/java/com/wikifyp/ui/reader/FakeImageLoader.kt
+  s_c5a94b10885ac2::t_c3de75b9d9578a 1-30
+android/app/src/main/java/com/wikifyp/ui/WikifypApp.kt
+  s_c5a94b10885ac2::t_88bd1fedb5ce53 195-196
+  s_c5a94b10885ac2::t_20cda9ace277b9 3-5,7,9
+  s_c5a94b10885ac2::t_f6034e1336eaae 312,314-320
+  s_c5a94b10885ac2::t_59b694f68e2d8a 40
+  s_c5a94b10885ac2::t_b96b84561e4ced 308,310
+  s_c5a94b10885ac2::t_0dfb92abd02504 256,268
+  s_c5a94b10885ac2::t_c32997c3563747 176-188,190-193,198-199,206-217,224-232,234-246,248-255,257-267,269-301,306-307,309,311,313
+  s_c5a94b10885ac2::t_21a4ff1fd43fb3 218-223
+  s_c5a94b10885ac2::t_852db200a1aaf9 247
+  s_c5a94b10885ac2::t_8f664714f8e9d4 194,197
+  s_c5a94b10885ac2::t_afb7cf5cf649c7 233
+  s_c5a94b10885ac2::t_a4e78ec5ddbbcc 200-205
+  s_c5a94b10885ac2::t_73add7cece8119 321-323
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "dc9b375b833432ef8ce9d56fb76b2ddf2bcab7d9",
+  "prompts": {},
+  "sessions": {
+    "s_c5a94b10885ac2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0881a2d6-0329-4520-8c04-c57ec6c904fb",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
