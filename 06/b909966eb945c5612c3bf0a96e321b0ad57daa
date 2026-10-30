@@ -1,0 +1,26 @@
+android/app/src/main/java/com/wikifyp/ui/WikifypApp.kt
+  s_c5a94b10885ac2::t_fa49d5954894e6 7
+  s_c5a94b10885ac2::t_ff85829a85e468 225-230,233-242
+  s_c5a94b10885ac2::t_b64e1d938300fa 10
+  s_c5a94b10885ac2::t_866387cc95253d 22
+android/app/src/main/java/com/wikifyp/ui/Transitions.kt
+  s_c5a94b10885ac2::t_3f62a301a62444 49-59
+  s_c5a94b10885ac2::t_5fc9fac27ff659 12-13
+  s_c5a94b10885ac2::t_24b63811f2dec0 60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "06b909966eb945c5612c3bf0a96e321b0ad57daa",
+  "prompts": {},
+  "sessions": {
+    "s_c5a94b10885ac2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0881a2d6-0329-4520-8c04-c57ec6c904fb",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
