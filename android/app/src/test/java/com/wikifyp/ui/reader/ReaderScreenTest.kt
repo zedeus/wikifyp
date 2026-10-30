@@ -6,6 +6,10 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
+import coil3.SingletonImageLoader
+import coil3.annotation.DelicateCoilApi
+import com.wikifyp.data.ArticleImage
+import com.wikifyp.data.testCard
 import com.wikifyp.reader.EventListener
 import com.wikifyp.reader.EventType
 import com.wikifyp.reader.FakeClock
@@ -13,6 +17,7 @@ import com.wikifyp.reader.ReaderEngine
 import com.wikifyp.reader.ReadingEvent
 import com.wikifyp.reader.SentenceTokens
 import com.wikifyp.theme.WikifypTheme
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -23,6 +28,14 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class ReaderScreenTest {
     @get:Rule val compose = createComposeRule()
+
+    // The idle-cover test swaps the process-wide Coil singleton for a fake;
+    // put it back so other classes in this JVM are unaffected.
+    @OptIn(DelicateCoilApi::class)
+    @After
+    fun resetImageLoader() {
+        SingletonImageLoader.reset()
+    }
 
     private val testSentences =
         listOf(
@@ -106,6 +119,72 @@ class ReaderScreenTest {
 
         compose.onNodeWithTag("wpmControl").assertIsDisplayed()
         compose.onNodeWithText("250 wpm").assertIsDisplayed()
+    }
+
+    /**
+     * The idle cover: the article's description shows before the first
+     * play, leaves when playback starts, and must not come back on pause —
+     * a pause keeps the word line on screen, not the cover.
+     */
+    @Test
+    fun idleCoverShowsOnlyWhileIdle() {
+        val clock = FakeClock()
+        val card =
+            testCard(
+                id = 7,
+                title = "Test Article",
+                description = "A thing being tested",
+                image = ArticleImage("https://example.com/x.jpg", 400, 300),
+            )
+        // Tests run offline: the cover's image URL must never reach the
+        // network, so it resolves to a flat stand-in through a fake engine.
+        installFakeImageLoader()
+        compose.setContent {
+            WikifypTheme {
+                ReaderScreen(
+                    articleTitle = "Test Article",
+                    sentences = testSentences,
+                    articleId = 7L,
+                    clock = clock,
+                    card = card,
+                )
+            }
+        }
+
+        compose.onNodeWithTag("idleCoverDescription").assertIsDisplayed()
+        compose.onNodeWithTag("idleHint").assertIsDisplayed()
+
+        // Hold to play: the cover leaves with the rest of the idle state.
+        compose.onNodeWithTag("readerSurface").performTouchInput { down(center) }
+        clock.advanceBy(151)
+        compose.waitForIdle()
+        compose.onNodeWithTag("idleCoverDescription").assertDoesNotExist()
+
+        // Lift to pause: the word line stays, the cover stays away.
+        compose.onNodeWithTag("readerSurface").performTouchInput { up() }
+        compose.waitForIdle()
+        compose.onNodeWithTag("idleCoverDescription").assertDoesNotExist()
+        compose.onNodeWithTag("currentWord").assertIsDisplayed()
+    }
+
+    /** Without a card the idle reader still shows the hint, nothing broken. */
+    @Test
+    fun idleCoverDegradesToTheHintWithoutACard() {
+        val clock = FakeClock()
+        compose.setContent {
+            WikifypTheme {
+                ReaderScreen(
+                    articleTitle = "Test",
+                    sentences = testSentences,
+                    articleId = 1L,
+                    clock = clock,
+                    card = null,
+                )
+            }
+        }
+
+        compose.onNodeWithTag("idleHint").assertIsDisplayed()
+        compose.onNodeWithTag("idleCoverDescription").assertDoesNotExist()
     }
 
     @Test

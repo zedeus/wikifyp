@@ -16,16 +16,18 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Toc
@@ -49,6 +51,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -65,11 +68,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.min
 import androidx.compose.ui.window.Popup
 import androidx.core.view.WindowCompat
 import com.wikifyp.data.FeedCard
@@ -80,7 +85,17 @@ import com.wikifyp.reader.ReaderState
 import com.wikifyp.reader.SentenceTokens
 import com.wikifyp.theme.Motion
 import com.wikifyp.theme.Spacing
+import com.wikifyp.ui.feed.CardImage
+import com.wikifyp.ui.feed.HERO_IMAGE_ASPECT
+import com.wikifyp.ui.sharedArticleImage
 import kotlinx.coroutines.delay
+
+// The one status bar, shared by every reader instance that is alive at
+// once (AnimatedContent overlaps an incoming and an outgoing reader):
+// how many readers currently own its appearance, and the appearance to
+// restore when the last one leaves.
+private var statusBarOwners = 0
+private var statusBarBaselineLight = true
 
 // Chrome enter/exit: settle in from the nearest edge, leave quickly.
 private val chromeEnterFromTop =
@@ -121,14 +136,16 @@ fun ReaderScreen(
     onBack: () -> Unit = {},
     settings: ReaderSettings = ReaderSettings(),
     onSettingsChange: (ReaderSettings) -> Unit = {},
+    card: FeedCard? = null,
     upNext: FeedCard? = null,
     onNext: () -> Unit = {},
     saved: Boolean = false,
     onSavedChange: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    // The caller wraps the reader in key(articleId), so every remember
-    // here is born fresh per article; nothing needs its own id key.
+    // The caller keys the reader's content on the article id (the
+    // AnimatedContent contentKey), so every remember here is born fresh
+    // per article; nothing needs its own id key.
     var currentWord by remember { mutableStateOf("") }
     var readerState by remember { mutableStateOf(ReaderState.IDLE) }
     var position by remember { mutableIntStateOf(0) }
@@ -223,16 +240,29 @@ fun ReaderScreen(
     val palette = readerPalette(settings.theme, isSystemInDarkTheme())
 
     // Status-bar icons must stay legible on whatever surface the reader
-    // theme picked, which can differ from the system theme.
+    // theme picked, which can differ from the system theme. During an
+    // AnimatedContent transition two readers overlap — the incoming one
+    // composes before the outgoing one disposes — so a per-reader
+    // save/restore would restore a stale value over the incoming reader's.
+    // The status bar is one shared resource: reference-count it, the first
+    // reader in saves the baseline and the last one out restores it.
     val view = LocalView.current
     DisposableEffect(palette.isDark) {
         val window = (view.context as? Activity)?.window
         val controller = window?.let { WindowCompat.getInsetsController(it, view) }
-        val wasLight = controller?.isAppearanceLightStatusBars
-        controller?.isAppearanceLightStatusBars = !palette.isDark
+        if (controller != null) {
+            if (statusBarOwners == 0) {
+                statusBarBaselineLight = controller.isAppearanceLightStatusBars
+            }
+            statusBarOwners++
+            controller.isAppearanceLightStatusBars = !palette.isDark
+        }
         onDispose {
-            if (controller != null && wasLight != null) {
-                controller.isAppearanceLightStatusBars = wasLight
+            if (controller != null) {
+                statusBarOwners--
+                if (statusBarOwners == 0) {
+                    controller.isAppearanceLightStatusBars = statusBarBaselineLight
+                }
             }
         }
     }
@@ -276,7 +306,16 @@ fun ReaderScreen(
             contentAlignment = Alignment.Center,
         ) {
             if (readerState == ReaderState.IDLE || allTokens.isEmpty()) {
-                IdleHint(palette)
+                IdleCover(
+                    card = card,
+                    palette = palette,
+                    // Centered between the chrome bars, not under them.
+                    modifier =
+                        Modifier.padding(
+                            top = topChromeHeight,
+                            bottom = bottomChromeHeight,
+                        ),
+                )
             } else if (currentWord.isNotEmpty()) {
                 // While playing the ghosts recede so the focal word
                 // carries the eye; on pause the surroundings fade in.
@@ -514,21 +553,71 @@ fun ReaderScreen(
     }
 }
 
+/**
+ * The idle reader: the article's cover — its lead image (or initial tile)
+ * and short description above the hold-to-read hint. The cover belongs to
+ * IDLE only: a pause keeps the word line on screen (state PAUSED), so the
+ * image never flashes back mid-read. The image shares its bounds with the
+ * feed card's — same aspect as the hero so nothing changes shape in
+ * flight — so opening an article is the card growing into its cover.
+ */
 @Composable
-private fun IdleHint(palette: ReaderPalette) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = "Hold to read",
-            style = MaterialTheme.typography.bodyLarge,
-            color = palette.word.copy(alpha = 0.6f),
-            modifier = Modifier.testTag("idleHint"),
-        )
-        Spacer(Modifier.height(Spacing.xs))
-        Text(
-            text = "Swipe up to browse",
-            style = MaterialTheme.typography.bodySmall,
-            color = palette.chrome.copy(alpha = 0.6f),
-        )
+private fun IdleCover(
+    card: FeedCard?,
+    palette: ReaderPalette,
+    modifier: Modifier = Modifier,
+) {
+    BoxWithConstraints(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.xl),
+        contentAlignment = Alignment.Center,
+    ) {
+        // The image takes the full width unless that would crowd out the
+        // description and hint beneath it (landscape, short screens):
+        // cap it at under half the surface height, keeping the aspect.
+        val imageWidth = min(maxWidth, maxHeight * 0.45f * HERO_IMAGE_ASPECT)
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            if (card != null) {
+                CardImage(
+                    image = card.image,
+                    title = card.title,
+                    cardId = card.id,
+                    modifier =
+                        Modifier
+                            .width(imageWidth)
+                            .aspectRatio(HERO_IMAGE_ASPECT)
+                            .sharedArticleImage(card.id)
+                            .clip(MaterialTheme.shapes.large),
+                )
+                if (card.subtitle.isNotEmpty()) {
+                    Spacer(Modifier.height(Spacing.md))
+                    Text(
+                        text = card.subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = palette.chrome,
+                        textAlign = TextAlign.Center,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.testTag("idleCoverDescription"),
+                    )
+                }
+                Spacer(Modifier.height(Spacing.xl))
+            }
+            Text(
+                text = "Hold to read",
+                style = MaterialTheme.typography.bodyLarge,
+                color = palette.word.copy(alpha = 0.6f),
+                modifier = Modifier.testTag("idleHint"),
+            )
+            Spacer(Modifier.height(Spacing.xs))
+            Text(
+                text = "Swipe up to browse",
+                style = MaterialTheme.typography.bodySmall,
+                color = palette.chrome.copy(alpha = 0.6f),
+            )
+        }
     }
 }
 

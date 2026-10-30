@@ -34,8 +34,13 @@ class ReaderTest {
         compose.onNodeWithText("DNA").performClick()
         compose.waitForIdle()
 
-        // The reader should show the idle hint.
+        // The reader should show the idle cover: hint, lead image and the
+        // card's description line, carried over from the tapped feed card.
+        // The image is CardImage's own node; the feed is gone, so the only
+        // card image on screen is the cover's.
         compose.onNodeWithTag("idleHint").assertIsDisplayed()
+        compose.onNodeWithTag("cardImage").assertIsDisplayed()
+        compose.onNodeWithTag("idleCoverDescription").assertIsDisplayed()
 
         // 2. Hold to play: touch down and let real time pass for HandlerClock.
         compose.onNodeWithTag("readerSurface").performTouchInput {

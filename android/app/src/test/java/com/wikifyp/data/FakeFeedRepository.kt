@@ -17,6 +17,7 @@ fun testCard(
     title: String = "Chemistry",
     words: Int = 1200,
     image: ArticleImage? = null,
+    description: String = "",
 ) = FeedCard(
     id = id,
     title = title,
@@ -25,6 +26,7 @@ fun testCard(
     sentences = 40,
     words = words,
     attribution = "Text from the Simple English Wikipedia article \"$title\"",
+    description = description,
     image = image,
 )
 

@@ -5,6 +5,7 @@ import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -158,6 +159,22 @@ class WikifypAppTest {
         )
         compose.onNodeWithText("Chemistry").performClick()
         compose.onNodeWithTag("idleHint").assertIsDisplayed()
+    }
+
+    /** The tapped card rides into the reader as its idle cover. */
+    @Test
+    fun theTappedCardBecomesTheReadersIdleCover() {
+        show(
+            FakeFeedRepository(
+                onFeed = { _ -> FeedResult(listOf(testCard())) },
+                onArticle = { testArticle(it) },
+            ),
+        )
+        compose.onNodeWithText("Chemistry").performClick()
+        // The card has no description, so the cover's line is the excerpt.
+        compose
+            .onNodeWithTag("idleCoverDescription")
+            .assertTextEquals("Chemistry is the science of matter and how it changes.")
     }
 
     @Test

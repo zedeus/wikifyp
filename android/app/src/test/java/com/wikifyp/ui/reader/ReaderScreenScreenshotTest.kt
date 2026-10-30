@@ -8,12 +8,17 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
+import coil3.SingletonImageLoader
+import coil3.annotation.DelicateCoilApi
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.wikifyp.data.ArticleImage
 import com.wikifyp.data.FeedCard
+import com.wikifyp.data.testCard
 import com.wikifyp.reader.FakeClock
 import com.wikifyp.reader.SentenceTokens
 import com.wikifyp.theme.WikifypTheme
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,6 +37,15 @@ import org.robolectric.annotation.GraphicsMode
 @Config(qualifiers = RobolectricDeviceQualifiers.MediumPhone)
 class ReaderScreenScreenshotTest {
     @get:Rule val compose = createComposeRule()
+
+    // The idle-cover tests swap the process-wide Coil singleton for a fake;
+    // put it back so other screenshot classes in this JVM keep their own
+    // (network-less) rendering regardless of execution order.
+    @OptIn(DelicateCoilApi::class)
+    @After
+    fun resetImageLoader() {
+        SingletonImageLoader.reset()
+    }
 
     private val sentences =
         listOf(
@@ -93,6 +107,55 @@ class ReaderScreenScreenshotTest {
         )
 
     private fun settingsFor(dark: Boolean) = ReaderSettings(theme = if (dark) ReaderTheme.DARK else ReaderTheme.LIGHT)
+
+    /** The idle reader: lead image and description above the hint. */
+    @Test
+    fun idle_cover_light() {
+        renderIdleCover(dark = false)
+        compose.onRoot().captureRoboImage()
+    }
+
+    @Test
+    fun idle_cover_dark() {
+        renderIdleCover(dark = true)
+        compose.onRoot().captureRoboImage()
+    }
+
+    /** Without a lead image the cover falls back to the initial tile. */
+    @Test
+    fun idle_cover_no_image_light() {
+        renderIdleCover(dark = false, withImage = false)
+        compose.onRoot().captureRoboImage()
+    }
+
+    private fun renderIdleCover(
+        dark: Boolean,
+        withImage: Boolean = true,
+    ) {
+        val settings = settingsFor(dark)
+        val card =
+            testCard(
+                title = "Philosophy",
+                description = "Study of general and fundamental questions",
+                image = if (withImage) ArticleImage("https://example.com/philosophy.jpg", 960, 640) else null,
+            )
+        // The golden must not depend on the network: the lead image URL
+        // resolves to a flat stand-in through a fake Coil engine.
+        installFakeImageLoader()
+        compose.setContent {
+            WikifypTheme(darkTheme = dark) {
+                ReaderScreen(
+                    articleTitle = "Philosophy",
+                    sentences = sentences,
+                    articleId = 1L,
+                    clock = FakeClock(),
+                    settings = settings,
+                    card = card,
+                )
+            }
+        }
+        compose.waitForIdle()
+    }
 
     /** Paused state: word visible, ghost text and chrome showing. */
     @Test

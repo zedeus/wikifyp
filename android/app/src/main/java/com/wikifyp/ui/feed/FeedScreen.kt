@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -51,6 +52,7 @@ import com.wikifyp.theme.BlueSoft
 import com.wikifyp.theme.Reading
 import com.wikifyp.theme.Spacing
 import com.wikifyp.ui.components.PrimaryButton
+import com.wikifyp.ui.sharedArticleImage
 
 /**
  * The feed: a hero card for the lead article, then a grouped list of the
@@ -70,6 +72,7 @@ fun FeedScreen(
     onOpenSettings: () -> Unit = {},
     onOpenSaved: () -> Unit = {},
     notice: String? = null,
+    listState: LazyListState = rememberLazyListState(),
     modifier: Modifier = Modifier,
 ) {
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -117,6 +120,7 @@ fun FeedScreen(
                             onLoadMore = onLoadMore,
                             loadingMore = state.loadingMore,
                             canLoadMore = state.canLoadMore,
+                            listState = listState,
                         )
                     }
                 }
@@ -178,11 +182,13 @@ private fun FeedList(
     onLoadMore: () -> Unit,
     loadingMore: Boolean,
     canLoadMore: Boolean,
+    listState: LazyListState,
 ) {
-    val listState = rememberLazyListState()
-
-    // Trigger load-more when the user scrolls near the end.
-    val shouldLoadMore by remember {
+    // Trigger load-more when the user scrolls near the end. Keyed on the
+    // captured params: they are plain values, not snapshot state, so an
+    // unkeyed derivedStateOf would read the first composition's values
+    // forever (e.g. a stale canLoadMore=true after the last page).
+    val shouldLoadMore by remember(listState, canLoadMore, loadingMore) {
         derivedStateOf {
             val info = listState.layoutInfo
             val lastVisible = info.visibleItemsInfo.lastOrNull()?.index ?: 0
@@ -290,7 +296,8 @@ private fun HeroCard(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .aspectRatio(HERO_IMAGE_ASPECT),
+                        .aspectRatio(HERO_IMAGE_ASPECT)
+                        .sharedArticleImage(card.id),
             )
             Box(
                 Modifier
@@ -401,6 +408,7 @@ internal fun FeedRow(
             modifier =
                 Modifier
                     .size(64.dp)
+                    .sharedArticleImage(card.id)
                     .clip(MaterialTheme.shapes.small),
         )
     }

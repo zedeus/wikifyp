@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import com.wikifyp.data.FeedCard
 import com.wikifyp.theme.Spacing
 import com.wikifyp.ui.feed.CardImage
+import com.wikifyp.ui.sharedArticleImage
 
 /**
  * The card shown when an article finishes: the next feed article one tap
@@ -70,6 +71,7 @@ internal fun UpNextCard(
                     modifier =
                         Modifier
                             .size(56.dp)
+                            .sharedArticleImage(card.id)
                             .clip(MaterialTheme.shapes.small),
                 )
                 Spacer(Modifier.width(Spacing.md))
