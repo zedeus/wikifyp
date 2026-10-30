@@ -9,6 +9,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -43,6 +45,18 @@ val fadeThrough: ContentTransform =
                 initialScale = 0.96f,
             )
     ) togetherWith fadeOut(tween(Motion.QUICK_MS, easing = Motion.Leave))
+
+/**
+ * Reader to reader (the skip/up-next flow): the next article slides in
+ * from the right while the finished one recedes left — reading moves
+ * forward, so the motion does too.
+ */
+val slideForward: ContentTransform =
+    slideInHorizontally(tween(Motion.SLOW_MS, easing = Motion.Settle)) { it } togetherWith
+        (
+            slideOutHorizontally(tween(Motion.SLOW_MS, easing = Motion.Settle)) { -it / 3 } +
+                fadeOut(tween(Motion.SLOW_MS, easing = Motion.Leave))
+        )
 
 // Spatial morphs are the largest motion on screen; they get the slow
 // token so the eye can follow the card into the reader.

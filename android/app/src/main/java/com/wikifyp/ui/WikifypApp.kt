@@ -4,8 +4,10 @@ import android.app.Activity
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -17,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import com.wikifyp.data.Article
@@ -219,10 +222,24 @@ fun WikifypApp(
                 }
             }
         }
-        SharedTransitionLayout {
+        // The container paints the theme background itself: during a
+        // transition the two screens' fades can sum below full opacity,
+        // and the activity window behind is white — a flash on dark themes.
+        SharedTransitionLayout(
+            modifier = Modifier.background(MaterialTheme.colorScheme.background),
+        ) {
             AnimatedContent(
                 targetState = screen,
-                transitionSpec = { fadeThrough },
+                transitionSpec = {
+                    // Reader to reader is the skip/up-next flow: reading
+                    // moves forward, slide with it. Everything else
+                    // fade-throughs.
+                    if (initialState is Screen.Reader && targetState is Screen.Reader) {
+                        slideForward
+                    } else {
+                        fadeThrough
+                    }
+                },
                 // Key the reader by article id (matching Screen.Reader's own
                 // id-based equality).
                 contentKey = { if (it is Screen.Reader) it.article.id else it },
