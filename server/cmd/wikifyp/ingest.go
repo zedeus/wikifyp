@@ -117,6 +117,15 @@ func runIngest(ctx context.Context, args []string) error {
 			}
 		}
 	}
+	if *reingest && db != nil {
+		// Superseded rows exist only to keep recorded addresses resolvable;
+		// drop the ones no event references.
+		pruned, err := ingest.PruneSuperseded(ctx, db)
+		if err != nil {
+			return err
+		}
+		log.Printf("pruned %d superseded article rows no event references", pruned)
+	}
 	return nil
 }
 

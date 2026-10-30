@@ -22,6 +22,7 @@ import (
 // stored without provenance, because ingest still validates every article.
 func runImportDump(ctx context.Context, args []string) error {
 	fs := flag.NewFlagSet("import-dump", flag.ContinueOnError)
+	reingest := fs.Bool("reingest", false, "store the current pipeline's output for already-stored revisions as new rows (a cleaner fix re-lands the same dump; unchanged articles stay no-ops)")
 	fs.Usage = func() {
 		fmt.Fprintln(fs.Output(), "usage: wikifyp import-dump <dump.json.tar.gz>")
 		fs.PrintDefaults()
@@ -53,10 +54,14 @@ func runImportDump(ctx context.Context, args []string) error {
 	}
 	defer f.Close()
 
+	store := ingest.Article
+	if *reingest {
+		store = ingest.Reingest
+	}
 	start := time.Now()
 	var stored, unchanged, failed int
 	_, skipped, err := source.ReadDump(ctx, f, start, func(a *source.Article) error {
-		res, err := ingest.Article(ctx, db, a)
+		res, err := store(ctx, db, a)
 		if err != nil {
 			failed++
 			log.Printf("skipping %q: %v", a.Title, err)
@@ -78,6 +83,14 @@ func runImportDump(ctx context.Context, args []string) error {
 	}
 	log.Printf("done in %v: %d stored, %d already stored, %d failed records skipped, %d non-articles skipped",
 		time.Since(start).Round(time.Second), stored, unchanged, failed, skipped-failed)
+	// Old rows exist only to keep recorded addresses resolvable; a bulk
+	// import (new revisions) or reingest (superseding rows) leaves non-latest
+	// rows behind, and the unreferenced ones are dead weight at corpus scale.
+	pruned, err := ingest.PruneSuperseded(ctx, db)
+	if err != nil {
+		return fmt.Errorf("import-dump: %w", err)
+	}
+	log.Printf("pruned %d superseded article rows no event references", pruned)
 	// A bulk write leaves the planner's statistics describing the old,
 	// near-empty tables; the first feed queries then pick catastrophic
 	// plans (a measured 4.8 s nested loop that hashes in 0.3 s once
