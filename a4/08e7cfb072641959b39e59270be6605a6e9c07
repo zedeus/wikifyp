@@ -1,0 +1,19 @@
+android/app/src/androidTest/java/com/wikifyp/ReaderTest.kt
+  s_c5a94b10885ac2::t_fb71256d53586e 221-224
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a408e7cfb072641959b39e59270be6605a6e9c07",
+  "prompts": {},
+  "sessions": {
+    "s_c5a94b10885ac2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0881a2d6-0329-4520-8c04-c57ec6c904fb",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
