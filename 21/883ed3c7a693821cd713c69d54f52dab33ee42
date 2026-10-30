@@ -1,0 +1,24 @@
+android/app/src/main/java/com/wikifyp/ui/feed/CardImage.kt
+  s_c5a94b10885ac2::t_d9809faf2163f3 71-73
+android/app/src/main/java/com/wikifyp/MainActivity.kt
+  s_c5a94b10885ac2::t_020194f9cae81d 27,31-33
+  s_c5a94b10885ac2::t_e2189e80dc9bcd 39-65
+  s_c5a94b10885ac2::t_e290a19e074d80 11-13
+  s_c5a94b10885ac2::t_65497ded3177be 34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "21883ed3c7a693821cd713c69d54f52dab33ee42",
+  "prompts": {},
+  "sessions": {
+    "s_c5a94b10885ac2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0881a2d6-0329-4520-8c04-c57ec6c904fb",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
