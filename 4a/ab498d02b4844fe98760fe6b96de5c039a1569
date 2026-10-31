@@ -1,0 +1,25 @@
+android/app/src/main/java/com/wikifyp/data/HttpHistoryRepository.kt
+  s_fbd6a0fc774e16::t_69d74429dd66eb 1-19,25,33-56,69-71,93-100
+  s_fbd6a0fc774e16::t_a9c3db7baf01b8 20-24,26-32,57-68,72-92
+android/app/src/main/java/com/wikifyp/data/FeedRepository.kt
+  s_fbd6a0fc774e16::t_3c323b1de20dd6 22-23
+android/app/src/main/java/com/wikifyp/data/HistoryRepository.kt
+  s_fbd6a0fc774e16::t_8e86b4fc6be909 1-28,37-121,129-138,145,147,149,151-158
+  s_fbd6a0fc774e16::t_a9c3db7baf01b8 29-36,122-128,139-144,146,148,150
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4aab498d02b4844fe98760fe6b96de5c039a1569",
+  "prompts": {},
+  "sessions": {
+    "s_fbd6a0fc774e16": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "03eb4619-e408-4fa9-863e-cd0e3e2f2ec9",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
