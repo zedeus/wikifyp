@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -21,6 +22,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -73,6 +77,9 @@ fun FeedScreen(
     isRefreshing: Boolean = false,
     onOpenSettings: () -> Unit = {},
     onOpenSaved: () -> Unit = {},
+    onOpenHistory: () -> Unit = {},
+    onOpenStats: () -> Unit = {},
+    onCardInfo: (FeedCard) -> Unit = {},
     notice: String? = null,
     listState: LazyListState = rememberLazyListState(),
     modifier: Modifier = Modifier,
@@ -84,7 +91,7 @@ fun FeedScreen(
                     .safeDrawingPadding()
                     .fillMaxSize(),
         ) {
-            TopBar(onOpenSettings, onOpenSaved)
+            TopBar(onOpenSettings, onOpenSaved, onOpenHistory, onOpenStats)
             if (state is FeedState.Content && state.offline) {
                 Banner("Offline — showing your last feed", Modifier.testTag("offlineBanner"))
             }
@@ -119,6 +126,7 @@ fun FeedScreen(
                         FeedList(
                             cards = state.cards,
                             onCardClick = onCardClick,
+                            onCardInfo = onCardInfo,
                             onLoadMore = onLoadMore,
                             loadingMore = state.loadingMore,
                             canLoadMore = state.canLoadMore,
@@ -135,6 +143,8 @@ fun FeedScreen(
 private fun TopBar(
     onOpenSettings: () -> Unit,
     onOpenSaved: () -> Unit,
+    onOpenHistory: () -> Unit,
+    onOpenStats: () -> Unit,
 ) {
     Row(
         modifier =
@@ -149,6 +159,26 @@ private fun TopBar(
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.weight(1f),
         )
+        IconButton(
+            onClick = onOpenHistory,
+            modifier = Modifier.testTag("historyButton"),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.History,
+                contentDescription = "History",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        IconButton(
+            onClick = onOpenStats,
+            modifier = Modifier.testTag("statsButton"),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Insights,
+                contentDescription = "Reading insights",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         IconButton(
             onClick = onOpenSaved,
             modifier = Modifier.testTag("savedListButton"),
@@ -181,6 +211,7 @@ private const val LOAD_MORE_THRESHOLD = 3
 private fun FeedList(
     cards: List<FeedCard>,
     onCardClick: (FeedCard) -> Unit,
+    onCardInfo: (FeedCard) -> Unit,
     onLoadMore: () -> Unit,
     loadingMore: Boolean,
     canLoadMore: Boolean,
@@ -219,6 +250,7 @@ private fun FeedList(
                     card = card,
                     shape = rowShape(index - 1, cards.size - 1),
                     onClick = { onCardClick(card) },
+                    onInfo = { onCardInfo(card) },
                 )
                 if (index < cards.lastIndex) Spacer(Modifier.height(2.dp))
             }
@@ -370,6 +402,7 @@ internal fun FeedRow(
     card: FeedCard,
     shape: Shape,
     onClick: () -> Unit,
+    onInfo: (() -> Unit)? = null,
 ) {
     Row(
         modifier =
@@ -406,7 +439,7 @@ internal fun FeedRow(
                 )
             }
             Spacer(Modifier.height(Spacing.xs))
-            MetaLine(card)
+            MetaLine(card, onInfo)
         }
         Spacer(Modifier.size(Spacing.md, 0.dp))
         CardImage(
@@ -423,12 +456,29 @@ internal fun FeedRow(
 }
 
 @Composable
-private fun MetaLine(card: FeedCard) {
-    Text(
-        text = "${readingTime(card.words)} · ${card.words} words",
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
+private fun MetaLine(
+    card: FeedCard,
+    onInfo: (() -> Unit)? = null,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = "${readingTime(card.words)} · ${card.words} words",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (onInfo != null && card.reason != null) {
+            Spacer(Modifier.width(Spacing.xs))
+            Icon(
+                imageVector = Icons.Outlined.Info,
+                contentDescription = "Why recommended",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                modifier =
+                    Modifier
+                        .size(14.dp)
+                        .clickable(onClick = onInfo),
+            )
+        }
+    }
 }
 
 /** A rough length signal for the card, at a typical reading speed. */

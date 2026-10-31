@@ -108,16 +108,17 @@ class ReaderEngine(
     fun load(
         articleId: Long,
         sentences: List<SentenceTokens>,
+        startPosition: Int = 0,
     ) {
         cancelPending()
         this.articleId = articleId
         this.sentences = sentences
         this.totalTokens = sentences.sumOf { it.tokens.size }
-        this.position = 0
+        this.position = startPosition.coerceIn(0, (totalTokens - 1).coerceAtLeast(0))
         this.state = ReaderState.IDLE
         this.sessionId = idGenerator()
-        this.playStartPosition = 0
-        this.resuming = false
+        this.playStartPosition = this.position
+        this.resuming = startPosition > 0
         this.hasPlayed = false
         this.hasFinished = false
         notifyChanged()

@@ -131,6 +131,7 @@ fun ReaderScreen(
     onNext: () -> Unit = {},
     saved: Boolean = false,
     onSavedChange: (Boolean) -> Unit = {},
+    resumePosition: Int = 0,
     modifier: Modifier = Modifier,
 ) {
     // The caller keys the reader's content on the article id (the
@@ -174,7 +175,7 @@ fun ReaderScreen(
                     finished = eng.hasFinished
                 }
                 eng.wpm = settings.wpm
-                eng.load(articleId, sentences)
+                eng.load(articleId, sentences, resumePosition)
             }
         }
 

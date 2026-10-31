@@ -25,6 +25,7 @@ import androidx.core.view.WindowCompat
 import com.wikifyp.data.Article
 import com.wikifyp.data.FeedCard
 import com.wikifyp.data.FeedRepository
+import com.wikifyp.data.HistoryRepository
 import com.wikifyp.data.toFeedCard
 import com.wikifyp.data.toSentenceTokens
 import com.wikifyp.reader.EventListener
@@ -34,6 +35,9 @@ import com.wikifyp.ui.feed.FeedScreen
 import com.wikifyp.ui.feed.FeedState
 import com.wikifyp.ui.feed.SavedScreen
 import com.wikifyp.ui.feed.loadFeed
+import com.wikifyp.ui.history.HistoryScreen
+import com.wikifyp.ui.history.ReasonSheet
+import com.wikifyp.ui.history.StatsScreen
 import com.wikifyp.ui.reader.ReaderScreen
 import com.wikifyp.ui.reader.ReaderSettings
 import com.wikifyp.ui.reader.ReaderSettingsSheet
@@ -56,6 +60,7 @@ fun WikifypApp(
     onReaderSettingsChange: (ReaderSettings) -> Unit = {},
     initialSaved: List<FeedCard> = emptyList(),
     onSavedChange: (List<FeedCard>) -> Unit = {},
+    historyRepository: HistoryRepository? = null,
 ) {
     var feedState by remember { mutableStateOf<FeedState>(FeedState.Loading) }
     var retry by remember { mutableIntStateOf(0) }
@@ -67,6 +72,10 @@ fun WikifypApp(
     var openArticleId by rememberSaveable { mutableStateOf<Long?>(null) }
     var article by remember { mutableStateOf<Article?>(null) }
     var notice by remember { mutableStateOf<String?>(null) }
+    // Resume token: sentence/token indices where the reader left off.
+    // Set when opening from history; null for new reads.
+    var resumeSentenceIdx by remember { mutableIntStateOf(-1) }
+    var resumeTokenIdx by remember { mutableIntStateOf(0) }
 
     // Reader settings (speed, type, theme…) belong to the reader, not to
     // one article: they carry between articles. Recreation re-reads them
@@ -88,6 +97,9 @@ fun WikifypApp(
         onSavedChange(it)
     }
     var showSaved by rememberSaveable { mutableStateOf(false) }
+    var showHistory by rememberSaveable { mutableStateOf(false) }
+    var showStats by rememberSaveable { mutableStateOf(false) }
+    var reasonCard by remember { mutableStateOf<FeedCard?>(null) }
 
     // Pagination: the accumulated cards across pages, and the IDs already
     // served (sent as the exclude list to the server so it never repeats).
@@ -194,6 +206,8 @@ fun WikifypApp(
         when {
             article != null -> Screen.Reader(article!!)
             showSaved -> Screen.Saved
+            showHistory -> Screen.History
+            showStats -> Screen.Stats
             else -> Screen.Feed
         }
 
@@ -284,6 +298,15 @@ fun WikifypApp(
                                     notice = null
                                     openArticleId = upNext?.id
                                 },
+                                resumePosition =
+                                    if (resumeSentenceIdx >= 0) {
+                                        // Flat index: sum of tokens in all sentences before
+                                        // the target, plus the token index within it.
+                                        sentences.take(resumeSentenceIdx).sumOf { it.tokens.size } +
+                                            resumeTokenIdx
+                                    } else {
+                                        0
+                                    },
                                 saved = savedCards.any { it.id == current.id },
                                 onSavedChange = { nowSaved ->
                                     // A save normally means the article is not in the list
@@ -306,6 +329,7 @@ fun WikifypApp(
                                 cards = savedCards,
                                 onCardClick = { card ->
                                     notice = null
+                                    resumeSentenceIdx = -1
                                     openArticleId = card.id
                                 },
                                 onBack = { showSaved = false },
@@ -315,11 +339,42 @@ fun WikifypApp(
                             )
                         }
 
+                        Screen.History -> {
+                            historyRepository?.let { repo ->
+                                HistoryScreen(
+                                    repository = repo,
+                                    onEntryClick = { entry ->
+                                        notice = null
+                                        val token = entry.resumeToken
+                                        if (token != null) {
+                                            resumeSentenceIdx = token.sentenceIdx
+                                            resumeTokenIdx = token.tokenIdx
+                                        } else {
+                                            resumeSentenceIdx = -1
+                                            resumeTokenIdx = 0
+                                        }
+                                        openArticleId = entry.id
+                                    },
+                                    onBack = { showHistory = false },
+                                )
+                            }
+                        }
+
+                        Screen.Stats -> {
+                            historyRepository?.let { repo ->
+                                StatsScreen(
+                                    repository = repo,
+                                    onBack = { showStats = false },
+                                )
+                            }
+                        }
+
                         Screen.Feed -> {
                             FeedScreen(
                                 state = feedState,
                                 onCardClick = { card ->
                                     notice = null
+                                    resumeSentenceIdx = -1
                                     openArticleId = card.id
                                 },
                                 onRetry = {
@@ -331,6 +386,9 @@ fun WikifypApp(
                                 isRefreshing = isRefreshing,
                                 onOpenSettings = { showFeedSettings = true },
                                 onOpenSaved = { showSaved = true },
+                                onOpenHistory = { showHistory = true },
+                                onOpenStats = { showStats = true },
+                                onCardInfo = { card -> reasonCard = card },
                                 notice = notice,
                                 listState = feedListState,
                             )
@@ -344,6 +402,15 @@ fun WikifypApp(
                                     onDismiss = { showFeedSettings = false },
                                 )
                             }
+                            reasonCard?.let { card ->
+                                card.reason?.let { reason ->
+                                    ReasonSheet(
+                                        title = card.title,
+                                        reason = reason,
+                                        onDismiss = { reasonCard = null },
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -352,11 +419,15 @@ fun WikifypApp(
     }
 }
 
-/** The three top-level screens the app animates between. */
+/** The top-level screens the app animates between. */
 private sealed interface Screen {
     data object Feed : Screen
 
     data object Saved : Screen
+
+    data object History : Screen
+
+    data object Stats : Screen
 
     class Reader(
         val article: Article,

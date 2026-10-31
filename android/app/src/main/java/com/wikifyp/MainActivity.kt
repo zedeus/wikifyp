@@ -17,7 +17,9 @@ import com.wikifyp.data.EventUploader
 import com.wikifyp.data.FeedCache
 import com.wikifyp.data.FeedRepository
 import com.wikifyp.data.FixtureFeedRepository
+import com.wikifyp.data.HistoryRepository
 import com.wikifyp.data.HttpFeedRepository
+import com.wikifyp.data.HttpHistoryRepository
 import com.wikifyp.data.SavedStore
 import com.wikifyp.reader.EventListener
 import com.wikifyp.ui.WikifypApp
@@ -64,6 +66,7 @@ class MainActivity : ComponentActivity() {
         }
 
         val repository = createRepository(this)
+        val historyRepo = createHistoryRepository(this)
         val clock = HandlerClock()
         val queue = EventQueue(this)
         val eventListener = EventListener { event -> queue.enqueue(event) }
@@ -91,6 +94,7 @@ class MainActivity : ComponentActivity() {
                 onReaderSettingsChange = settingsStore::save,
                 initialSaved = initialSaved,
                 onSavedChange = savedStore::save,
+                historyRepository = historyRepo,
             )
         }
     }
@@ -111,6 +115,14 @@ private fun createRepository(context: Context): FeedRepository {
         remote = HttpFeedRepository(BuildConfig.SERVER_URL, readerId(context)),
         cache = FeedCache(File(context.filesDir, "feed-cache")),
     )
+}
+
+/** The history repository: server-backed when configured, null for fixtures. */
+private fun createHistoryRepository(context: Context): HistoryRepository? {
+    if (BuildConfig.SERVER_URL.isEmpty() || underInstrumentation()) {
+        return null
+    }
+    return HttpHistoryRepository(BuildConfig.SERVER_URL, readerId(context))
 }
 
 /** Whether an androidTest instrumentation is driving the app. */
