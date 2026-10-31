@@ -28,10 +28,13 @@ import androidx.compose.material.icons.automirrored.outlined.ViewList
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -45,6 +48,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -153,6 +157,7 @@ fun HistoryScreen(
     var searchQuery by remember { mutableStateOf("") }
     var showSearch by remember { mutableStateOf(false) }
     var isCardLayout by remember { mutableStateOf(true) }
+    var showDatePicker by remember { mutableStateOf(false) }
 
     // Selection state.
     val selectedIds = remember { mutableStateListOf<Long>() }
@@ -169,11 +174,12 @@ fun HistoryScreen(
     suspend fun loadHistory(
         cursor: String = "",
         search: String = "",
+        date: String = "",
     ) {
         try {
             isLoading = true
             error = null
-            val page = repository.history(cursor = cursor, search = search)
+            val page = repository.history(cursor = cursor, search = search, date = date)
             if (cursor.isEmpty()) {
                 entries = page.entries
             } else {
@@ -328,6 +334,12 @@ fun HistoryScreen(
                             Icon(
                                 if (showSearch) Icons.Filled.Close else Icons.Filled.Search,
                                 contentDescription = if (showSearch) "Close search" else "Search",
+                            )
+                        }
+                        IconButton(onClick = { showDatePicker = true }) {
+                            Icon(
+                                Icons.Outlined.CalendarMonth,
+                                contentDescription = "Go to date",
                             )
                         }
                         IconButton(onClick = { isCardLayout = !isCardLayout }) {
@@ -511,6 +523,34 @@ fun HistoryScreen(
                 }
             },
         )
+    }
+
+    // Go-to-date picker.
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDatePicker = false
+                    val millis = datePickerState.selectedDateMillis
+                    if (millis != null) {
+                        val fmt = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+                        val dateStr = fmt.format(java.util.Date(millis))
+                        scope.launch { loadHistory(search = searchQuery, date = dateStr) }
+                    }
+                }) {
+                    Text("Go")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel")
+                }
+            },
+        ) {
+            DatePicker(state = datePickerState)
+        }
     }
 }
 

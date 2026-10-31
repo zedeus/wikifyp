@@ -318,6 +318,46 @@ class ReaderEngineTest {
         clock.advanceBy(ReaderEngine.HOLD_THRESHOLD_MS)
     }
 
+    // --- Resume position ---
+
+    @Test
+    fun loadWithStartPositionResumesAtToken() {
+        // Position 3 = "Dogs" (first sentence has 3 tokens: The, cat, sat.)
+        engine.load(articleId = 42, sentences = twoSentences, startPosition = 3)
+        assertEquals(ReaderState.IDLE, engine.state)
+        assertEquals("Dogs", engine.currentToken())
+        assertEquals(3, engine.currentPosition())
+    }
+
+    @Test
+    fun loadWithStartPositionClampsToEnd() {
+        // Total tokens = 5; position 99 clamps to 4 ("run.")
+        engine.load(articleId = 42, sentences = twoSentences, startPosition = 99)
+        assertEquals("run.", engine.currentToken())
+        assertEquals(4, engine.currentPosition())
+    }
+
+    @Test
+    fun loadWithStartPositionZeroStartsAtBeginning() {
+        engine.load(articleId = 42, sentences = twoSentences, startPosition = 0)
+        assertEquals("The", engine.currentToken())
+        assertEquals(0, engine.currentPosition())
+    }
+
+    @Test
+    fun resumedEngineStartsPlayingFromResumePosition() {
+        engine.load(articleId = 42, sentences = twoSentences, startPosition = 3)
+        assertEquals("Dogs", engine.currentToken())
+        // Hold to play.
+        engine.onTouchDown()
+        clock.advanceBy(ReaderEngine.HOLD_THRESHOLD_MS + 1)
+        assertEquals(ReaderState.PLAYING, engine.state)
+        // The play event's token should be at the resume position.
+        val playEvent = events.firstOrNull { it.type == EventType.PLAY }
+        assertEquals(1, playEvent?.token?.sentenceIdx) // sentence 1
+        assertEquals(0, playEvent?.token?.tokenIdx) // token 0 = "Dogs"
+    }
+
     /** Advance the clock by the delay for one token. */
     private fun advanceTokens(
         tokenText: String,
