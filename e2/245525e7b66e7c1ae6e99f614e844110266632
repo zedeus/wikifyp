@@ -1,0 +1,38 @@
+android/app/src/main/java/com/wikifyp/ui/history/HistoryScreen.kt
+  s_fbd6a0fc774e16::t_f09ef64acad845 177,182
+  s_fbd6a0fc774e16::t_0b54ef66557e3f 160
+  s_fbd6a0fc774e16::t_cd9c1f5a40bc20 339-344
+  s_fbd6a0fc774e16::t_8e6d6617f373bb 31
+  s_fbd6a0fc774e16::t_562570eb149983 527-554
+  s_fbd6a0fc774e16::t_9a851de80990d4 36-37,51
+android/reader/src/test/java/com/wikifyp/reader/ReaderEngineTest.kt
+  s_fbd6a0fc774e16::t_397e20e53fdc2c 321-356,359-360
+  s_fbd6a0fc774e16::t_697914824732f9 357-358
+android/app/src/test/java/com/wikifyp/data/FakeHistoryRepository.kt
+  s_fbd6a0fc774e16::t_25631a0d6677eb 1-6,8-16,18-33
+  s_fbd6a0fc774e16::t_3de81a7685494f 7
+  s_fbd6a0fc774e16::t_5707ec65ed0dae 17
+android/app/src/test/java/com/wikifyp/ui/history/HistoryScreenScreenshotTest.kt
+  s_fbd6a0fc774e16::t_fa019aa767d6be 1-135
+android/app/src/test/java/com/wikifyp/ui/history/HistoryScreenTest.kt
+  s_fbd6a0fc774e16::t_5ed1594c1692d3 1-95,97-230
+  s_fbd6a0fc774e16::t_b3f90abe9165a3 96
+android/app/src/androidTest/java/com/wikifyp/HistoryNavigationTest.kt
+  s_fbd6a0fc774e16::t_4c1a320c76516b 1-42
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e2245525e7b66e7c1ae6e99f614e844110266632",
+  "prompts": {},
+  "sessions": {
+    "s_fbd6a0fc774e16": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "03eb4619-e408-4fa9-863e-cd0e3e2f2ec9",
+        "model": "metr-model"
+      },
+      "human_author": "Zed <zedeus@pm.me>"
+    }
+  }
+}
